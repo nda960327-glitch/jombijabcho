@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>BOARD | 좀비잡초</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Archivo:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/project.css">
+<link rel="stylesheet" href="css/board.css">
+</head>
+<body>
+
+<header class="header scrolled" id="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <span class="logo-mark">🌱</span>
+      <span class="logo-text">좀비잡초<em>MY BOARD</em></span>
+    </a>
+    <nav class="nav" id="nav">
+      <a href="index.html#projects">PROJECTS</a>
+      <a href="blog.html">BLOG</a>
+      <a href="https://docs.google.com/spreadsheets/d/1IW65a8-4D4nkGQfbNSrVRZQYRV4128iRTYtK0d7FJi4/edit" target="_blank" rel="noopener" class="nav-sheet">📊 시트 열기</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="메뉴 열기">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main class="board" id="board">
+  <div class="board-head">
+    <div>
+      <p class="section-eyebrow">MY BOARD</p>
+      <h1>오늘의 <span class="accent">전장</span></h1>
+      <p class="board-date" id="boardDate"></p>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="refreshBtn">↻ 새로고침</button>
+  </div>
+
+  <div class="board-loading" id="boardLoading">시트에서 데이터를 불러오는 중… 🌱</div>
+  <div class="board-error" id="boardError" hidden>시트를 불러오지 못했습니다. 시트 공유 설정(링크가 있는 모든 사용자)을 확인하세요.</div>
+
+  <div id="boardContent" hidden>
+    <!-- 전체 현황 -->
+    <section class="stat-row" id="statRow"></section>
+
+    <!-- 경고: 마감 -->
+    <section class="board-section" id="dueSection" hidden>
+      <h2>⚠️ 마감 지남 · 임박 (3일 이내)</h2>
+      <div class="task-list" id="dueList"></div>
+    </section>
+
+    <!-- 이번 주 집중 -->
+    <section class="board-section">
+      <h2>⭐ 이번 주 집중</h2>
+      <div class="task-list" id="weekList"></div>
+    </section>
+
+    <!-- 프로젝트별 현황 -->
+    <section class="board-section">
+      <h2>🗂 프로젝트별 현황</h2>
+      <div class="prj-board-grid" id="prjGrid"></div>
+    </section>
+
+    <!-- 최근 업무일지 -->
+    <section class="board-section">
+      <h2>📋 최근 업무일지</h2>
+      <div class="timeline prj-timeline" id="logList"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <p>© 2026 좀비잡초 · 개인용 보드 (검색 비노출)</p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/projects.js"></script>
+<script src="js/main.js"></script>
+<script src="js/board.js"></script>
+</body>
+</html>
