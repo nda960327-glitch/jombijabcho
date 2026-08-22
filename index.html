@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Archivo:wght@600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/project.css">
 </head>
 <body>
 
@@ -135,36 +136,9 @@
   <div class="container">
     <p class="section-eyebrow">PROJECTS</p>
     <h2 class="section-title">지금 키우고 있는 <span class="accent">것들</span></h2>
-    <p class="section-desc">진행 중인 사업과 앱. 상태는 계속 업데이트된다.</p>
-    <div class="project-grid">
-      <article class="project-card">
-        <div class="project-thumb">🚀</div>
-        <div class="project-body">
-          <span class="badge badge-live">진행 중</span>
-          <h3>프로젝트 이름 #1</h3>
-          <p>여기에 사업/앱 한 줄 소개를 적는다. 무엇을, 누구를 위해, 왜 만드는가.</p>
-          <div class="project-meta">시작 2026.08 · 상태: MVP 제작 중</div>
-        </div>
-      </article>
-      <article class="project-card">
-        <div class="project-thumb">📱</div>
-        <div class="project-body">
-          <span class="badge badge-plan">준비 중</span>
-          <h3>프로젝트 이름 #2</h3>
-          <p>다음 실행 대기 중인 아이디어. 검증 → 실행 순서를 기다리고 있다.</p>
-          <div class="project-meta">시작 예정 · 상태: 아이디어 검증</div>
-        </div>
-      </article>
-      <article class="project-card">
-        <div class="project-thumb">🌱</div>
-        <div class="project-body">
-          <span class="badge badge-seed">씨앗</span>
-          <h3>아이디어 창고</h3>
-          <p>아직 심지 않은 아이디어들. 언젠가 이 중 하나가 다음 프로젝트가 된다.</p>
-          <div class="project-meta">수시 업데이트</div>
-        </div>
-      </article>
-    </div>
+    <p class="section-desc">진행 중인 사업과 앱. 카드를 누르면 프로젝트별 트래킹 페이지로 이동한다.</p>
+    <!-- 프로젝트 카드는 js/projects.js 데이터로 자동 생성됩니다 -->
+    <div class="project-grid" id="projectGrid"></div>
   </div>
 </section>
 
@@ -173,30 +147,9 @@
   <div class="container">
     <p class="section-eyebrow">JOURNEY</p>
     <h2 class="section-title">성장 <span class="accent">타임라인</span></h2>
-    <p class="section-desc">사업과 앱이 자라나는 과정의 공개 기록. 숫자와 사건을 시간순으로 남긴다.</p>
-    <div class="timeline">
-      <div class="timeline-item">
-        <div class="timeline-date">2026.08.22</div>
-        <div class="timeline-content">
-          <h3>좀비잡초 홈페이지 오픈 🌱</h3>
-          <p>기록의 시작. 이곳에 모든 과정을 남기기로 결심하다.</p>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-date">예정</div>
-        <div class="timeline-content">
-          <h3>유튜브 첫 영상 업로드</h3>
-          <p>채널 소개와 함께, 왜 이 여정을 시작하는지 이야기한다.</p>
-        </div>
-      </div>
-      <div class="timeline-item">
-        <div class="timeline-date">예정</div>
-        <div class="timeline-content">
-          <h3>첫 프로젝트 공개</h3>
-          <p>지금 만들고 있는 것의 정체를 공개하고, 목표 수치를 선언한다.</p>
-        </div>
-      </div>
-    </div>
+    <p class="section-desc">모든 프로젝트의 최근 활동이 여기로 모인다. 프로젝트 로그를 쓰면 자동으로 쌓인다.</p>
+    <!-- 모든 프로젝트의 log를 최신순으로 자동 표시 -->
+    <div class="timeline" id="journeyTimeline"></div>
   </div>
 </section>
 
@@ -291,6 +244,8 @@
   </div>
 </footer>
 
+<script src="js/projects.js"></script>
+<script src="js/home.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
