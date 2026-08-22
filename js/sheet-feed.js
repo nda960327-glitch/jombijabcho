@@ -9,7 +9,7 @@
 //       '할일'과 '대시보드' 탭은 게시하지 마세요 (비공개 유지).
 // ============================================================
 
-const SHEET_CSV_URL = ""; // ← 여기에 게시된 CSV 주소를 넣으면 연동 시작
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1IW65a8-4D4nkGQfbNSrVRZQYRV4128iRTYtK0d7FJi4/gviz/tq?tqx=out:csv&sheet=%EC%97%85%EB%AC%B4%EC%9D%BC%EC%A7%80"; // 업무일지 탭
 
 // --- CSV 파서 (따옴표, 쉼표, 줄바꿈 처리) ---
 function parseCSV(text) {
