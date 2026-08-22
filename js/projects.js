@@ -21,7 +21,7 @@ const STAGES = ["아이디어", "검증", "MVP", "운영", "확장"];
 const PROJECTS = [
   {
     id: "neurumind",
-    name: "우렁의사 (뉴루마인드)",
+    name: "우렁의사 (느루마인드)",
     icon: "🧠",
     status: "live",
     stage: 3,
