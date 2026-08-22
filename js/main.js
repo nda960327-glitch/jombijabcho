@@ -16,6 +16,25 @@ if (navToggle && nav) {
   );
 }
 
+// 로고 길게 누르기(0.7초) → 개인 보드로 이동 (숨은 입구)
+const logo = document.querySelector('.logo');
+if (logo) {
+  let pressTimer = null, longPressed = false;
+  const start = () => {
+    longPressed = false;
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      if (navigator.vibrate) navigator.vibrate(30);
+      location.href = 'board.html';
+    }, 700);
+  };
+  const cancel = () => { clearTimeout(pressTimer); };
+  logo.addEventListener('pointerdown', start);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => logo.addEventListener(ev, cancel));
+  logo.addEventListener('click', e => { if (longPressed) e.preventDefault(); });
+  logo.addEventListener('contextmenu', e => e.preventDefault()); // 모바일 길게 누를 때 메뉴 방지
+}
+
 // 스크롤 리빌 애니메이션
 const revealTargets = document.querySelectorAll(
   '.section-title, .section-desc, .card, .mini-card, .project-card, .timeline-item, .reflection-card, .yt-placeholder, .about-text'

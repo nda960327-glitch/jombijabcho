@@ -46,7 +46,10 @@ img { max-width: 100%; }
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 24px;
 }
-.logo { display: flex; align-items: center; gap: 10px; }
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; /* 길게 누르기용 */
+}
 .logo-mark { font-size: 1.5rem; }
 .logo-text {
   font-weight: 900; font-size: 1.15rem; letter-spacing: -0.02em;
