@@ -58,7 +58,7 @@
     </div>
 
     <div class="sidebar-note">
-      <p>💡 새 글은 <code>blog/</code> 폴더에<br>HTML 파일로 추가하면 됩니다.</p>
+      <p>💡 새 글은 <code>js/posts.js</code>에<br>항목 하나만 추가하면 됩니다.</p>
     </div>
   </aside>
 
@@ -69,24 +69,8 @@
       <p>사업일지 · 자기성찰 · 마인드맵이 시간순으로 쌓입니다.</p>
     </div>
 
-    <div class="post-list" id="postList">
-
-      <article class="post-item" data-cat="mindmap">
-        <a href="blog/post-001.html" class="post-link">
-          <div class="post-text">
-            <span class="post-cat">🧠 마인드맵</span>
-            <h2>좀비잡초 채널 설계 마인드맵</h2>
-            <p>유튜브 채널 '좀비잡초'를 어떤 구조로 키워갈지, 머릿속 지도를 마인드맵으로 정리했다. 사업 · 성찰 · 소통 세 갈래의 뿌리.</p>
-            <div class="post-meta">2026. 8. 22. · 좀비잡초</div>
-          </div>
-          <div class="post-thumb">🧠</div>
-        </a>
-      </article>
-
-      <!-- 새 글 템플릿: 위 article 블록을 복사해서 붙여넣고 내용만 바꾸세요.
-           data-cat: business | reflection | mindmap | youtube -->
-
-    </div>
+    <!-- 글 목록은 js/posts.js 데이터로 자동 생성됩니다 -->
+    <div class="post-list" id="postList"></div>
 
     <div class="empty-msg" id="emptyMsg" hidden>
       <p>이 카테고리에는 아직 글이 없습니다. 🌱<br>첫 글이 자라나길 기다리는 중…</p>
@@ -103,6 +87,7 @@
   </div>
 </footer>
 
+<script src="js/posts.js"></script>
 <script src="js/main.js"></script>
 <script src="js/blog.js"></script>
 </body>
