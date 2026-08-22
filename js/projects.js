@@ -20,12 +20,99 @@ const STAGES = ["아이디어", "검증", "MVP", "운영", "확장"];
 
 const PROJECTS = [
   {
+    id: "neurumind",
+    name: "우렁의사 (뉴루마인드)",
+    icon: "🧠",
+    status: "live",
+    stage: 3,
+    oneliner: "CBT(인지행동치료) 기반 AI 심리상담 · 자기관리 앱. 24시간 곁에 있는 마음 관리 도구. — neurumind.com",
+    start: "운영 중",
+    goal: "사용자 확보 및 유지율 개선 (목표 수치 정하기)",
+    metrics: [
+      { label: "사용자", value: "-" },
+      { label: "MAU", value: "-" },
+      { label: "매출", value: "-" }
+    ],
+    next: [
+      "핵심 지표 정하고 현재 값 기록하기",
+      "이번 달 집중할 것 한 가지 정하기"
+    ],
+    log: [
+      { date: "2026.08.22", text: "좀비잡초 트래킹 보드에 등록. 지표 정리부터 시작." }
+    ]
+  },
+  {
+    id: "batentalk",
+    name: "바텐톡",
+    icon: "🍸",
+    status: "live",
+    stage: 3,
+    oneliner: "바텐더들의 익명 커뮤니티. 칵테일 레시피 · 원가 계산 · 채용 · 모임. — barapp.kr",
+    start: "운영 중",
+    goal: "활성 사용자 늘리기 (목표 수치 정하기)",
+    metrics: [
+      { label: "가입자", value: "-" },
+      { label: "일 방문", value: "-" },
+      { label: "게시글", value: "-" }
+    ],
+    next: [
+      "핵심 지표 정하고 현재 값 기록하기",
+      "바텐더 커뮤니티 홍보 채널 정하기"
+    ],
+    log: [
+      { date: "2026.08.22", text: "좀비잡초 트래킹 보드에 등록." }
+    ]
+  },
+  {
+    id: "secret-garden",
+    name: "Stay in 비밀의정원",
+    icon: "🌿",
+    status: "live",
+    stage: 3,
+    oneliner: "오프라인 칵테일바. 직접 운영하며 배우는 실전 사업의 현장.",
+    start: "운영 중",
+    goal: "월 매출 안정화 (목표 수치 정하기)",
+    metrics: [
+      { label: "월 매출", value: "-" },
+      { label: "월 방문", value: "-" }
+    ],
+    next: [
+      "월 매출/방문 수 기록 시작하기",
+      "바텐톡 · 유튜브와 연결 지점 찾기"
+    ],
+    log: [
+      { date: "2026.08.22", text: "좀비잡초 트래킹 보드에 등록." }
+    ]
+  },
+  {
+    id: "5secore",
+    name: "5secore",
+    icon: "⚡",
+    status: "plan",
+    stage: 2,
+    oneliner: "영어단어를 5초 만에 외우는 암기 앱. 학원가 배포로 시작한다.",
+    start: "준비 중",
+    goal: "학원가 첫 배포 — 파트너 학원 확보",
+    metrics: [
+      { label: "파트너 학원", value: "0" },
+      { label: "사용 학생", value: "0" }
+    ],
+    next: [
+      "배포용 앱 완성도 점검",
+      "타겟 학원 리스트 만들기",
+      "학원 제안용 소개 자료 만들기"
+    ],
+    log: [
+      { date: "2026.08.22", text: "좀비잡초 트래킹 보드에 등록. 학원가 배포 전략 수립 단계." }
+    ]
+  },
+  {
     id: "youtube",
     name: "좀비잡초 유튜브",
     icon: "🎬",
     status: "live",
     stage: 1,
-    oneliner: "사업과 성찰의 과정을 기록하고 공유하는 채널. 성공이 아니라 과정을 보여준다.",
+    oneliner: "위의 모든 사업을 트래킹하고 자아성찰하는 채널. 성공이 아니라 과정을 보여준다.",
     start: "2026.08",
     goal: "첫 영상 업로드 → 구독자 100명 (2026년 내)",
     metrics: [
@@ -40,27 +127,6 @@ const PROJECTS = [
     ],
     log: [
       { date: "2026.08.22", text: "채널 개설 (@jombijabcho), 홈페이지 오픈. 기록 시작." }
-    ]
-  },
-  {
-    id: "project-a",
-    name: "사업 A (이름 미정)",
-    icon: "🚀",
-    status: "plan",
-    stage: 0,
-    oneliner: "여기에 한 줄 소개를 적으세요 — 무엇을, 누구를 위해, 왜 만드는가.",
-    start: "미정",
-    goal: "아이디어 검증: 잠재 고객 10명에게 물어보기",
-    metrics: [
-      { label: "매출", value: "0원" },
-      { label: "고객", value: "0" }
-    ],
-    next: [
-      "아이디어 한 문장으로 정리하기",
-      "타겟 고객 정의하기"
-    ],
-    log: [
-      { date: "2026.08.22", text: "프로젝트 슬롯 생성. 내용을 채워야 함." }
     ]
   }
 ];
