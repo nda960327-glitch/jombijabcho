@@ -45,7 +45,8 @@ async function loadSheetFeed() {
   if (!journey) return;
 
   try {
-    const res = await fetch(SHEET_CSV_URL);
+    // 캐시 무시: 매번 최신 데이터 요청
+    const res = await fetch(SHEET_CSV_URL + "&_=" + Date.now(), { cache: "no-store" });
     if (!res.ok) return;
     const rows = parseCSV(await res.text());
 
