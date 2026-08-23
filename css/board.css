@@ -70,6 +70,23 @@
 .pbc-last { font-size: 0.75rem; color: var(--text-dim); border-top: 1px solid var(--line); padding-top: 10px; }
 .pbc-last.warn { color: #facc15; }
 
+/* 콘텐츠 파이프라인 */
+.pipe-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.pipe-step {
+  flex: 1; min-width: 90px; background: var(--panel); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 12px; text-align: center;
+}
+.pipe-step strong { display: block; font-family: var(--font-en); font-size: 1.3rem; color: var(--accent); }
+.pipe-step span { font-size: 0.72rem; color: var(--text-dim); }
+.pipe-step.done strong { color: var(--text-dim); }
+.task-stage { font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: rgba(74,222,128,.12); color: var(--accent); white-space: nowrap; }
+.task-link { font-size: 0.75rem; color: var(--accent); white-space: nowrap; }
+
+/* 아이디어 */
+.idea-count { font-size: 0.8rem; color: var(--text-dim); font-weight: 400; margin-left: 6px; }
+.idea-score { font-family: var(--font-en); font-size: 0.75rem; color: var(--accent); white-space: nowrap; }
+.idea-field { font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; }
+
 /* 결정 · 운영 원칙 */
 .dec-alert {
   background: rgba(250,204,21,.1); border: 1px solid rgba(250,204,21,.4);
