@@ -90,6 +90,16 @@ body.board-page * { scroll-behavior: auto; }
 .quick-sel { min-width: 110px; }
 .quick-input { flex: 1; min-width: 220px; }
 .quick-input:focus, .quick-sel:focus { outline: none; border-color: var(--accent); }
+.quick-opts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.opt-btn, .opt-sel, .opt-field {
+  background: var(--bg-soft); color: var(--text-dim); border: 1px solid var(--line); border-radius: 8px;
+  padding: 7px 10px; font-size: 0.82rem; font-family: var(--font-kr); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.opt-btn.on { color: #facc15; border-color: rgba(250,204,21,.6); background: rgba(250,204,21,.1); }
+.opt-field input { background: transparent; border: 0; color: var(--text); font-family: var(--font-kr); font-size: 0.85rem; outline: none; min-width: 0; width: 120px; }
+.opt-field input[type="date"] { width: 135px; color-scheme: dark; }
+.opt-field.grow { flex: 1; } .opt-field.grow input { width: 100%; }
+.opt-sel { color: var(--text); }
 .quick-help { font-size: 0.72rem; color: var(--text-dim); margin-top: 8px; }
 .quick-help code { background: var(--bg-soft); padding: 1px 5px; border-radius: 4px; color: var(--accent); }
 .quick-off { font-size: 0.8rem; color: #facc15; margin-top: 8px; }

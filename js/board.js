@@ -84,16 +84,29 @@
     const parts = s.split("//").map(x => x.replace(/\s+/g, " ").trim());
     out.text = parts[0]; out.second = parts[1] || ""; return out;
   }
+  // 옵션 버튼/칸 (기호 입력과 병행 — 버튼 값이 우선)
+  $("optStar").addEventListener("click", () => $("optStar").classList.toggle("on"));
+  function resetOpts() {
+    $("optStar").classList.remove("on"); $("optDue").value = ""; $("optPri").value = "중간"; $("optWho").value = "";
+    $("optLearned").value = ""; $("optDesc").value = ""; $("optWhy").value = ""; $("optReview").value = "";
+  }
   async function quickAdd() {
     const type = $("qType").value, prj = $("qPrj").value, raw = $("qText").value;
-    if (!raw.trim()) return;
+    if (!raw.trim()) { $("qText").focus(); return; }
     const q = parseQuick(raw); let r;
-    if (type === "task") r = await api("addTask", { prj, text: q.text, due: q.due || "", star: !!q.star, pri: q.pri || "중간", who: q.who || "" });
-    else if (type === "log") r = await api("addLog", { prj, did: q.text, learned: q.second });
-    else if (type === "idea") r = await api("addIdea", { text: q.text, desc: q.second, field: prj && !/개인/.test(prj) ? prj : "" });
-    else if (type === "decision") r = await api("addDecision", { prj, text: q.text, why: q.second, review: q.due || "" });
+    if (type === "task") {
+      const star = $("optStar").classList.contains("on") || !!q.star;
+      const due = $("optDue").value || q.due || "";
+      const pri = $("optPri").value !== "중간" ? $("optPri").value : (q.pri || "중간");
+      const who = $("optWho").value.trim() || q.who || "";
+      q.star = star; q.due = due; q.pri = pri; q.who = who;
+      r = await api("addTask", { prj, text: q.text, due, star, pri, who });
+    }
+    else if (type === "log") { q.second = $("optLearned").value.trim() || q.second; r = await api("addLog", { prj, did: q.text, learned: q.second }); }
+    else if (type === "idea") r = await api("addIdea", { text: q.text, desc: $("optDesc").value.trim() || q.second, field: prj && !/개인/.test(prj) ? prj : "" });
+    else if (type === "decision") r = await api("addDecision", { prj, text: q.text, why: $("optWhy").value.trim() || q.second, review: $("optReview").value || q.due || "" });
     if (!r) return;
-    $("qText").value = "";
+    $("qText").value = ""; resetOpts();
     msg({ task: "할 일 추가됨 ✓", log: "일지 기록됨 ✓", idea: "아이디어 심었어요 🌱", decision: "결정 기록됨 📌" }[type] + (r.blind ? " (반영 확인 중…)" : ""));
     if (type === "task") {
       const t = { prj, text: q.text, due: q.due ? parseDate(q.due) : null, star: !!q.star, status: "할일", pri: q.pri || "중간", who: q.who || "" };
@@ -109,8 +122,9 @@
   $("qText").addEventListener("keydown", e => { if (e.key === "Enter") quickAdd(); });
   $("qType").addEventListener("change", () => {
     const t = $("qType").value;
-    $("qText").placeholder = { task: "할 일 한 줄 — 예: 재고 발주 ⭐ ~8/30 @현영", log: "오늘 한 일 // 배운 것(선택)", idea: "아이디어 // 한 줄 설명", decision: "결정 내용 // 이유 ~10/1(재검토일)" }[t];
+    $("qText").placeholder = { task: "할 일을 적고 Enter", log: "오늘 한 일을 적고 Enter", idea: "아이디어를 적고 Enter", decision: "결정한 내용을 적고 Enter" }[t];
     $("qPrj").style.display = t === "idea" ? "none" : "";
+    ["Task", "Log", "Idea", "Decision"].forEach(k => { $("opts" + k).hidden = k.toLowerCase() !== t; });
   });
   function refreshWriteUI() {
     const on = canWrite();
@@ -155,6 +169,9 @@
       if (prev && labels.includes(prev)) sel.value = prev;
 
       const tasks = parseTasks(rows["할일"], idOf);
+      // 담당 이름 자동완성 목록 (할일 담당 + 기본 이름)
+      const names = [...new Set(["나", "준", "현영", "경이", ...tasks.map(t => t.who).filter(Boolean)])];
+      $("whoList").innerHTML = names.map(n => `<option value="${esc(n)}">`).join("");
       const logs = (rows["업무일지"] || [])
         .map(r => ({ date: parseDate(r[0]), prj: cell(r, 1), did: cell(r, 2), learned: cell(r, 3), pid: idOf(cell(r, 1)) }))
         .filter(l => l.date && l.did && !l.did.startsWith("(예시)")).sort((a, b) => b.date - a.date);

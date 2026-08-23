@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Archivo:wght@600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=202608231351">
-<link rel="stylesheet" href="css/project.css?v=202608231351">
-<link rel="stylesheet" href="css/board.css?v=202608231351">
+<link rel="stylesheet" href="css/style.css?v=202608231356">
+<link rel="stylesheet" href="css/project.css?v=202608231356">
+<link rel="stylesheet" href="css/board.css?v=202608231356">
 </head>
 <body class="board-page">
 
@@ -54,10 +54,27 @@
         <option value="decision">📌 결정</option>
       </select>
       <select id="qPrj" class="quick-sel"></select>
-      <input id="qText" class="quick-input" type="text" placeholder="한 줄로 적고 Enter — 예: 재고 발주 !높음 ⭐ ~8/30 @현영" autocomplete="off">
+      <input id="qText" class="quick-input" type="text" placeholder="할 일을 적고 Enter" autocomplete="off">
       <button class="btn btn-primary btn-sm" id="qAdd">추가</button>
     </div>
-    <div class="quick-help" id="qHelp"><code>⭐</code> 이번주 · <code>~8/30</code> 마감 · <code>!높음</code> 우선순위 · <code>@이름</code> 담당 · 일지는 <code>//</code> 뒤에 배운 것</div>
+    <!-- 옵션 (종류별로 바뀜) -->
+    <div class="quick-opts" id="optsTask">
+      <button type="button" class="opt-btn" id="optStar" title="중요 표시">⭐ 중요</button>
+      <label class="opt-field">📅 <input type="date" id="optDue"></label>
+      <select id="optPri" class="opt-sel"><option value="중간">보통</option><option value="높음">🔥 높음</option><option value="낮음">낮음</option></select>
+      <label class="opt-field">👤 <input type="text" id="optWho" list="whoList" placeholder="담당 (비우면 나)" autocomplete="off"></label>
+      <datalist id="whoList"></datalist>
+    </div>
+    <div class="quick-opts" id="optsLog" hidden>
+      <label class="opt-field grow">💡 <input type="text" id="optLearned" placeholder="배운 것 / 느낀 것 (선택)"></label>
+    </div>
+    <div class="quick-opts" id="optsIdea" hidden>
+      <label class="opt-field grow">📝 <input type="text" id="optDesc" placeholder="한 줄 설명 (선택)"></label>
+    </div>
+    <div class="quick-opts" id="optsDecision" hidden>
+      <label class="opt-field grow">💬 <input type="text" id="optWhy" placeholder="이유 (선택)"></label>
+      <label class="opt-field">🔁 재검토 <input type="date" id="optReview"></label>
+    </div>
     <div class="quick-off" id="quickOff" hidden>✍️ 보드에서 바로 입력·완료하려면 <a href="#setupDetails">⚙️ 빠른 입력 설정</a> (1회, 3분)</div>
     <div class="quick-msg" id="qMsg" hidden></div>
   </section>
@@ -143,9 +160,9 @@
   </div>
 </footer>
 
-<script src="js/projects.js?v=202608231351"></script>
-<script src="js/sheet-data.js?v=202608231351"></script>
-<script src="js/main.js?v=202608231351"></script>
-<script src="js/board.js?v=202608231351"></script>
+<script src="js/projects.js?v=202608231356"></script>
+<script src="js/sheet-data.js?v=202608231356"></script>
+<script src="js/main.js?v=202608231356"></script>
+<script src="js/board.js?v=202608231356"></script>
 </body>
 </html>
