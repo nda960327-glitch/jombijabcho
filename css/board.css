@@ -91,6 +91,9 @@ body.board-page * { scroll-behavior: auto; }
 .quick-input { flex: 1; min-width: 220px; }
 .quick-input:focus, .quick-sel:focus { outline: none; border-color: var(--accent); }
 .quick-opts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.quick-opts[hidden], .quick-off[hidden], .quick-msg[hidden], [hidden] { display: none !important; }
+#refreshBtn { background: transparent; color: var(--text-dim); border-color: var(--line); }
+#refreshBtn:hover { color: var(--accent); border-color: var(--accent); }
 .opt-btn, .opt-sel, .opt-field {
   background: var(--bg-soft); color: var(--text-dim); border: 1px solid var(--line); border-radius: 8px;
   padding: 7px 10px; font-size: 0.82rem; font-family: var(--font-kr); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
