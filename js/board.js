@@ -13,7 +13,7 @@
   $("boardDateText").textContent = `${fmtDate(today)} · ${DOW[today.getDay()]}요일`;
 
   // ===== 쓰기 API =====
-  const WRITE_KEY = "zj_write_url";
+  const WRITE_KEY = "zj_write_url_v2"; // v2: 옛 주소가 저장된 기기 무시
   const DEFAULT_WRITE_URL = "https://script.google.com/macros/s/AKfycbzYHtUl7iFSqXWBXvL3m167FL6GO25GteG0QethSpO3e5wlmBPk3t1ypQYwH2IfFQoa4w/exec";
   const writeUrl = () => (localStorage.getItem(WRITE_KEY) || DEFAULT_WRITE_URL).trim();
   const canWrite = () => /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(writeUrl());

@@ -9,7 +9,7 @@
   const dueTxt = d => !d ? "" : (daysDiff(d) < 0 ? `${-daysDiff(d)}일 지남` : daysDiff(d) === 0 ? "오늘" : `D-${daysDiff(d)}`);
 
   // ---- 쓰기 API (보드와 동일) ----
-  const WRITE_KEY = "zj_write_url";
+  const WRITE_KEY = "zj_write_url_v2"; // v2: 옛 주소가 저장된 기기 무시
   const DEFAULT_WRITE_URL = "https://script.google.com/macros/s/AKfycbzYHtUl7iFSqXWBXvL3m167FL6GO25GteG0QethSpO3e5wlmBPk3t1ypQYwH2IfFQoa4w/exec";
   const writeUrl = () => (localStorage.getItem(WRITE_KEY) || DEFAULT_WRITE_URL).trim();
   function msg(text, err) { const m = $("qMsg"); m.hidden = false; m.textContent = text; m.classList.toggle("err", !!err); clearTimeout(msg._t); msg._t = setTimeout(() => { m.hidden = true; }, 5000); }
