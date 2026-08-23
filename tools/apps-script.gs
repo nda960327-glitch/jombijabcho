@@ -99,11 +99,20 @@ function doPost(e) {
         result = { row };
         break;
       }
-      case "addContent": {   // {prj, title, stage, script, due}
+      case "addContent": {   // {prj, title, stage, script, due, memo}
         const sh = ss.getSheetByName(TAB.콘텐츠);
         const row = nextRow_(sh, 3);
-        sh.getRange(row, 1, 1, 8).setValues([[today, body.prj || "", body.title || "", body.stage || "아이디어", body.script || "", body.due || "", "", ""]]);
+        sh.getRange(row, 1, 1, 8).setValues([[today, body.prj || "", body.title || "", body.stage || "아이디어", body.script || "", body.due || "", "", body.memo || ""]]);
         result = { row };
+        break;
+      }
+      case "updateContent": { // {title, stage?, script?, due?, video?, memo?, newTitle?, prj?}
+        const sh = ss.getSheetByName(TAB.콘텐츠);
+        const r = findRow_(sh, 3, body.title);
+        if (!r) throw new Error("콘텐츠를 찾지 못했습니다: " + body.title);
+        const set = (col, v) => { if (v !== undefined && v !== null) sh.getRange(r, col).setValue(v); };
+        set(2, body.prj); set(3, body.newTitle); set(4, body.stage); set(5, body.script); set(6, body.due); set(7, body.video); set(8, body.memo);
+        result = { row: r };
         break;
       }
       default:
