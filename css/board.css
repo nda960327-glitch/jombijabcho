@@ -90,7 +90,34 @@
 .setup-box { font-size: 0.88rem; }
 .setup-steps { padding-left: 20px; margin: 10px 0 14px; display: flex; flex-direction: column; gap: 6px; }
 .setup-box a { color: var(--accent); text-decoration: underline; }
+/* 프로젝트 한 줄 목록 */
+.prj-list { display: flex; flex-direction: column; gap: 6px; }
+.prj-row { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.prj-row.h-red { border-color: rgba(248,113,113,.5); }
+.prj-row.h-yellow { border-color: rgba(250,204,21,.4); }
+.prj-row-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; user-select: none; }
+.prj-row-head .icon { font-size: 1.2rem; }
+.prj-row-head .name { font-weight: 700; font-size: 0.95rem; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prj-row-head .meta { font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; }
+.prj-row-head .meta b { color: var(--text); font-family: var(--font-en); }
+.prj-row-head .chev { color: var(--text-dim); font-size: 0.8rem; transition: transform .2s; }
+.prj-row.open .chev { transform: rotate(90deg); }
+.prj-row-body { display: none; padding: 0 14px 14px 44px; font-size: 0.88rem; }
+.prj-row.open .prj-row-body { display: block; }
+.prj-row-body .goal { color: var(--accent); font-size: 0.82rem; margin-bottom: 8px; }
+.prj-row-body ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.prj-row-body li { display: flex; align-items: center; gap: 8px; }
+.prj-row-body .foot { margin-top: 10px; font-size: 0.75rem; color: var(--text-dim); display: flex; gap: 12px; }
+.prj-row-body .foot a { color: var(--accent); }
+.prj-row.inactive { opacity: .6; }
+
 /* 액션 버튼 */
+.chk {
+  width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--line); background: transparent;
+  color: transparent; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
+}
+.chk:hover { border-color: var(--accent); color: var(--accent); }
+.task.done .chk { background: var(--accent); border-color: var(--accent); color: #06130a; }
 .tbtn {
   border: 1px solid var(--line); background: var(--bg-soft); color: var(--text-dim); border-radius: 6px;
   padding: 3px 8px; font-size: 0.75rem; cursor: pointer; white-space: nowrap; font-family: var(--font-kr);
@@ -188,7 +215,17 @@
 .dec-meta { font-size: 0.72rem; color: var(--text-dim); margin-top: 6px; font-family: var(--font-en); }
 
 @media (max-width: 760px) {
-  .stat-row { grid-template-columns: repeat(2, 1fr); }
-  .task { flex-wrap: wrap; }
-  .task-prj { min-width: 0; }
+  .stat-row { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .stat-card { padding: 12px 10px; }
+  .stat-card strong { font-size: 1.4rem; }
+  .stat-card span { font-size: 0.68rem; }
+  .task { flex-wrap: wrap; padding: 12px 12px; gap: 8px; }
+  .task-prj { min-width: 0; order: 5; width: 100%; font-size: 0.7rem; }
+  .task-text { flex: 1 1 60%; }
+  .tbtn { padding: 6px 10px; font-size: 0.85rem; }
+  .chk { width: 30px; height: 30px; }
+  .board { padding-top: 90px; }
+  .quick-sel { min-width: 0; flex: 1; }
+  .quick-input { min-width: 100%; order: 3; }
+  #qAdd { order: 4; width: 100%; }
 }

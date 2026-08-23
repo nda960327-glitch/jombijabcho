@@ -24,17 +24,34 @@
   function msg(text, err) { const m = $("qMsg"); m.hidden = false; m.textContent = text; m.classList.toggle("err", !!err); clearTimeout(msg._t); msg._t = setTimeout(() => { m.hidden = true; }, 4000); }
   async function api(action, payload) {
     if (!canWrite()) { msg("빠른 입력이 아직 설정되지 않았어요 — 아래 ⚙️ 설정을 먼저 해주세요.", true); return null; }
+    const body = JSON.stringify({ action, ...payload });
     try {
-      const res = await fetch(writeUrl(), { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action, ...payload }) });
+      const res = await fetch(writeUrl(), { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body, redirect: "follow" });
       const data = await res.json().catch(() => ({ ok: res.ok }));
       if (!data.ok) throw new Error(data.error || "실패");
       return data;
-    } catch (e) { msg("저장 실패: " + e.message, true); return null; }
+    } catch (e) {
+      // CORS/리다이렉트 문제(예: 구글 계정 여러 개 로그인)면 응답을 못 읽을 뿐 요청은 전달됨 → no-cors로 한 번 더 보내고 성공으로 간주
+      if (e instanceof TypeError) {
+        try { await fetch(writeUrl(), { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body }); return { ok: true, blind: true }; }
+        catch (e2) { msg("저장 실패(네트워크): " + e2.message, true); return null; }
+      }
+      msg("저장 실패: " + e.message, true); return null;
+    }
   }
+  // 시트 → 공개 CSV 반영이 몇 초~1분 걸리므로: 화면은 즉시 바꾸고, 뒤에서 두 번 다시 읽음
+  const reloadSoon = () => { setTimeout(load, 4000); setTimeout(load, 20000); };
   async function act(action, payload, okText, el) {
     if (el) el.classList.add("busy");
     const r = await api(action, payload);
-    if (r) { msg(okText || "저장됨 ✓"); setTimeout(load, 900); } else if (el) el.classList.remove("busy");
+    if (!r) { if (el) el.classList.remove("busy"); return; }
+    msg((okText || "저장됨 ✓") + (r.blind ? " (시트 반영 확인 중…)" : ""));
+    if (el) {
+      el.classList.remove("busy");
+      if (action === "doneTask" || action === "checkRoutine") { el.classList.add("done"); el.style.transition = "opacity .5s"; setTimeout(() => { el.style.opacity = "0.35"; }, 50); }
+      if (action === "toggleStar") { const b = el.querySelector('[data-act="star"]'); if (b) b.classList.toggle("on"); }
+    }
+    reloadSoon();
   }
   // 데이터 속성으로 이벤트 위임
   document.addEventListener("click", e => {
@@ -46,21 +63,26 @@
     else if (a === "doing") act("setStatus", { text, prj, status: "진행중" }, "진행중으로 표시", task);
     else if (a === "routine") act("checkRoutine", { item: text }, "루틴 확인 ✓", task);
   });
-  const actBtns = t => !canWrite() ? "" : `
-      <button class="tbtn" data-act="done" data-text="${esc(t.text)}" data-prj="${esc(t.prj)}" title="완료">✓</button>
-      <button class="tbtn ${t.star ? "on" : ""}" data-act="star" data-text="${esc(t.text)}" data-prj="${esc(t.prj)}" title="이번 주 토글">⭐</button>`;
+  // 왼쪽 동그라미 = 완료 체크, 오른쪽 ⭐ = 이번 주 토글
+  const chkBtn = t => !canWrite() ? "" : `<button class="chk" data-act="done" data-text="${esc(t.text)}" data-prj="${esc(t.prj)}" title="완료">✓</button>`;
+  const starBtn = t => !canWrite() ? "" : `<button class="tbtn ${t.star ? "on" : ""}" data-act="star" data-text="${esc(t.text)}" data-prj="${esc(t.prj)}" title="이번 주 토글">⭐</button>`;
 
   function taskHtml(t, extra = "") {
     const over = t.due && daysDiff(t.due) < 0;
     return `<div class="task ${over ? "overdue" : ""} ${t.status === "진행중" ? "doing" : ""}">
-      ${extra}
-      <span class="task-prj">${esc(t.prj)}</span>
+      ${chkBtn(t)}${extra}
       <span class="task-text">${esc(t.text)}${t.status === "진행중" ? ' <em style="color:var(--accent);font-size:.75rem;">진행중</em>' : ""}${!isMe(t.who) ? ` <span class="task-who">👤 ${esc(t.who)}</span>` : ""}</span>
-      ${t.pri ? `<span class="task-pri ${priCls(t.pri)}">${esc(t.pri)}</span>` : ""}
+      ${t.pri === "높음" ? `<span class="task-pri pri-high">높음</span>` : ""}
       ${t.due ? `<span class="task-due ${over ? "over" : ""}">${dueTxt(t.due)}</span>` : ""}
-      ${actBtns(t)}
+      ${starBtn(t)}
+      <span class="task-prj">${esc(t.prj)}</span>
     </div>`;
   }
+  // 프로젝트 행 펼치기/접기
+  document.addEventListener("click", e => {
+    const h = e.target.closest(".prj-row-head"); if (!h || e.target.closest("a")) return;
+    h.parentElement.classList.toggle("open");
+  });
 
   // ===== 빠른 입력 파서 =====
   // 할 일: "재고 발주 !높음 ⭐ ~8/30 @현영"  / 일지: "한 일 // 배운 것" / 결정: "결정 // 이유 ~10/1"
@@ -85,7 +107,20 @@
     else if (type === "log") r = await api("addLog", { prj, did: q.text, learned: q.second });
     else if (type === "idea") r = await api("addIdea", { text: q.text, desc: q.second, field: prj && !/개인/.test(prj) ? prj : "" });
     else if (type === "decision") r = await api("addDecision", { prj, text: q.text, why: q.second, review: q.due || "" });
-    if (r) { $("qText").value = ""; msg({ task: "할 일 추가됨 ✓", log: "일지 기록됨 ✓", idea: "아이디어 심었어요 🌱", decision: "결정 기록됨 📌" }[type]); setTimeout(load, 900); }
+    if (!r) return;
+    $("qText").value = "";
+    msg({ task: "할 일 추가됨 ✓", log: "일지 기록됨 ✓", idea: "아이디어 심었어요 🌱", decision: "결정 기록됨 📌" }[type] + (r.blind ? " (시트 반영 확인 중…)" : ""));
+    // 즉시 화면 반영 (낙관적 표시)
+    if (type === "task") {
+      const t = { prj, text: q.text, due: q.due ? SHEET.parseDate(q.due) : null, star: !!q.star, status: "할일", pri: q.pri || "중간", who: q.who || "" };
+      const html = taskHtml(t, `<span class="focus-why">방금 추가</span>`);
+      (q.star ? $("weekList") : $("allTasksList")).insertAdjacentHTML("afterbegin", html);
+      if (q.star) { const e = $("weekList").querySelector(".task-empty"); if (e) e.remove(); }
+    } else if (type === "log") {
+      $("logList").insertAdjacentHTML("afterbegin", `<div class="timeline-item"><div class="timeline-date">${fmtDate(today)}</div><div class="timeline-content"><h3 style="font-size:.95rem;">${esc(prj)}</h3><p>${esc(q.text)}${q.second ? `<br><em style="color:var(--accent);">💡 ${esc(q.second)}</em>` : ""}</p></div></div>`);
+      $("logDetails").open = true;
+    }
+    reloadSoon();
   }
   $("qAdd").addEventListener("click", quickAdd);
   $("qText").addEventListener("keydown", e => { if (e.key === "Enter") quickAdd(); });
@@ -188,22 +223,11 @@
         ? scored.map((x, i) => taskHtml(x.t, `<span class="focus-num">${i + 1}</span>`).replace(/<\/div>\s*$/, `${x.why ? `<span class="focus-why">${x.why}</span>` : ""}</div>`)).join("")
         : '<p class="task-empty">내 할 일이 비어 있어요. 시트 할일 탭에 하나만 적고 ⭐를 찍어보세요.</p>';
 
-      // ===== 3. 오늘 확인할 것 (경고 모음) =====
-      const alerts = [];
-      overdue.forEach(t => alerts.push({ sev: "high", icon: "⏰", text: `<b>${esc(t.text)}</b> — ${dueTxt(t.due)}${!isMe(t.who) ? ` (담당 ${esc(t.who)})` : ""}`, href: "#weekList" }));
-      soon.forEach(t => alerts.push({ sev: "mid", icon: "⏳", text: `<b>${esc(t.text)}</b> — ${dueTxt(t.due)}`, href: "#weekList" }));
-      routines.filter(r => r.over).forEach(r => alerts.push({ sev: "high", icon: "🔁", text: `루틴 <b>${esc(r.item)}</b> ${r.since >= 999 ? "한 번도 확인 안 됨" : r.since + "일째 미확인"} (담당 ${esc(r.who || "-")})`, href: "#routineList" }));
-      decisions.filter(d => d.review && daysDiff(d.review) <= 7).forEach(d => alerts.push({ sev: daysDiff(d.review) <= 0 ? "high" : "mid", icon: "📌", text: `결정 재검토 <b>${esc(d.text.slice(0, 28))}…</b> — ${daysDiff(d.review) < 0 ? -daysDiff(d.review) + "일 지남" : daysDiff(d.review) === 0 ? "오늘" : "D-" + daysDiff(d.review)}`, href: "#decisionDetails" }));
-      contents.filter(c => c.due && c.stage !== "업로드완료" && daysDiff(c.due) <= 3).forEach(c => alerts.push({ sev: daysDiff(c.due) < 0 ? "high" : "mid", icon: "🎬", text: `콘텐츠 <b>${esc(c.title)}</b> 업로드 ${dueTxt(c.due)} (${esc(c.stage)})`, href: "#contentDetails" }));
-      // 방치 프로젝트
-      const STALE = 7;
-      projects.filter(p => p.status === "live").forEach(p => {
-        const last = logs.find(l => l.pid === p.id); const since = last ? ago(last.date) : null;
-        if (since === null || since >= STALE * 2) alerts.push({ sev: "mid", icon: "🥀", text: `<b>${esc(p.name)}</b> ${since === null ? "기록이 한 번도 없음" : since + "일째 기록 없음"} — 한 줄이라도 남기기`, href: "#prjGrid" });
-      });
-      alerts.sort((a, b) => (a.sev === "high" ? 0 : 1) - (b.sev === "high" ? 0 : 1));
-      $("alertSection").hidden = alerts.length === 0;
-      $("alertList").innerHTML = alerts.map(a => `<div class="alert-item sev-${a.sev}"><span>${a.icon}</span><span>${a.text}</span><a href="${a.href}">보기 →</a></div>`).join("");
+      // ===== 3. 재검토 결정 / 콘텐츠 마감은 '지금 이것부터' 아래 한 줄 메모로만 =====
+      const notes = [];
+      decisions.filter(d => d.review && daysDiff(d.review) <= 7).forEach(d => notes.push(`📌 결정 재검토 ${daysDiff(d.review) <= 0 ? "오늘" : "D-" + daysDiff(d.review)}: ${esc(d.text.slice(0, 30))}`));
+      contents.filter(c => c.due && c.stage !== "업로드완료" && daysDiff(c.due) <= 3).forEach(c => notes.push(`🎬 ${esc(c.title)} 업로드 ${dueTxt(c.due)}`));
+      if (notes.length) $("focusList").insertAdjacentHTML("beforeend", `<p class="task-empty" style="padding:6px 0 0;">${notes.join(" · ")}</p>`);
 
       // ===== 4. 루틴 =====
       $("routineSection").hidden = routines.length === 0;
@@ -222,6 +246,7 @@
       // ===== 5. 위임 현황 =====
       $("delegSection").hidden = delegated.length === 0;
       if (delegated.length) {
+        $("delegHint").textContent = `${delegated.length}건`;
         const byWho = {};
         delegated.forEach(t => { (byWho[t.who] = byWho[t.who] || []).push(t); });
         // 루틴 담당도 합산 표시
@@ -251,47 +276,42 @@
       $("weekList").innerHTML = week.length ? week.map(t => taskHtml(t)).join("")
         : '<p class="task-empty">⭐ 표시된 할 일이 없습니다. 시트 "이번주" 열에 ⭐를 찍어보세요.</p>';
 
-      // ===== 7. 프로젝트 건강도 =====
+      // ===== 7. 프로젝트 (한 줄 목록) — 빨강: 마감 지난 일 있음 / 노랑: 2주+ 기록 없음 또는 목표 없음 =====
       const health = projects.map(p => {
         const my = open.filter(t => t.pid === p.id);
         const over = my.filter(t => t.due && daysDiff(t.due) < 0).length;
         const last = logs.find(l => l.pid === p.id); const since = last ? ago(last.date) : null;
         const active = p.status === "live" || p.status === "plan";
-        let h = "gray", reason = "";
-        if (active) {
-          if (over) { h = "red"; reason = `마감 지난 일 ${over}개`; }
-          else if (p.status === "live" && (since === null || since >= 14)) { h = "red"; reason = since === null ? "기록 없음" : `${since}일째 기록 없음`; }
-          else if (since !== null && since >= 7) { h = "yellow"; reason = `${since}일째 기록 없음`; }
-          else if (!p.goal || p.goal === "-") { h = "yellow"; reason = "목표 미설정"; }
-          else if (p.status === "live" && my.length === 0) { h = "yellow"; reason = "할 일 없음"; }
-          else { h = "green"; reason = "정상"; }
-        } else reason = SL[p.status]?.text || p.status;
-        return { p, my, over, since, last, h, reason };
+        let h = "gray";
+        if (active) h = over ? "red" : ((p.status === "live" && since !== null && since >= 14) || !p.goal || p.goal === "-") ? "yellow" : "green";
+        return { p, my, over, since, last, h, active };
       });
       const order = { red: 0, yellow: 1, green: 2, gray: 3 };
       health.sort((a, b) => order[a.h] - order[b.h]);
       const cnt = k => health.filter(x => x.h === k).length;
-      $("healthSummary").innerHTML = `<span class="health-dot h-red"></span>${cnt("red")} <span class="health-dot h-yellow" style="margin-left:8px"></span>${cnt("yellow")} <span class="health-dot h-green" style="margin-left:8px"></span>${cnt("green")} · 전체 ${projects.length}`;
-      $("prjGrid").innerHTML = health.map(({ p, my, over, since, last, h, reason }) => {
-        const st = SL[p.status] || { text: p.status, cls: "badge-seed" };
-        const nextItems = [...my].sort((a, b) => (b.star - a.star) || ((sortPri[a.pri] ?? 1) - (sortPri[b.pri] ?? 1))).slice(0, 3);
-        return `<div class="prj-board-card h-${h}-card" ${h === "gray" ? 'style="opacity:.65"' : ""}>
-          <div class="pbc-head"><span class="icon">${p.icon}</span><h3><span class="health-dot h-${h}"></span>${esc(p.name)}</h3><a href="project.html?id=${encodeURIComponent(p.id)}">상세 →</a></div>
-          <div class="pbc-stats">
-            <span class="badge ${st.cls}" style="margin:0;">${st.text}</span>
-            <span>${STAGE_NAMES[p.stage]}</span>
-            <span>할 일 <b>${my.length}</b></span>
-            ${over ? `<span style="color:#f87171;">지남 <b style="color:#f87171;">${over}</b></span>` : ""}
-            ${p.public === false ? `<span title="사이트 비공개">🔒</span>` : ""}
+      $("healthSummary").innerHTML = `${cnt("red") ? `<span class="health-dot h-red"></span>${cnt("red")} ` : ""}${cnt("yellow") ? `<span class="health-dot h-yellow"></span>${cnt("yellow")} ` : ""}<span class="health-dot h-green"></span>${cnt("green")} · ${projects.length}개`;
+      $("prjGrid").innerHTML = health.map(({ p, my, over, since, last, h, active }) => {
+        const nextItems = [...my].sort((a, b) => (b.star - a.star) || ((sortPri[a.pri] ?? 1) - (sortPri[b.pri] ?? 1))).slice(0, 4);
+        const starN = my.filter(t => t.star).length;
+        return `<div class="prj-row h-${h} ${active ? "" : "inactive"}">
+          <div class="prj-row-head">
+            <span class="icon">${p.icon}</span>
+            <span class="name"><span class="health-dot h-${h}"></span>${esc(p.name)}</span>
+            <span class="meta">${STAGE_NAMES[p.stage]} · 할 일 <b>${my.length}</b>${starN ? ` · ⭐<b>${starN}</b>` : ""}${over ? ` · <b style="color:#f87171">지남 ${over}</b>` : ""}${p.public === false ? " · 🔒" : ""}</span>
+            <span class="chev">▶</span>
           </div>
-          ${p.goal && p.goal !== "-" ? `<div style="font-size:.8rem;color:var(--accent);">🎯 ${esc(p.goal)}</div>` : ""}
-          <ul class="pbc-next">${nextItems.map(t => `<li>${t.star ? "⭐ " : ""}${esc(t.text)}${!isMe(t.who) ? ` <span class="task-who">👤${esc(t.who)}</span>` : ""}</li>`).join("") || "<li style='color:var(--text-dim)'>할 일 없음</li>"}</ul>
-          <div class="pbc-last ${h === "red" || h === "yellow" ? "warn" : ""}">${reason}${last ? ` · 마지막 기록 ${fmtDate(last.date)}` : ""}</div>
+          <div class="prj-row-body">
+            ${p.goal && p.goal !== "-" ? `<div class="goal">🎯 ${esc(p.goal)}</div>` : `<div class="goal" style="color:var(--text-dim)">🎯 목표를 정하세요 (시트 프로젝트 탭)</div>`}
+            <ul>${nextItems.map(t => `<li>${chkBtn(t)}<span>${t.star ? "⭐ " : ""}${esc(t.text)}</span>${!isMe(t.who) ? `<span class="task-who">👤${esc(t.who)}</span>` : ""}${t.due ? `<span class="task-due ${daysDiff(t.due) < 0 ? "over" : ""}">${dueTxt(t.due)}</span>` : ""}</li>`).join("") || "<li style='color:var(--text-dim)'>할 일 없음 — 위 입력 바에서 추가</li>"}</ul>
+            <div class="foot"><span>${last ? `마지막 기록 ${fmtDate(last.date)}${since ? ` (${since}일 전)` : " (오늘)"}` : "아직 기록 없음"}</span><a href="project.html?id=${encodeURIComponent(p.id)}">공개 페이지 →</a></div>
+          </div>
         </div>`;
       }).join("");
 
-      // ===== 8. 이번 주 돌아보기 =====
+      // ===== 8. 이번 주 돌아보기 (일요일만 펼침) =====
       const isSun = today.getDay() === 0;
+      $("reviewDetails").open = isSun;
+      $("reviewHint").textContent = `완료 ${doneThisWeek.length} · 일지 ${logsThisWeek.length}일`;
       $("reviewBox").innerHTML = `
         <div class="review-stats">
           <span>이번 주 완료 <b>${doneThisWeek.length}</b></span>
