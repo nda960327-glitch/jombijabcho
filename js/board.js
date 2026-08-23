@@ -16,7 +16,9 @@
 
   // ===== 쓰기 API (Apps Script 웹앱) — URL은 이 기기 localStorage에 저장 =====
   const WRITE_KEY = "zj_write_url";
-  const writeUrl = () => (localStorage.getItem(WRITE_KEY) || "").trim();
+  // 기본 쓰기 API 주소 (Apps Script 웹앱). 기기별로 다른 주소를 쓰려면 보드 ⚙️ 설정에 저장 → 그게 우선.
+  const DEFAULT_WRITE_URL = "https://script.google.com/macros/s/AKfycbwpnv00mLYmr-qd5bcWrV42LFQTtrJaPNRBoSwMI_ANxpMi3yC-fRanHnnhXprITU3VPQ/exec";
+  const writeUrl = () => (localStorage.getItem(WRITE_KEY) || DEFAULT_WRITE_URL).trim();
   const canWrite = () => /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec/.test(writeUrl());
   let PRJ_LABELS = [];
   function msg(text, err) { const m = $("qMsg"); m.hidden = false; m.textContent = text; m.classList.toggle("err", !!err); clearTimeout(msg._t); msg._t = setTimeout(() => { m.hidden = true; }, 4000); }
