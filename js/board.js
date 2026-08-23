@@ -303,6 +303,7 @@
     }
   }
 
-  $("refreshBtn").addEventListener("click", () => load(false));
+  // 새로고침 = 페이지 자체를 다시 받아옴 (캐시된 옛 버전 방지). 주소 뒤에 시각을 붙여 강제 갱신
+  $("refreshBtn").addEventListener("click", () => { location.href = location.pathname + "?r=" + Date.now(); });
   load(true).then(() => load(false));   // 캐시로 즉시 → 네트워크로 갱신
 })();
