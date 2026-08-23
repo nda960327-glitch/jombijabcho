@@ -8,11 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Archivo:wght@600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=202608231338">
-<link rel="stylesheet" href="css/project.css?v=202608231338">
-<link rel="stylesheet" href="css/board.css?v=202608231338">
+<link rel="stylesheet" href="css/style.css?v=202608231351">
+<link rel="stylesheet" href="css/project.css?v=202608231351">
+<link rel="stylesheet" href="css/board.css?v=202608231351">
 </head>
-<body>
+<body class="board-page">
 
 <header class="header scrolled" id="header">
   <div class="header-inner">
@@ -36,7 +36,7 @@
     <div>
       <p class="section-eyebrow">MY BOARD</p>
       <h1>오늘의 <span class="accent">전장</span></h1>
-      <p class="board-date" id="boardDate"></p>
+      <p class="board-date" id="boardDate"><span id="boardDateText"></span><span class="board-updating" id="boardUpdating" hidden>· 업데이트 중…</span></p>
     </div>
     <button class="btn btn-ghost btn-sm" id="refreshBtn">↻ 새로고침</button>
   </div>
@@ -69,41 +69,29 @@
 
     <!-- 2. 지금 이것부터 -->
     <section class="board-section focus-section">
-      <h2>🎯 지금 이것부터 <span class="sec-hint">머리 비우고 이 3개만</span></h2>
+      <h2>🎯 지금 이것부터</h2>
       <div class="task-list" id="focusList"></div>
     </section>
 
-    <!-- 3. 오늘 루틴 (있을 때만) -->
-    <section class="board-section" id="routineSection" hidden>
-      <h2>🔁 오늘 루틴 <span class="sec-hint" id="routineHint"></span></h2>
-      <div class="task-list" id="routineList"></div>
-    </section>
-
-    <!-- 4. 이번 주 -->
-    <section class="board-section">
-      <h2>⭐ 이번 주 <span class="sec-hint" id="weekHint"></span></h2>
-      <div id="weekWarn"></div>
-      <div class="task-list" id="weekList"></div>
-    </section>
-
-    <!-- 5. 위임 (있을 때만) -->
+    <!-- 3. 맡긴 일 (있을 때만) -->
     <section class="board-section" id="delegSection" hidden>
       <h2>👥 맡긴 일 <span class="sec-hint" id="delegHint"></span></h2>
       <div class="deleg-grid" id="delegGrid"></div>
     </section>
 
-    <!-- 6. 프로젝트 (한 줄 목록, 눌러서 펼침) -->
+    <!-- 4. 프로젝트 (한 줄 목록, 눌러서 펼침) -->
     <section class="board-section">
       <h2>🗂 프로젝트 <span class="sec-hint" id="healthSummary"></span></h2>
       <div class="prj-list" id="prjGrid"></div>
     </section>
 
-    <!-- 7. 접힌 섹션들 -->
-    <details class="board-details" id="reviewDetails">
-      <summary>🪞 이번 주 돌아보기 <span class="sec-hint" id="reviewHint"></span></summary>
-      <div class="review-box" id="reviewBox"></div>
-    </details>
+    <!-- 5. 전체 할 일 -->
+    <section class="board-section">
+      <h2>📂 할 일 <span class="sec-hint" id="allTasksHint"></span></h2>
+      <div class="task-list" id="allTasksList"></div>
+    </section>
 
+    <!-- 6. 접힌 섹션들 -->
     <details class="board-details" id="contentDetails" hidden>
       <summary>🎬 콘텐츠 파이프라인 <span class="sec-hint" id="contentHint"></span></summary>
       <div class="pipe-row" id="pipeRow"></div>
@@ -123,11 +111,6 @@
     <details class="board-details" id="logDetails" open>
       <summary>📋 최근 업무일지 <span class="sec-hint" id="logHint"></span></summary>
       <div class="timeline prj-timeline" id="logList"></div>
-    </details>
-
-    <details class="board-details" id="allTasksDetails">
-      <summary>📂 전체 할 일 <span class="sec-hint" id="allTasksHint"></span></summary>
-      <div class="task-list" id="allTasksList"></div>
     </details>
 
     <details class="board-details" id="setupDetails">
@@ -160,9 +143,9 @@
   </div>
 </footer>
 
-<script src="js/projects.js?v=202608231338"></script>
-<script src="js/sheet-data.js?v=202608231338"></script>
-<script src="js/main.js?v=202608231338"></script>
-<script src="js/board.js?v=202608231338"></script>
+<script src="js/projects.js?v=202608231351"></script>
+<script src="js/sheet-data.js?v=202608231351"></script>
+<script src="js/main.js?v=202608231351"></script>
+<script src="js/board.js?v=202608231351"></script>
 </body>
 </html>

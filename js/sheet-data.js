@@ -90,9 +90,9 @@ const SHEET = (() => {
   const slug = s => nameOf(s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "") || "p";
 
   // 프로젝트 마스터: 시트 우선, 실패 시 projects.js의 PROJECTS 사용. 로그는 projects.js(id 기준)에서 병합.
-  async function loadProjects() {
+  async function loadProjects(prefetchedRows) {
     const local = (typeof PROJECTS !== "undefined") ? PROJECTS : [];
-    const rows = await loadTab("프로젝트");
+    const rows = prefetchedRows !== undefined ? prefetchedRows : await loadTab("프로젝트");
     if (!rows) return { projects: local.map(p => ({ ...p, label: p.label || null, public: true })), source: "local" };
     const list = rows
       .filter(r => cell(r, 0) && !cell(r, 0).startsWith("라벨") && !cell(r, 0).startsWith("(예시)"))   // 헤더/예시/빈 행 제외
