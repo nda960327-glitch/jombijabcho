@@ -70,6 +70,23 @@
 .pbc-last { font-size: 0.75rem; color: var(--text-dim); border-top: 1px solid var(--line); padding-top: 10px; }
 .pbc-last.warn { color: #facc15; }
 
+/* 결정 · 운영 원칙 */
+.dec-alert {
+  background: rgba(250,204,21,.1); border: 1px solid rgba(250,204,21,.4);
+  border-radius: 10px; padding: 12px 16px; font-size: 0.85rem; margin-bottom: 14px; color: #facc15;
+}
+.dec-alert b { color: var(--text); font-weight: 600; }
+.dec-group { margin-bottom: 18px; }
+.dec-group h3 { font-size: 0.85rem; color: var(--accent); margin-bottom: 8px; }
+.dec-item {
+  background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 8px;
+}
+.dec-item.changed { border-left-color: #facc15; }
+.dec-text { font-size: 0.92rem; white-space: pre-line; }
+.dec-why { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+.dec-meta { font-size: 0.72rem; color: var(--text-dim); margin-top: 6px; font-family: var(--font-en); }
+
 @media (max-width: 760px) {
   .stat-row { grid-template-columns: repeat(2, 1fr); }
   .task { flex-wrap: wrap; }

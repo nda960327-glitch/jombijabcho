@@ -54,12 +54,21 @@
   async function load() {
     $("boardLoading").hidden = false; $("boardError").hidden = true; $("boardContent").hidden = true;
     try {
-      const [tRes, lRes] = await Promise.all([
-        fetch(csvUrl("할일"), { cache: "no-store" }), fetch(csvUrl("업무일지"), { cache: "no-store" })
+      const [tRes, lRes, dRes] = await Promise.all([
+        fetch(csvUrl("할일"), { cache: "no-store" }), fetch(csvUrl("업무일지"), { cache: "no-store" }),
+        fetch(csvUrl("결정"), { cache: "no-store" }).catch(() => null) // 결정 탭은 없어도 됨
       ]);
       if (!tRes.ok || !lRes.ok) throw new Error("fetch");
       const tRows = parseCSV(await tRes.text());
       const lRows = parseCSV(await lRes.text());
+      const dRows = (dRes && dRes.ok) ? parseCSV(await dRes.text()) : [];
+
+      // 결정: A날짜 B프로젝트 C결정 D이유 E재검토일 F상태(유효/변경/폐기)
+      const decisions = dRows
+        .map(r => ({ date: parseDate(r[0]), prj: (r[1] || "").trim(), text: (r[2] || "").trim(), why: (r[3] || "").trim(),
+                     review: parseDate(r[4]), status: (r[5] || "").trim() || "유효", pid: prjIdOf(r[1]) }))
+        .filter(d => d.date && d.text && !d.text.startsWith("(예시)") && d.status !== "폐기")
+        .sort((a, b) => b.date - a.date);
 
       // 할일: A등록일 B프로젝트 C할일 D마감 E이번주 F상태 G우선순위 H메모
       const tasks = tRows
@@ -140,6 +149,26 @@
           <ul class="pbc-next">${etc.slice(0, 4).map(t => `<li>${t.star ? "⭐ " : ""}${esc(t.text)}</li>`).join("")}</ul>
         </div>`;
       })();
+
+      // 결정 · 운영 원칙 (프로젝트별 그룹)
+      const decSec = $("decisionSection");
+      if (decSec) {
+        decSec.hidden = decisions.length === 0;
+        const groups = {};
+        decisions.forEach(d => { (groups[d.prj || "기타"] = groups[d.prj || "기타"] || []).push(d); });
+        const reviewSoon = decisions.filter(d => d.review && daysDiff(d.review) <= 7);
+        $("decisionList").innerHTML =
+          (reviewSoon.length ? `<div class="dec-alert">🔔 재검토 시점: ${reviewSoon.map(d => `<b>${esc(d.text.slice(0, 30))}${d.text.length > 30 ? "…" : ""}</b> (${daysDiff(d.review) < 0 ? -daysDiff(d.review) + "일 지남" : daysDiff(d.review) === 0 ? "오늘" : "D-" + daysDiff(d.review)})`).join(" · ")}</div>` : "") +
+          Object.entries(groups).map(([prj, list]) => `
+            <div class="dec-group">
+              <h3>${esc(prj)}</h3>
+              ${list.map(d => `<div class="dec-item ${d.status === "변경" ? "changed" : ""}">
+                <div class="dec-text">${esc(d.text)}</div>
+                ${d.why ? `<div class="dec-why">${esc(d.why)}</div>` : ""}
+                <div class="dec-meta">${fmt(d.date)} 결정${d.review ? ` · 재검토 ${fmt(d.review)}` : ""}${d.status !== "유효" ? ` · ${esc(d.status)}` : ""}</div>
+              </div>`).join("")}
+            </div>`).join("");
+      }
 
       // 최근 업무일지
       $("logList").innerHTML = logs.slice(0, 10).map(l => `
