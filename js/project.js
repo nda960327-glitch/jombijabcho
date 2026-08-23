@@ -21,10 +21,18 @@
 
   // 활동 로그 = projects.js 로그 + 시트 업무일지(이 프로젝트 라벨) 병합
   let logs = (prj.log || []).map(l => ({ date: l.date, text: l.text }));
+  let nextActions = prj.next || [];
   if (typeof SHEET !== 'undefined') {
-    const rows = await SHEET.loadTab("업무일지");
+    const idOf = SHEET.matcher(projects);
+    const [rows, tRows] = await Promise.all([SHEET.loadTab("업무일지"), SHEET.loadTab("할일")]);
+    // 다음 액션: 할일 탭의 이 프로젝트 미완료 항목 (⭐ → 높음 → 마감순), 최대 5개
+    if (tRows) {
+      const pri = { "높음": 0, "중간": 1, "낮음": 2 };
+      const mine = SHEET.parseTasks(tRows, idOf).filter(t => t.pid === prj.id && t.status !== "완료" && t.status !== "보류")
+        .sort((a, b) => (b.star - a.star) || ((pri[a.pri] ?? 1) - (pri[b.pri] ?? 1)) || ((a.due || 9e15) - (b.due || 9e15)));
+      if (mine.length) nextActions = mine.slice(0, 5).map(t => (t.star ? "⭐ " : "") + t.text);
+    }
     if (rows) {
-      const idOf = SHEET.matcher(projects);
       rows.forEach(r => {
         const d = SHEET.parseDate(r[0]); const did = SHEET.cell(r, 2);
         if (!d || !did || did.startsWith("(예시)")) return;
@@ -41,7 +49,7 @@
     return `<div class="stage ${cls}"><span class="stage-dot"></span><span class="stage-label">${s}</span></div>`;
   }).join('<div class="stage-line"></div>');
   const metrics = (prj.metrics || []).map(m => `<div class="metric"><strong>${esc(m.value)}</strong><span>${esc(m.label)}</span></div>`).join('');
-  const next = (prj.next || []).map((n, i) => `<li><span class="next-num">${i + 1}</span>${esc(n)}</li>`).join('');
+  const next = nextActions.map((n, i) => `<li><span class="next-num">${i + 1}</span>${esc(n)}</li>`).join('');
   const log = logs.map(l => `
     <div class="timeline-item"><div class="timeline-date">${esc(l.date)}</div><div class="timeline-content"><p>${esc(l.text)}</p></div></div>`).join('');
 
