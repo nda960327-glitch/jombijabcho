@@ -10,7 +10,7 @@
 
   // ---- 쓰기 API (보드와 동일) ----
   const WRITE_KEY = "zj_write_url";
-  const DEFAULT_WRITE_URL = "https://script.google.com/macros/s/AKfycbwkAHwgvwg4n81ZlpDdSXM-m2DgEbC86-PYbwPw9Yjf2oZHl8mkZuFEdnnZJRXcFb0y3w/exec";
+  const DEFAULT_WRITE_URL = "https://script.google.com/macros/s/AKfycbzYHtUl7iFSqXWBXvL3m167FL6GO25GteG0QethSpO3e5wlmBPk3t1ypQYwH2IfFQoa4w/exec";
   const writeUrl = () => (localStorage.getItem(WRITE_KEY) || DEFAULT_WRITE_URL).trim();
   function msg(text, err) { const m = $("qMsg"); m.hidden = false; m.textContent = text; m.classList.toggle("err", !!err); clearTimeout(msg._t); msg._t = setTimeout(() => { m.hidden = true; }, 5000); }
   async function api(action, payload) {
