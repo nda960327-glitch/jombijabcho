@@ -777,3 +777,41 @@ body.no-side .layout { grid-template-columns: minmax(0, 1fr); }
   .panels { overflow-y: visible; }
   .side { max-height: none; }
 }
+
+/* ---------- 카테고리 트리 ---------- */
+.hub-body { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.hub-tree { padding: 14px; position: sticky; top: 76px; }
+.tree-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.tree-head .text-btn.on { background: var(--gold-soft); border-color: var(--gold); color: #7a5411; }
+.tree { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.tree-card.is-hidden > .tree-row .tree-link { opacity: .6; }
+.tree-row { display: flex; align-items: center; gap: 4px; min-height: 30px; padding: 2px 4px; border-radius: 8px; }
+.tree-row:hover { background: #fdfbf7; }
+.tree-row.sub { padding-left: 22px; min-height: 26px; }
+.tw-btn { border: 0; background: none; width: 20px; color: var(--text-dim); cursor: pointer; font-size: .8rem; padding: 0; flex-shrink: 0; }
+.tree-link { border: 0; background: none; font: inherit; text-align: left; cursor: pointer; padding: 2px 4px; border-radius: 6px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); font-size: .9rem; }
+.tree-link.main { font-weight: 700; }
+.tree-link:hover { color: var(--accent); text-decoration: underline; }
+.tree-link.muted { color: var(--text-dim); }
+.tree-emoji { margin-right: 2px; }
+.tree-branch { color: var(--line-strong); font-size: .8rem; width: 12px; flex-shrink: 0; }
+.tree-n { font-size: .74rem; color: var(--text-dim); background: #f0ebe3; border-radius: 999px; padding: 0 7px; min-width: 22px; text-align: center; flex-shrink: 0; }
+.tree-n.total { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.tree-subs { list-style: none; }
+.tree-sub.none { padding: 2px 4px 4px 34px; }
+.tree-ctl { display: inline-flex; gap: 2px; flex-shrink: 0; }
+.tree-ctl button { border: 1px solid var(--line); background: #fff; border-radius: 6px; width: 22px; height: 22px; font-size: .7rem; cursor: pointer; color: var(--text-dim); padding: 0; }
+.tree-ctl button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.tree-ctl button:disabled { opacity: .3; cursor: default; }
+.tree-ctl button.del:hover { border-color: var(--red); color: var(--red); }
+.tree-rename { flex: 1; min-width: 0; border: 1px solid var(--line-strong); border-radius: 6px; padding: 3px 6px; font-size: .86rem; background: #fdfbf7; }
+.tree-rename:focus { outline: 0; border-color: var(--accent); background: #fff; }
+.tree-add-form { display: flex; align-items: center; gap: 4px; padding: 4px 4px 4px 22px; }
+.tree-add-form input { flex: 1; min-width: 0; border: 1px dashed var(--line-strong); border-radius: 6px; padding: 3px 6px; font-size: .84rem; background: #fff; }
+.tree-add-form input:focus { outline: 0; border-color: var(--accent); }
+.tree-add-form .primary { padding: 2px 8px; font-size: .8rem; }
+.tree-help { margin-top: 8px; }
+@media (max-width: 900px) {
+  .hub-body { grid-template-columns: 1fr; }
+  .hub-tree { position: static; order: -1; }
+}

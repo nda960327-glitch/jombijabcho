@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908d';
+  const APP_VER = '20260908e';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -122,6 +122,7 @@
     [].concat(s.goals, s.works, [s.diary]).forEach(it => {
       delete it.group;
       if (typeof it.hidden !== 'boolean') it.hidden = false;
+      if (typeof it.collapsed !== 'boolean') it.collapsed = false;   // 카테고리 트리에서 접힘
       if (!Array.isArray(it.boards)) it.boards = [];                 // 세부 게시판
       it.boards.forEach(b => { if (!b.id) b.id = uid(); if (typeof b.name !== 'string') b.name = ''; });
       const bids = it.boards.map(b => b.id);
@@ -1505,7 +1506,7 @@
   });
 
   /* ---------- 게시판 허브: 전체보기 · 그룹 · 홈 표시 · 전체 글 · 찾기 ---------- */
-  const hub = { kind: null, q: '' };
+  const hub = { kind: null, q: '', manage: false };
   function allCards() {
     return state.goals.map(it => ({ kind: 'goal', it })).concat(state.works.map(it => ({ kind: 'work', it })), [{ kind: 'diary', it: state.diary }]);
   }
@@ -1530,7 +1531,97 @@
       </li>`;
     }).join('') : '<li class="muted small hub-empty">여기에 해당하는 게시판이 없어요.</li>';
     $('#hubQ').value = hub.q || '';
+    renderTree();
   }
+
+  /* ---------- 카테고리 트리 (게시판 → 세부 게시판, 글 개수, 접기/펼치기, 관리) ---------- */
+  function renderTree() {
+    const cards = allCards().filter(c => !hub.kind || c.kind === hub.kind);
+    const mg = hub.manage;
+    $('#hubManage').textContent = mg ? '✓ 관리 끝' : '⚙️ 카테고리 관리';
+    $('#hubManage').classList.toggle('on', mg);
+    $('#treeHelp').textContent = mg ? '이름을 고치고 ▲▼로 순서를 바꿔요. ＋로 세부 게시판을 만들어요.' : '▾▸로 펼치고 접어요. 접은 상태는 저장돼요.';
+    $('#hubTree').innerHTML = cards.length ? cards.map(({ kind, it }) => {
+      const notes = it.notes || [];
+      const total = notes.length;
+      const unfiled = notes.filter(n => !n.board).length;
+      const subs = (it.boards || []).map((bd, i) => {
+        const n = notes.filter(x => x.board === bd.id).length;
+        return `<li class="tree-sub" data-bid="${bd.id}">
+          <div class="tree-row sub">
+            <span class="tree-branch">└</span>
+            ${mg ? `<input class="tree-rename" value="${esc(bd.name)}" maxlength="20" placeholder="세부 게시판 이름">`
+                 : `<button type="button" class="tree-link" data-act="opensub">${esc(bd.name || '(이름 없음)')}</button>`}
+            <span class="tree-n">${n}</span>
+            ${mg ? `<span class="tree-ctl"><button type="button" data-act="subup" title="위로" ${i === 0 ? 'disabled' : ''}>▲</button><button type="button" data-act="subdown" title="아래로" ${i >= it.boards.length - 1 ? 'disabled' : ''}>▼</button><button type="button" data-act="subdel" class="del" title="지우기">×</button></span>` : ''}
+          </div>
+        </li>`;
+      }).join('');
+      const unfiledRow = (it.boards.length && unfiled) || (mg && it.boards.length)
+        ? `<li class="tree-sub unfiled"><div class="tree-row sub"><span class="tree-branch">└</span><button type="button" class="tree-link muted" data-act="openunfiled">미분류</button><span class="tree-n">${unfiled}</span></div></li>` : '';
+      const addRow = mg ? `<li class="tree-add"><form class="tree-add-form"><span class="tree-branch">└</span><input placeholder="새 세부 게시판" maxlength="20"><button type="submit" class="primary">＋</button></form></li>` : '';
+      const list = listOf(kind), idx = list.indexOf(it);
+      return `<li class="tree-card ${it.collapsed ? 'collapsed' : ''} ${it.hidden ? 'is-hidden' : ''}" data-kind="${kind}" data-id="${it.id}">
+        <div class="tree-row">
+          <button type="button" class="tw-btn" data-act="toggle" title="${it.collapsed ? '펼치기' : '접기'}">${it.collapsed ? '▸' : '▾'}</button>
+          <button type="button" class="tree-link main" data-act="open"><span class="tree-emoji">${esc(it.emoji || '📌')}</span> ${esc(it.title || '(제목 없음)')}</button>
+          <span class="tree-n total">${total}</span>
+          ${mg && kind !== 'diary' ? `<span class="tree-ctl"><button type="button" data-act="cardup" title="위로" ${idx === 0 ? 'disabled' : ''}>▲</button><button type="button" data-act="carddown" title="아래로" ${idx >= list.length - 1 ? 'disabled' : ''}>▼</button></span>` : ''}
+        </div>
+        <ul class="tree-subs" ${it.collapsed ? 'hidden' : ''}>${subs}${unfiledRow}${addRow}${!subs && !mg ? '<li class="tree-sub none muted small">세부 게시판 없음</li>' : ''}</ul>
+      </li>`;
+    }).join('') : '<li class="muted small">게시판이 없어요.</li>';
+  }
+  $('#hubManage').addEventListener('click', () => { hub.manage = !hub.manage; renderTree(); });
+  $('#hubTree').addEventListener('click', e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const cardLi = b.closest('.tree-card'); if (!cardLi) return;
+    const kind = cardLi.dataset.kind, it = findItem(kind, cardLi.dataset.id); if (!it) return;
+    const act = b.dataset.act;
+    const subLi = b.closest('.tree-sub');
+    const bid = subLi ? subLi.dataset.bid : null;
+    if (act === 'toggle') { it.collapsed = !it.collapsed; save(); renderTree(); return; }
+    if (act === 'open') { current = { kind, id: it.id }; openList(false, null); return; }
+    if (act === 'opensub') { current = { kind, id: it.id }; openList(false, bid); return; }
+    if (act === 'openunfiled') { current = { kind, id: it.id }; openList(false, 'none'); return; }
+    if (act === 'cardup' || act === 'carddown') {
+      const list = listOf(kind), i = list.indexOf(it), j = act === 'cardup' ? i - 1 : i + 1;
+      if (j < 0 || j >= list.length) return;
+      [list[i], list[j]] = [list[j], list[i]];
+      save(); renderHub(); renderGoals(); renderWork(); return;
+    }
+    if (act === 'subup' || act === 'subdown') {
+      const i = it.boards.findIndex(x => x.id === bid), j = act === 'subup' ? i - 1 : i + 1;
+      if (i < 0 || j < 0 || j >= it.boards.length) return;
+      [it.boards[i], it.boards[j]] = [it.boards[j], it.boards[i]];
+      save(); renderTree(); return;
+    }
+    if (act === 'subdel') {
+      const bd = it.boards.find(x => x.id === bid); if (!bd) return;
+      const n = (it.notes || []).filter(x => x.board === bid).length;
+      if (!confirm(`"${bd.name}" 세부 게시판을 지울까요? 안의 글 ${n}개는 미분류로 남아요.`)) return;
+      (it.notes || []).forEach(x => { if (x.board === bid) x.board = ''; });
+      it.boards = it.boards.filter(x => x.id !== bid);
+      save(); renderHub(); return;
+    }
+  });
+  $('#hubTree').addEventListener('change', e => {
+    const inp = e.target.closest('.tree-rename'); if (!inp) return;
+    const cardLi = inp.closest('.tree-card'), subLi = inp.closest('.tree-sub');
+    const it = findItem(cardLi.dataset.kind, cardLi.dataset.id); if (!it) return;
+    const bd = it.boards.find(x => x.id === subLi.dataset.bid); if (!bd) return;
+    bd.name = inp.value.trim(); save(); renderTree();
+  });
+  $('#hubTree').addEventListener('submit', e => {
+    const f = e.target.closest('.tree-add-form'); if (!f) return;
+    e.preventDefault();
+    const cardLi = f.closest('.tree-card'); const it = findItem(cardLi.dataset.kind, cardLi.dataset.id); if (!it) return;
+    const name = f.querySelector('input').value.trim(); if (!name) return;
+    it.boards.push({ id: uid(), name });
+    it.collapsed = false;
+    save(); renderHub();
+    const again = $(`#hubTree .tree-card[data-id="${it.id}"] .tree-add-form input`); if (again) again.focus();
+  });
   $('#hubKinds').addEventListener('click', e => {
     const b = e.target.closest('.hub-tab'); if (!b) return;
     go('boards' + (b.dataset.kind ? '/' + b.dataset.kind : ''), true);

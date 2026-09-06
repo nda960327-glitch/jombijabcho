@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260908d">
+<link rel="stylesheet" href="css/style.css?v=20260908e">
 </head>
 <body>
 
@@ -417,7 +417,14 @@
         <form class="hub-search" id="hubSearch"><input id="hubQ" placeholder="글 찾기 (제목·내용)" maxlength="60"><button type="submit" class="primary">찾기</button></form>
         <button type="button" class="text-btn" id="hubAllPosts">📚 전체 글 보기</button>
       </div>
-      <ul class="hub-list" id="hubList"></ul>
+      <div class="hub-body">
+        <ul class="hub-list" id="hubList"></ul>
+        <aside class="hub-tree card">
+          <div class="tree-head"><b>📂 카테고리</b><button type="button" class="text-btn" id="hubManage">⚙️ 카테고리 관리</button></div>
+          <ul class="tree" id="hubTree"></ul>
+          <p class="muted small tree-help" id="treeHelp">▾▸로 펼치고 접어요. 접은 상태는 저장돼요.</p>
+        </aside>
+      </div>
     </div>
 
     <!-- 전체 글 / 검색 결과 -->
@@ -653,6 +660,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260908d"></script>
+<script src="js/app.js?v=20260908e"></script>
 </body>
 </html>
