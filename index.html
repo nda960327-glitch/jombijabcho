@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260907j">
+<link rel="stylesheet" href="css/style.css?v=20260907k">
 </head>
 <body>
 
@@ -292,12 +292,6 @@
         <form class="hub-search" id="hubSearch"><input id="hubQ" placeholder="글 찾기 (제목·내용)" maxlength="60"><button type="submit" class="primary">찾기</button></form>
         <button type="button" class="text-btn" id="hubAllPosts">📚 전체 글 보기</button>
       </div>
-      <div class="hub-groups" id="hubGroups"></div>
-      <div class="hub-group-editor card" id="hubGroupEditor" hidden>
-        <p class="eyebrow">그룹 관리</p>
-        <ul id="hubGroupList" class="group-list"></ul>
-        <form class="group-add" id="hubGroupAdd"><input id="hubGroupName" placeholder="새 그룹 이름 (예: 사업, 건강, 취미)" maxlength="20"><button type="submit" class="primary">＋ 그룹 추가</button></form>
-      </div>
       <ul class="hub-list" id="hubList"></ul>
     </div>
 
@@ -310,6 +304,13 @@
 
     <!-- 글 목록 -->
     <div class="bd-view" id="bdViewList" hidden>
+      <div class="hub-groups" id="listBoards"></div>
+      <div class="hub-group-editor card" id="listBoardEditor" hidden>
+        <p class="eyebrow">세부 게시판 관리</p>
+        <ul id="listBoardList" class="group-list"></ul>
+        <form class="group-add" id="listBoardAdd"><input id="listBoardName" placeholder="새 세부 게시판 이름 (예: 개발일지, 아이디어, 회의록)" maxlength="20"><button type="submit" class="primary">＋ 세부 게시판 추가</button></form>
+        <p class="muted small">세부 게시판을 지우면 그 안의 글은 "미분류"로 남아요. 글은 사라지지 않습니다.</p>
+      </div>
       <ul class="post-list page" id="bdPosts"></ul>
     </div>
 
@@ -330,7 +331,10 @@
     <!-- 글쓰기 / 수정 -->
     <div class="bd-view" id="bdViewEdit" hidden>
       <div class="editor card">
-        <p class="eyebrow" id="bdEditTitle">새 글</p>
+        <div class="ed-top">
+          <p class="eyebrow" id="bdEditTitle">새 글</p>
+          <label class="ed-board">세부 게시판 <select id="bdBoard"><option value="">미분류</option></select></label>
+        </div>
         <input id="bdTitle" class="post-title-input" placeholder="제목 (비워도 돼요)" maxlength="80">
 
         <div class="ed-toolbar" id="edToolbar">
@@ -424,9 +428,6 @@
             <option value="weight">체중 44kg</option>
           </select>
         </label>
-        <label class="im-field">그룹
-          <select id="imGroup"><option value="">그룹 없음</option></select>
-        </label>
         <label class="im-field im-check">홈 화면
           <span class="switch"><input type="checkbox" id="imShow" checked><span>홈에 표시</span></span>
         </label>
@@ -494,6 +495,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260907j"></script>
+<script src="js/app.js?v=20260907k"></script>
 </body>
 </html>

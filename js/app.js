@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260907j';
+  const APP_VER = '20260907k';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -64,7 +64,7 @@
   /* ---------- 상태 ---------- */
   const defaultState = () => ({
     todos: [], qty: {}, now: {}, weight: null, weightStart: null, langLog: {}, showDone: false, useStocks: false,
-    goals: null, works: null, order: null, texts: {}, memo: '', groups: null
+    goals: null, works: null, order: null, texts: {}, memo: ''
   });
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   let state = load();
@@ -99,12 +99,14 @@
     SECTIONS.forEach(k => { if (s.order.indexOf(k) < 0) s.order.push(k); });
     if (!s.texts || typeof s.texts !== 'object') s.texts = {};
     if (typeof s.memo !== 'string') s.memo = '';
-    if (!Array.isArray(s.groups)) s.groups = [];
-    s.groups.forEach(g => { if (!g.id) g.id = uid(); if (typeof g.name !== 'string') g.name = ''; });
-    const gids = s.groups.map(g => g.id);
+    delete s.groups;
     [].concat(s.goals, s.works).forEach(it => {
-      if (typeof it.group !== 'string' || (it.group && gids.indexOf(it.group) < 0)) it.group = '';
+      delete it.group;
       if (typeof it.hidden !== 'boolean') it.hidden = false;
+      if (!Array.isArray(it.boards)) it.boards = [];                 // 세부 게시판
+      it.boards.forEach(b => { if (!b.id) b.id = uid(); if (typeof b.name !== 'string') b.name = ''; });
+      const bids = it.boards.map(b => b.id);
+      (it.notes || []).forEach(n => { if (typeof n.board !== 'string' || (n.board && bids.indexOf(n.board) < 0)) n.board = ''; });
     });
     return s;
   }
@@ -552,10 +554,9 @@
     $('#imStatusWrap').hidden = kind !== 'work';
     if (kind === 'goal') $('#imBar').value = it.bar || '';
     else $('#imStatus').value = it.status || 'build';
-    fillGroupSelect($('#imGroup'), it.group || '');
     $('#imShow').checked = !it.hidden;
     $('#imSaved').textContent = '';
-    board.postId = null; board.draft = null;
+    board.postId = null; board.draft = null; board.listBoard = 'all'; board.editBoards = false;
     renderTeaser(); renderList(); showView('card');
     $('#itemModal').hidden = false;
     if (isNew) setTimeout(() => $('#imTitle').focus(), 50);
@@ -589,15 +590,17 @@
   bindField('#imTag', 'tag', v => v.replace(/[\[\]]/g, '').trim());
   bindField('#imBar', 'bar');
   bindField('#imStatus', 'status');
-  bindField('#imGroup', 'group');
   $('#imShow').addEventListener('change', e => { const it = curItem(); if (!it) return; it.hidden = !e.target.checked; touched(); });
-  function fillGroupSelect(sel, val) {
-    sel.innerHTML = '<option value="">그룹 없음</option>' + state.groups.map(g => `<option value="${g.id}">${esc(g.name || '(이름 없음)')}</option>`).join('');
+  /** 카드의 세부 게시판 이름 */
+  function boardName(it, bid) { const b = (it.boards || []).find(x => x.id === bid); return b ? (b.name || '(이름 없음)') : ''; }
+  function fillBoardSelect(sel, it, val) {
+    sel.innerHTML = '<option value="">미분류</option>' + (it.boards || []).map(b => `<option value="${b.id}">${esc(b.name || '(이름 없음)')}</option>`).join('');
     sel.value = val || '';
+    if (sel.value !== (val || '')) sel.value = '';
   }
 
   /* ---------- 기록 게시판 (카드마다 글 목록 · 보기 · 쓰기 · 수정) ---------- */
-  const board = { view: 'card', postId: null, draft: null };
+  const board = { view: 'card', postId: null, draft: null, listBoard: 'all', editBoards: false };
   const PHOTO_MAX = 240;      // 긴 변 기준 픽셀. 알아볼 정도로만 작게.
   const PHOTO_Q = 0.6;
   const PHOTO_LIMIT = 6;      // 글 하나당 사진 수
@@ -664,7 +667,11 @@
     const kind = m[2], id = m[3], pid = m[4];
     if (!findItem(kind, id)) { history.replaceState(null, '', location.pathname + location.search); route(); return; }
     current = { kind, id };
-    if (m[1] === 'list') { renderList(); showView('list'); }
+    if (m[1] === 'list') {
+      const it = findItem(kind, id);
+      board.listBoard = !pid ? 'all' : pid === 'none' ? '' : (it.boards.some(b => b.id === pid) ? pid : 'all');
+      renderList(); showView('list');
+    }
     else if (m[1] === 'post') renderPostPage(pid);
     else if (m[1] === 'edit') renderEditorPage(pid);
     else renderEditorPage(null);
@@ -674,11 +681,12 @@
   function postTitle(n) {
     return (n.title && n.title.trim()) || (n.text || '').split('\n')[0].trim().slice(0, 40) || (n.photos && n.photos.length ? '(사진)' : '(제목 없음)');
   }
-  function postItemHtml(n) {
+  function postItemHtml(n, it) {
     const thumb = n.photos && n.photos.length ? `<img class="post-thumb" src="${n.photos[0]}" alt="">` : '';
     const snip = (n.text || '').replace(/\s+/g, ' ').trim().slice(0, 70);
+    const bn = it && n.board ? boardName(it, n.board) : '';
     return `<li data-pid="${n.id}" tabindex="0">${thumb}<div class="post-item-body">
-      <div class="post-item-title">${esc(postTitle(n))}</div>
+      <div class="post-item-title">${bn ? `<span class="todo-tag">${esc(bn)}</span>` : ''}${esc(postTitle(n))}</div>
       ${snip ? `<div class="post-item-snip muted small">${esc(snip)}</div>` : ''}
       <div class="muted small">${whenLabel(n.at)}${n.photos && n.photos.length ? ` · 사진 ${n.photos.length}` : ''}</div>
     </div></li>`;
@@ -688,15 +696,65 @@
     const ps = postsOf(it);
     $('#imNoteCount').textContent = ps.length ? `${ps.length}개` : '';
     $('#imRecent').innerHTML = ps.length
-      ? ps.slice(0, 3).map(postItemHtml).join('')
+      ? ps.slice(0, 3).map(n => postItemHtml(n, it)).join('')
       : '<li class="im-empty muted small">아직 글이 없어요. 새 글 쓰기로 첫 기록을 남겨보자.</li>';
   }
   function renderList() {
     const it = curItem(); if (!it) return;
-    const ps = postsOf(it);
-    $('#bdPosts').innerHTML = ps.length ? ps.map(postItemHtml).join('') : '<li class="im-empty muted small">아직 글이 없어요.</li>';
+    const all = postsOf(it);
+    const f = board.listBoard;   // 'all' | '' (미분류) | boardId
+    const countOf = bid => all.filter(n => (n.board || '') === bid).length;
+    $('#listBoards').innerHTML =
+      `<button type="button" class="chip-btn ${f === 'all' ? 'on' : ''}" data-board="all">전체 ${all.length}</button>` +
+      (it.boards || []).map(b => `<button type="button" class="chip-btn ${f === b.id ? 'on' : ''}" data-board="${b.id}">${esc(b.name || '(이름 없음)')} ${countOf(b.id)}</button>`).join('') +
+      (countOf('') || !it.boards.length ? `<button type="button" class="chip-btn ${f === '' ? 'on' : ''}" data-board="">미분류 ${countOf('')}</button>` : '') +
+      `<button type="button" class="chip-btn ghost" data-board="__edit">${board.editBoards ? '✓ 관리 끝' : '⚙️ 세부 게시판 관리'}</button>`;
+    $('#listBoardEditor').hidden = !board.editBoards;
+    if (board.editBoards) {
+      $('#listBoardList').innerHTML = it.boards.length ? it.boards.map(b =>
+        `<li data-bid="${b.id}"><input value="${esc(b.name)}" maxlength="20" placeholder="세부 게시판 이름"><span class="muted small">${countOf(b.id)}개</span><button type="button" class="text-btn board-up" title="위로">▲</button><button type="button" class="text-btn board-down" title="아래로">▼</button><button type="button" class="text-btn danger board-del">지우기</button></li>`).join('')
+        : '<li class="muted small">아직 세부 게시판이 없어요. 아래에서 만들어 보세요.</li>';
+    }
+    const ps = f === 'all' ? all : all.filter(n => (n.board || '') === f);
+    $('#bdPosts').innerHTML = ps.length ? ps.map(n => postItemHtml(n, it)).join('') : `<li class="im-empty muted small">${f === 'all' ? '아직 글이 없어요.' : '이 세부 게시판에는 아직 글이 없어요.'}</li>`;
   }
-  function openList(replace) { if (!current) return; go(`list/${current.kind}/${current.id}`, replace); }
+  $('#listBoards').addEventListener('click', e => {
+    const b = e.target.closest('.chip-btn'); if (!b) return;
+    if (b.dataset.board === '__edit') { board.editBoards = !board.editBoards; renderList(); return; }
+    openList(true, b.dataset.board === 'all' ? null : (b.dataset.board || 'none'));
+  });
+  $('#listBoardAdd').addEventListener('submit', e => {
+    e.preventDefault();
+    const it = curItem(); if (!it) return;
+    const name = $('#listBoardName').value.trim(); if (!name) return;
+    it.boards.push({ id: uid(), name });
+    $('#listBoardName').value = '';
+    touched(); renderList();
+  });
+  $('#listBoardList').addEventListener('change', e => {
+    const li = e.target.closest('li[data-bid]'); const it = curItem(); if (!li || !it) return;
+    const b = it.boards.find(x => x.id === li.dataset.bid); if (!b) return;
+    b.name = li.querySelector('input').value.trim(); touched(); renderList();
+  });
+  $('#listBoardList').addEventListener('click', e => {
+    const li = e.target.closest('li[data-bid]'); const it = curItem(); if (!li || !it) return;
+    const i = it.boards.findIndex(x => x.id === li.dataset.bid); if (i < 0) return;
+    if (e.target.closest('.board-del')) {
+      const b = it.boards[i];
+      if (!confirm(`"${b.name}" 세부 게시판을 지울까요? 안의 글 ${(it.notes || []).filter(n => n.board === b.id).length}개는 미분류로 남아요.`)) return;
+      (it.notes || []).forEach(n => { if (n.board === b.id) n.board = ''; });
+      it.boards.splice(i, 1);
+      if (board.listBoard === b.id) board.listBoard = 'all';
+    } else if (e.target.closest('.board-up')) { if (i === 0) return; [it.boards[i - 1], it.boards[i]] = [it.boards[i], it.boards[i - 1]]; }
+    else if (e.target.closest('.board-down')) { if (i >= it.boards.length - 1) return; [it.boards[i + 1], it.boards[i]] = [it.boards[i], it.boards[i + 1]]; }
+    else return;
+    touched(); renderList();
+  });
+  function openList(replace, bid) {
+    if (!current) return;
+    const seg = bid === undefined ? (board.listBoard === 'all' ? '' : '/' + (board.listBoard || 'none')) : (bid ? '/' + bid : '');
+    go(`list/${current.kind}/${current.id}${seg}`, replace);
+  }
   function openPost(pid, replace) { if (!current) return; go(`post/${current.kind}/${current.id}/${pid}`, replace); }
   function openEditor(pid) { if (!current) return; go(pid ? `edit/${current.kind}/${current.id}/${pid}` : `write/${current.kind}/${current.id}`); }
   function renderPostPage(pid) {
@@ -704,7 +762,8 @@
     if (!n) { go('', true); return; }
     board.postId = pid;
     $('#bdPostTitle').textContent = postTitle(n);
-    $('#bdPostMeta').textContent = whenLabel(n.at) + (n.updatedAt ? ` · 수정 ${whenLabel(n.updatedAt)}` : '');
+    const bn = n.board ? boardName(it, n.board) : '';
+    $('#bdPostMeta').textContent = (bn ? bn + ' · ' : '') + whenLabel(n.at) + (n.updatedAt ? ` · 수정 ${whenLabel(n.updatedAt)}` : '');
     if (n.html) {
       $('#bdPostPhotos').innerHTML = '';
       $('#bdPostBody').innerHTML = sanitizeHtml(n.html);
@@ -724,6 +783,7 @@
     const n = pid ? it.notes.find(x => x.id === pid) : null;
     if (pid && !n) { go('', true); return; }
     board.draft = { id: n ? n.id : null, title: n ? (n.title || '') : '' };
+    fillBoardSelect($('#bdBoard'), it, n ? (n.board || '') : (board.listBoard === 'all' ? '' : board.listBoard));
     $('#bdEditTitle').textContent = n ? '글 수정' : '새 글';
     $('#bdTitle').value = board.draft.title;
     // 예전 글(사진 배열 + 줄글)은 편집 가능한 서식으로 바꿔서 연다
@@ -748,10 +808,10 @@
     if (!title && !text && !photos.length) { $('#bdEditNote').textContent = '내용을 적어주세요.'; edBody.focus(); return; }
     if (board.draft.id) {
       const n = it.notes.find(x => x.id === board.draft.id);
-      if (n) { n.title = title; n.text = text; n.html = html; n.photos = photos; n.updatedAt = Date.now(); }
+      if (n) { n.title = title; n.text = text; n.html = html; n.photos = photos; n.board = $('#bdBoard').value || ''; n.updatedAt = Date.now(); }
       board.postId = board.draft.id;
     } else {
-      const n = { id: uid(), title, text, html, photos, at: Date.now() };
+      const n = { id: uid(), title, text, html, photos, board: $('#bdBoard').value || '', at: Date.now() };
       it.notes.push(n); board.postId = n.id;
     }
     board.draft = null;
@@ -1111,90 +1171,48 @@
   });
 
   /* ---------- 게시판 허브: 전체보기 · 그룹 · 홈 표시 · 전체 글 · 찾기 ---------- */
-  const hub = { kind: null, group: 'all', q: '', editGroups: false };
+  const hub = { kind: null, q: '' };
   function allCards() {
     return state.goals.map(it => ({ kind: 'goal', it })).concat(state.works.map(it => ({ kind: 'work', it })));
   }
-  function groupName(id) { const g = state.groups.find(x => x.id === id); return g ? (g.name || '(이름 없음)') : ''; }
   function renderHub() {
-    // 종류 탭
     $('#hubKinds').innerHTML = [['', '전체'], ['goal', '🌱 꿈과 목표'], ['work', '🛠 하는 일']].map(([k, label]) =>
       `<button type="button" class="hub-tab ${(hub.kind || '') === k ? 'on' : ''}" data-kind="${k}">${label}</button>`).join('');
-    // 그룹 칩
-    const cards = allCards().filter(c => !hub.kind || c.kind === hub.kind);
-    const countOf = gid => cards.filter(c => (c.it.group || '') === gid).length;
-    $('#hubGroups').innerHTML =
-      `<button type="button" class="chip-btn ${hub.group === 'all' ? 'on' : ''}" data-group="all">전체 ${cards.length}</button>` +
-      state.groups.map(g => `<button type="button" class="chip-btn ${hub.group === g.id ? 'on' : ''}" data-group="${g.id}">${esc(g.name || '(이름 없음)')} ${countOf(g.id)}</button>`).join('') +
-      `<button type="button" class="chip-btn ${hub.group === '' ? 'on' : ''}" data-group="">그룹 없음 ${countOf('')}</button>` +
-      `<button type="button" class="chip-btn ghost" data-group="__edit">${hub.editGroups ? '✓ 그룹 관리 끝' : '⚙️ 그룹 관리'}</button>`;
-    // 그룹 편집기
-    $('#hubGroupEditor').hidden = !hub.editGroups;
-    if (hub.editGroups) {
-      $('#hubGroupList').innerHTML = state.groups.length ? state.groups.map(g =>
-        `<li data-gid="${g.id}"><input value="${esc(g.name)}" maxlength="20" placeholder="그룹 이름"><span class="muted small">${allCards().filter(c => c.it.group === g.id).length}개</span><button type="button" class="text-btn danger group-del">지우기</button></li>`).join('')
-        : '<li class="muted small">아직 그룹이 없어요. 아래에서 만들어 보세요.</li>';
-    }
-    // 게시판(카드) 목록
-    const rows = cards.filter(c => hub.group === 'all' || (c.it.group || '') === hub.group);
+    const rows = allCards().filter(c => !hub.kind || c.kind === hub.kind);
     $('#hubList').innerHTML = rows.length ? rows.map(({ kind, it }) => {
-      const n = (it.notes || []).length;
-      const last = n ? Math.max.apply(null, it.notes.map(x => x.updatedAt || x.at || 0)) : 0;
+      const notes = it.notes || [], n = notes.length;
+      const last = n ? Math.max.apply(null, notes.map(x => x.updatedAt || x.at || 0)) : 0;
+      const subs = (it.boards || []).map(bd => `<button type="button" class="sub-chip" data-board="${bd.id}">${esc(bd.name || '(이름 없음)')} ${notes.filter(x => x.board === bd.id).length}</button>`).join('');
+      const unfiled = notes.filter(x => !x.board).length;
       return `<li class="hub-row ${it.hidden ? 'is-hidden' : ''}" data-kind="${kind}" data-id="${it.id}">
         <span class="hub-emoji">${esc(it.emoji || '📌')}</span>
         <div class="hub-main">
-          <div class="hub-title"><b>${esc(it.title || '(제목 없음)')}</b> <span class="muted small">${kind === 'work' ? '하는 일' : '꿈과 목표'}${it.group ? ' · ' + esc(groupName(it.group)) : ''}</span></div>
+          <div class="hub-title"><b>${esc(it.title || '(제목 없음)')}</b> <span class="muted small">${kind === 'work' ? '하는 일' : '꿈과 목표'}</span></div>
           <div class="muted small">글 ${n}개${last ? ' · 마지막 ' + whenLabel(last) : ''}${it.hidden ? ' · 홈에서 숨김' : ''}</div>
+          ${subs || unfiled ? `<div class="sub-chips">${subs}${(it.boards || []).length && unfiled ? `<button type="button" class="sub-chip" data-board="none">미분류 ${unfiled}</button>` : ''}</div>` : ''}
         </div>
-        <select class="hub-group" title="그룹"></select>
         <label class="switch hub-show" title="홈 화면에 표시"><input type="checkbox" ${it.hidden ? '' : 'checked'}><span>홈</span></label>
         <button type="button" class="text-btn hub-open">열기 →</button>
       </li>`;
     }).join('') : '<li class="muted small hub-empty">여기에 해당하는 게시판이 없어요.</li>';
-    $$('#hubList .hub-row').forEach(li => { const it = findItem(li.dataset.kind, li.dataset.id); if (it) fillGroupSelect(li.querySelector('.hub-group'), it.group || ''); });
     $('#hubQ').value = hub.q || '';
   }
   $('#hubKinds').addEventListener('click', e => {
     const b = e.target.closest('.hub-tab'); if (!b) return;
     go('boards' + (b.dataset.kind ? '/' + b.dataset.kind : ''), true);
   });
-  $('#hubGroups').addEventListener('click', e => {
-    const b = e.target.closest('.chip-btn'); if (!b) return;
-    if (b.dataset.group === '__edit') hub.editGroups = !hub.editGroups; else hub.group = b.dataset.group;
-    renderHub();
-  });
-  $('#hubGroupAdd').addEventListener('submit', e => {
-    e.preventDefault();
-    const name = $('#hubGroupName').value.trim(); if (!name) return;
-    state.groups.push({ id: uid(), name });
-    $('#hubGroupName').value = '';
-    save(); renderHub();
-  });
-  $('#hubGroupList').addEventListener('change', e => {
-    const li = e.target.closest('li[data-gid]'); if (!li) return;
-    const g = state.groups.find(x => x.id === li.dataset.gid); if (!g) return;
-    g.name = li.querySelector('input').value.trim(); save(); renderHub();
-  });
-  $('#hubGroupList').addEventListener('click', e => {
-    const b = e.target.closest('.group-del'); if (!b) return;
-    const li = b.closest('li[data-gid]'); const g = state.groups.find(x => x.id === li.dataset.gid); if (!g) return;
-    if (!confirm(`"${g.name}" 그룹을 지울까요? 안에 있던 게시판은 "그룹 없음"으로 돌아가요.`)) return;
-    allCards().forEach(c => { if (c.it.group === g.id) c.it.group = ''; });
-    state.groups = state.groups.filter(x => x.id !== g.id);
-    if (hub.group === g.id) hub.group = 'all';
-    save(); renderHub();
-  });
   $('#hubList').addEventListener('change', e => {
     const li = e.target.closest('.hub-row'); if (!li) return;
     const it = findItem(li.dataset.kind, li.dataset.id); if (!it) return;
-    if (e.target.matches('.hub-group')) it.group = e.target.value;
-    else if (e.target.matches('.hub-show input')) it.hidden = !e.target.checked;
+    if (e.target.matches('.hub-show input')) it.hidden = !e.target.checked;
     save(); renderHub(); renderGoals(); renderWork();
   });
   $('#hubList').addEventListener('click', e => {
     const li = e.target.closest('.hub-row'); if (!li) return;
+    const sub = e.target.closest('.sub-chip');
+    if (sub) { current = { kind: li.dataset.kind, id: li.dataset.id }; openList(false, sub.dataset.board); return; }
     if (e.target.closest('.hub-open') || e.target.closest('.hub-main') || e.target.closest('.hub-emoji')) {
-      current = { kind: li.dataset.kind, id: li.dataset.id }; openList();
+      current = { kind: li.dataset.kind, id: li.dataset.id }; openList(false, null);
     }
   });
   $('#hubSearch').addEventListener('submit', e => { e.preventDefault(); go('posts/' + encodeURIComponent($('#hubQ').value.trim())); });
@@ -1205,7 +1223,7 @@
     const q = (hub.q || '').trim().toLowerCase();
     let rows = [];
     allCards().forEach(({ kind, it }) => (it.notes || []).forEach(n => rows.push({ kind, it, n })));
-    if (q) rows = rows.filter(r => ((r.n.title || '') + ' ' + (r.n.text || '') + ' ' + (r.it.title || '')).toLowerCase().indexOf(q) >= 0);
+    if (q) rows = rows.filter(r => ((r.n.title || '') + ' ' + (r.n.text || '') + ' ' + (r.it.title || '') + ' ' + (r.n.board ? boardName(r.it, r.n.board) : '')).toLowerCase().indexOf(q) >= 0);
     rows.sort((a, b) => (b.n.at || 0) - (a.n.at || 0));
     $('#allQ').value = hub.q || '';
     $('#allInfo').textContent = q ? `"${hub.q}" 검색 결과 ${rows.length}개` : `모든 게시판의 글 ${rows.length}개 · 최신순`;
@@ -1215,7 +1233,7 @@
       return `<li data-kind="${kind}" data-id="${it.id}" data-pid="${n.id}" tabindex="0">${thumb}<div class="post-item-body">
         <div class="post-item-title">${esc(postTitle(n))}</div>
         ${snip ? `<div class="post-item-snip muted small">${esc(snip)}</div>` : ''}
-        <div class="muted small"><span class="todo-tag">${esc(it.emoji || '')} ${esc(it.title || '')}</span> ${whenLabel(n.at)}${n.photos && n.photos.length ? ` · 사진 ${n.photos.length}` : ''}</div>
+        <div class="muted small"><span class="todo-tag">${esc(it.emoji || '')} ${esc(it.title || '')}${n.board ? ' · ' + esc(boardName(it, n.board)) : ''}</span> ${whenLabel(n.at)}${n.photos && n.photos.length ? ` · 사진 ${n.photos.length}` : ''}</div>
       </div></li>`;
     }).join('') : `<li class="im-empty muted small">${q ? '찾은 글이 없어요.' : '아직 글이 없어요.'}</li>`;
   }
@@ -1341,7 +1359,7 @@
       langLog: remote.langLog || {},
       useStocks: !!remote.useStocks,
       showDone: state.showDone,
-      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), groups: keep('groups')
+      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo')
     }));
     saveLocal();
     return true;
