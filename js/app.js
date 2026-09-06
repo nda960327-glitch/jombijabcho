@@ -619,8 +619,62 @@
     try { localStorage.removeItem(PIN_KEY); } catch (e) {}
     prices = {};
     setSync(msg || '잠겼습니다. PIN을 넣어주세요.', 'none');
+    if (modalOpen) showModalError(msg || 'PIN이 맞지 않아요.');
     renderAll();
   }
+
+  /* ---------- PIN 팝업 ---------- */
+  let modalOpen = false;
+  function openPinModal() {
+    modalOpen = true;
+    const m = $('#pinModal');
+    m.hidden = false;
+    $('#pinModalErr').hidden = true;
+    const i = $('#pinModalInput');
+    i.value = '';
+    setTimeout(() => i.focus(), 50);
+  }
+  function closePinModal() {
+    modalOpen = false;
+    $('#pinModal').hidden = true;
+    $('#pinModalInput').value = '';
+  }
+  function showModalError(msg) {
+    const e = $('#pinModalErr');
+    e.textContent = msg;
+    e.hidden = false;
+    const i = $('#pinModalInput');
+    i.value = ''; i.focus();
+  }
+  async function submitModalPin() {
+    const v = $('#pinModalInput').value.trim();
+    if (!v) { showModalError('PIN을 넣어주세요.'); return; }
+    if (!apiUrl) { showModalError('저장 서버 주소가 아직 없어요. 아래 ☁️ 동기화에서 주소를 먼저 넣어주세요.'); return; }
+    $('#pinModalErr').hidden = true;
+    $('#pinModalOk').disabled = true;
+    $('#pinModalOk').textContent = '확인 중…';
+    pin = v;
+    try { localStorage.setItem(PIN_KEY, v); } catch (e) {}
+    await pullFromCloud();
+    $('#pinModalOk').disabled = false;
+    $('#pinModalOk').textContent = '잠금 풀기';
+    if (pin) closePinModal();     // 성공하면 pin 이 남아 있다
+  }
+  $('#pinModalOk').addEventListener('click', submitModalPin);
+  $('#pinModalInput').addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.keyCode === 13) && !e.isComposing) { e.preventDefault(); submitModalPin(); }
+  });
+  $('#pinModalLater').addEventListener('click', () => {
+    closePinModal();
+    setSync('나중에 하기로 했어요. 지금은 이 브라우저에만 저장됩니다.', 'none');
+  });
+  $('#pinModal').addEventListener('click', e => { if (e.target === $('#pinModal')) closePinModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modalOpen) closePinModal(); });
+  $('#syncBadge').addEventListener('click', e => {
+    if (pin) return;              // 이미 열려 있으면 동기화 섹션으로 이동
+    e.preventDefault();
+    openPinModal();
+  });
 
   function unlock() {
     if (!apiUrl) {
@@ -633,7 +687,9 @@
     try { localStorage.setItem(PIN_KEY, v); } catch (e) {}
     pullFromCloud();
   }
-  $('#pinSave').addEventListener('click', unlock);
+  $('#pinSave').addEventListener('click', () => {
+    if ($('#pinInput').value.trim()) unlock(); else openPinModal();
+  });
   $('#pinInput').addEventListener('keydown', e => {
     if ((e.key === 'Enter' || e.keyCode === 13) && !e.isComposing) { e.preventDefault(); unlock(); }
   });
@@ -686,7 +742,10 @@
   if (apiUrl !== DEFAULT_API) $('#apiUrl').value = apiUrl;
   if (pin && apiUrl) pullFromCloud();
   else if (!apiUrl) setSync('아직 저장 서버 주소가 코드에 없어요. 아래 [주소가 바뀌었다면]을 펼쳐 주소를 넣어주세요.', 'none');
-  else setSync('PIN을 넣으면 저장된 내용을 불러옵니다. 지금은 이 브라우저 저장본만 보여요.', 'none');
+  else {
+    setSync('PIN을 넣으면 저장된 내용을 불러옵니다. 지금은 이 브라우저 저장본만 보여요.', 'none');
+    openPinModal();
+  }
 
   // 30분마다 시세 갱신
   setInterval(() => { if (pin && !document.hidden) pullFromCloud(true); }, 30 * 60 * 1000);

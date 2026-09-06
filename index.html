@@ -252,6 +252,20 @@
 </aside>
 </div>
 
-<script src="js/app.js?v=20260906"></script>
+<!-- ===== PIN 팝업 ===== -->
+<div class="modal" id="pinModal" hidden>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="pinModalTitle">
+    <h2 id="pinModalTitle">🔒 PIN을 넣어주세요</h2>
+    <p class="muted small">이 기기에서 한 번만 넣으면 다음부터는 바로 열려요.</p>
+    <input type="password" id="pinModalInput" inputmode="numeric" autocomplete="current-password" maxlength="32" placeholder="● ● ● ● ● ●">
+    <p class="modal-err" id="pinModalErr" hidden></p>
+    <div class="modal-btns">
+      <button type="button" class="text-btn" id="pinModalLater">나중에</button>
+      <button type="button" class="primary" id="pinModalOk">잠금 풀기</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js?v=20260906b"></script>
 </body>
 </html>
