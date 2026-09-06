@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908g';
+  const APP_VER = '20260908h';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -1554,7 +1554,7 @@
             ${mg ? `<input class="tree-rename" value="${esc(bd.name)}" maxlength="20" placeholder="세부 게시판 이름">`
                  : `<button type="button" class="tree-link" data-act="opensub">${esc(bd.name || '(이름 없음)')}</button>`}
             <span class="tree-n">${n}</span>
-            ${mg ? `<span class="tree-ctl"><button type="button" data-act="subup" title="위로" ${i === 0 ? 'disabled' : ''}>▲</button><button type="button" data-act="subdown" title="아래로" ${i >= it.boards.length - 1 ? 'disabled' : ''}>▼</button><button type="button" data-act="subdel" class="del" title="지우기">×</button></span>` : ''}
+            ${mg ? `<span class="tree-ctl"><select class="tree-move tree-move-sub" title="다른 게시판으로 이동">${moveSubOptions(kind, it)}</select><button type="button" data-act="subup" title="위로" ${i === 0 ? 'disabled' : ''}>▲</button><button type="button" data-act="subdown" title="아래로" ${i >= it.boards.length - 1 ? 'disabled' : ''}>▼</button><button type="button" data-act="subdel" class="del" title="지우기">×</button></span>` : ''}
           </div>
         </li>`;
       }).join('');
@@ -1567,9 +1567,9 @@
           <button type="button" class="tw-btn" data-act="toggle" title="${it.collapsed ? '펼치기' : '접기'}">${it.collapsed ? '▸' : '▾'}</button>
           <button type="button" class="tree-link is-main" data-act="open"><span class="tree-emoji">${esc(it.emoji || '📌')}</span> ${esc(it.title || '(제목 없음)')}</button>
           <span class="tree-n total">${total}</span>
-          ${mg && kind !== 'diary' ? `<span class="tree-ctl"><button type="button" data-act="cardup" title="위로" ${idx === 0 ? 'disabled' : ''}>▲</button><button type="button" data-act="carddown" title="아래로" ${idx >= list.length - 1 ? 'disabled' : ''}>▼</button><button type="button" data-act="carddel" class="del" title="게시판 삭제">×</button></span>` : ''}
+          ${mg && kind !== 'diary' ? `<span class="tree-ctl"><select class="tree-move tree-move-card" title="다른 종류로 이동"><option value="">이동…</option><option value="goal" ${kind === 'goal' ? 'disabled' : ''}>→ 🌱 꿈과 목표</option><option value="work" ${kind === 'work' ? 'disabled' : ''}>→ 🛠 하는 일</option></select><button type="button" data-act="cardup" title="위로" ${idx === 0 ? 'disabled' : ''}>▲</button><button type="button" data-act="carddown" title="아래로" ${idx >= list.length - 1 ? 'disabled' : ''}>▼</button><button type="button" data-act="carddel" class="del" title="게시판 삭제">×</button></span>` : ''}
         </div>
-        <ul class="tree-subs" ${it.collapsed ? 'hidden' : ''}>${subs}${unfiledRow}${addRow}${!subs && !mg ? '<li class="tree-sub none muted small">세부 게시판 없음</li>' : ''}</ul>
+        <ul class="tree-subs" ${it.collapsed ? 'hidden' : ''}>${subs}${unfiledRow}${addRow}</ul>
       </li>`;
     }).join('') : '<li class="muted small">게시판이 없어요.</li>';
     if (mg) {
@@ -1584,6 +1584,38 @@
     $('#treeCounts').checked = !!state.treeCounts;
     $('#hubTree').classList.toggle('no-counts', !state.treeCounts);
   }
+  function moveSubOptions(kind, it) {
+    let html = '<option value="">이동…</option>';
+    allCards().filter(c => c.kind !== 'diary' && c.it !== it).forEach(c => {
+      html += `<option value="${c.kind}:${c.it.id}">→ ${esc(c.it.emoji || '')} ${esc(c.it.title || '(제목 없음)')}</option>`;
+    });
+    return html;
+  }
+  $('#hubTree').addEventListener('change', e => {
+    const sel = e.target.closest('.tree-move'); if (!sel || !sel.value) return;
+    const cardLi = sel.closest('.tree-card'); const kind = cardLi.dataset.kind; const it = findItem(kind, cardLi.dataset.id); if (!it) { sel.value = ''; return; }
+    if (sel.classList.contains('tree-move-card')) {
+      const to = sel.value; if (to === kind) { sel.value = ''; return; }
+      if (!confirm(`"${it.title}" 게시판을 ${to === 'work' ? '하는 일' : '꿈과 목표'}로 옮길까요? 글과 세부 게시판은 그대로 따라가요.`)) { sel.value = ''; return; }
+      if (kind === 'work') state.works = state.works.filter(x => x !== it); else state.goals = state.goals.filter(x => x !== it);
+      if (to === 'work') { if (!it.status) it.status = 'build'; state.works.push(it); }
+      else { if (it.bar === undefined) it.bar = ''; state.goals.push(it); }
+      if (current && current.id === it.id) current = { kind: to, id: it.id };
+      save(); renderHub(); renderGoals(); renderWork(); return;
+    }
+    if (sel.classList.contains('tree-move-sub')) {
+      const subLi = sel.closest('.tree-sub'); const bd = it.boards.find(x => x.id === subLi.dataset.bid); if (!bd) return;
+      const [tk, tid] = sel.value.split(':'); const target = findItem(tk, tid); if (!target || target === it) { sel.value = ''; return; }
+      const moving = (it.notes || []).filter(n => n.board === bd.id);
+      if (!confirm(`"${bd.name}" 세부 게시판을 "${target.title}" 밑으로 옮길까요?${moving.length ? ' 안의 글 ' + moving.length + '개도 같이 옮겨져요.' : ''}`)) { sel.value = ''; return; }
+      it.boards = it.boards.filter(x => x !== bd);
+      it.notes = (it.notes || []).filter(n => n.board !== bd.id);
+      target.boards.push(bd);
+      target.notes = (target.notes || []).concat(moving);
+      target.collapsed = false;
+      save(); renderHub(); renderGoals(); renderWork(); return;
+    }
+  });
   $('#hubManage').addEventListener('click', () => { hub.manage = !hub.manage; renderTree(); });
   $('#treeExpandAll').addEventListener('click', () => { allCards().forEach(c => { c.it.collapsed = false; }); save(); renderTree(); });
   $('#treeCollapseAll').addEventListener('click', () => { allCards().forEach(c => { c.it.collapsed = true; }); save(); renderTree(); });

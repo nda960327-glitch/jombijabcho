@@ -835,3 +835,7 @@ body.no-side .layout { grid-template-columns: minmax(0, 1fr); }
 .tree-add-card-form input { flex: 1; min-width: 120px; border: 1px dashed var(--line-strong); border-radius: 8px; padding: 6px 8px; font-size: .86rem; background: #fff; }
 .tree-add-card-form input:focus { outline: 0; border-color: var(--accent); }
 .tree-add-card-form .primary { padding: 5px 10px; font-size: .82rem; }
+
+/* ---------- 카테고리 트리: 이동 ---------- */
+.tree-move { border: 1px solid var(--line); border-radius: 6px; height: 22px; font-size: .72rem; background: #fff; color: var(--text-dim); max-width: 74px; padding: 0 2px; cursor: pointer; }
+.tree-move:hover { border-color: var(--accent); color: var(--accent); }
