@@ -358,3 +358,5 @@ b, strong { font-weight: 700; }
 .modal-btns .text-btn { flex: 0 0 auto; }
 .modal-btns .primary { flex: 1; padding: 10px; }
 .sync-badge { cursor: pointer; }
+
+.modal-ver { margin-top: 12px; font-size: .7rem; opacity: .6; }

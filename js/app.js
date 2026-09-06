@@ -7,7 +7,8 @@
   'use strict';
 
   const KEY = 'myhome.v1';
-  const API_KEY = 'myhome.api';
+  const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
+  const APP_VER = '20260906e';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -70,7 +71,9 @@
   let pendingSave = null;
 
   try {
-    apiUrl = localStorage.getItem(API_KEY) || DEFAULT_API;
+    localStorage.removeItem('myhome.api');            // 옛 주소 저장값 제거
+    const ov = localStorage.getItem(API_KEY) || '';
+    apiUrl = (ov && ov !== DEFAULT_API) ? ov : DEFAULT_API;
     pin = localStorage.getItem(PIN_KEY) || '';
   } catch (e) { apiUrl = DEFAULT_API; pin = ''; }
 
@@ -627,6 +630,7 @@
   let modalOpen = false;
   function openPinModal() {
     modalOpen = true;
+    const vEl = $('#pinModalVer'); if (vEl) vEl.textContent = '버전 ' + APP_VER + (apiUrl === DEFAULT_API ? '' : ' · 사용자 지정 주소');
     const m = $('#pinModal');
     m.hidden = false;
     $('#pinModalErr').hidden = true;
