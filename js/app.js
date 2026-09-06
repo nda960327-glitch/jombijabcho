@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260907i';
+  const APP_VER = '20260907j';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -64,7 +64,7 @@
   /* ---------- 상태 ---------- */
   const defaultState = () => ({
     todos: [], qty: {}, now: {}, weight: null, weightStart: null, langLog: {}, showDone: false, useStocks: false,
-    goals: null, works: null, order: null, texts: {}, memo: ''
+    goals: null, works: null, order: null, texts: {}, memo: '', groups: null
   });
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   let state = load();
@@ -99,6 +99,13 @@
     SECTIONS.forEach(k => { if (s.order.indexOf(k) < 0) s.order.push(k); });
     if (!s.texts || typeof s.texts !== 'object') s.texts = {};
     if (typeof s.memo !== 'string') s.memo = '';
+    if (!Array.isArray(s.groups)) s.groups = [];
+    s.groups.forEach(g => { if (!g.id) g.id = uid(); if (typeof g.name !== 'string') g.name = ''; });
+    const gids = s.groups.map(g => g.id);
+    [].concat(s.goals, s.works).forEach(it => {
+      if (typeof it.group !== 'string' || (it.group && gids.indexOf(it.group) < 0)) it.group = '';
+      if (typeof it.hidden !== 'boolean') it.hidden = false;
+    });
     return s;
   }
   function saveLocal() {
@@ -448,8 +455,9 @@
   }
   function renderGrid(kind) {
     const grid = $(kind === 'work' ? '#workGrid' : '#goalGrid');
-    grid.innerHTML = listOf(kind).map(it => cardHtml(kind, it)).join('')
-      + `<button type="button" class="goal add-card" data-add="${kind}"><span class="goal-emoji">＋</span><h3>${kind === 'work' ? '일 추가' : '목표 추가'}</h3><p>${kind === 'work' ? '새로 시작한 일, 앱, 가게' : '새로운 꿈, 하고 싶은 것'}</p></button>`;
+    const all = listOf(kind), shown = all.filter(it => !it.hidden), hiddenN = all.length - shown.length;
+    grid.innerHTML = shown.map(it => cardHtml(kind, it)).join('')
+      + `<button type="button" class="goal add-card" data-add="${kind}"><span class="goal-emoji">＋</span><h3>${kind === 'work' ? '일 추가' : '목표 추가'}</h3><p>${kind === 'work' ? '새로 시작한 일, 앱, 가게' : '새로운 꿈, 하고 싶은 것'}</p>${hiddenN ? `<span class="muted small">홈에서 숨긴 카드 ${hiddenN}개 · 전체보기에서 관리</span>` : ''}</button>`;
   }
   function renderGoals() { renderGrid('goal'); }
   function renderWork() { renderGrid('work'); }
@@ -544,6 +552,8 @@
     $('#imStatusWrap').hidden = kind !== 'work';
     if (kind === 'goal') $('#imBar').value = it.bar || '';
     else $('#imStatus').value = it.status || 'build';
+    fillGroupSelect($('#imGroup'), it.group || '');
+    $('#imShow').checked = !it.hidden;
     $('#imSaved').textContent = '';
     board.postId = null; board.draft = null;
     renderTeaser(); renderList(); showView('card');
@@ -579,6 +589,12 @@
   bindField('#imTag', 'tag', v => v.replace(/[\[\]]/g, '').trim());
   bindField('#imBar', 'bar');
   bindField('#imStatus', 'status');
+  bindField('#imGroup', 'group');
+  $('#imShow').addEventListener('change', e => { const it = curItem(); if (!it) return; it.hidden = !e.target.checked; touched(); });
+  function fillGroupSelect(sel, val) {
+    sel.innerHTML = '<option value="">그룹 없음</option>' + state.groups.map(g => `<option value="${g.id}">${esc(g.name || '(이름 없음)')}</option>`).join('');
+    sel.value = val || '';
+  }
 
   /* ---------- 기록 게시판 (카드마다 글 목록 · 보기 · 쓰기 · 수정) ---------- */
   const board = { view: 'card', postId: null, draft: null };
@@ -587,25 +603,35 @@
   const PHOTO_LIMIT = 6;      // 글 하나당 사진 수
   function showView(v) {
     board.view = v;
-    const onPage = v === 'list' || v === 'post' || v === 'edit';
+    const onPage = v === 'list' || v === 'post' || v === 'edit' || v === 'hub' || v === 'all';
+    const hubLike = v === 'hub' || v === 'all';
     $('#imViewCard').hidden = onPage;
+    $('#bdViewHub').hidden = v !== 'hub';
+    $('#bdViewAll').hidden = v !== 'all';
     $('#bdViewList').hidden = v !== 'list';
     $('#bdViewPost').hidden = v !== 'post';
     $('#bdViewEdit').hidden = v !== 'edit';
     $('#bdEdit').hidden = v !== 'post';
     $('#bdDelete').hidden = v !== 'post';
     $('#bdNew').hidden = !(v === 'list' || v === 'post');
-    $('#bdBackList').textContent = v === 'list' ? '← 대시보드' : '← 목록으로';
+    $('#bdBackList').textContent = (v === 'list' || hubLike) ? '← 대시보드' : '← 목록으로';
     document.body.classList.toggle('on-board', onPage);
     $('#boardPage').hidden = !onPage;
     if (onPage) {
-      // 팝업은 닫고, 페이지 머리에 카드 정보를 채운다
       $('#itemModal').hidden = true; itemOpen = false;
-      const it = curItem();
+      const it = hubLike ? null : curItem();
       if (it) {
         $('#bdCardEmoji').textContent = it.emoji || '📌';
         $('#bdCardTitle').textContent = it.title || '(제목 없음)';
         $('#bdCardKind').textContent = (current.kind === 'work' ? '하는 일' : '꿈과 목표') + ' · 기록';
+      } else if (v === 'hub') {
+        $('#bdCardEmoji').textContent = '📚';
+        $('#bdCardTitle').textContent = hub.kind === 'work' ? '하는 일 게시판' : hub.kind === 'goal' ? '꿈과 목표 게시판' : '기록 게시판 전체';
+        $('#bdCardKind').textContent = '전체보기';
+      } else if (v === 'all') {
+        $('#bdCardEmoji').textContent = hub.q ? '🔍' : '📚';
+        $('#bdCardTitle').textContent = hub.q ? `"${hub.q}" 찾기` : '전체 글';
+        $('#bdCardKind').textContent = '모든 게시판';
       }
       window.scrollTo({ top: 0 });
     } else {
@@ -620,6 +646,10 @@
     if (replace) route();
   }
   function route() {
+    const hb = location.hash.match(/^#boards(?:\/(goal|work))?$/);
+    if (hb) { hub.kind = hb[1] || null; renderHub(); showView('hub'); return; }
+    const ap = location.hash.match(/^#posts(?:\/(.*))?$/);
+    if (ap) { hub.q = ap[1] ? decodeURIComponent(ap[1]) : ''; renderAllPosts(); showView('all'); return; }
     const m = location.hash.match(/^#(list|post|write|edit)\/(goal|work)\/([^/]+)(?:\/([^/]+))?$/);
     if (!m) {
       // 페이지에서 나옴 → 대시보드. 카드가 있었다면 카드 창을 다시 연다.
@@ -863,7 +893,10 @@
   $('#imOpenBoard').addEventListener('click', () => openList());
   $('#imNewPost').addEventListener('click', () => openEditor(null));
   $('#bdNew').addEventListener('click', () => openEditor(null));
-  $('#bdBackList').addEventListener('click', () => { if (board.view === 'list') go('', true); else openList(true); });
+  $('#bdBackList').addEventListener('click', () => {
+    if (board.view === 'list' || board.view === 'hub' || board.view === 'all') go('', true);
+    else openList(true);
+  });
   $('#bdEdit').addEventListener('click', () => openEditor(board.postId));
   $('#bdDelete').addEventListener('click', () => {
     const it = curItem(); if (!it || !board.postId) return;
@@ -1077,6 +1110,126 @@
     save(); renderWeight(); renderGoals();
   });
 
+  /* ---------- 게시판 허브: 전체보기 · 그룹 · 홈 표시 · 전체 글 · 찾기 ---------- */
+  const hub = { kind: null, group: 'all', q: '', editGroups: false };
+  function allCards() {
+    return state.goals.map(it => ({ kind: 'goal', it })).concat(state.works.map(it => ({ kind: 'work', it })));
+  }
+  function groupName(id) { const g = state.groups.find(x => x.id === id); return g ? (g.name || '(이름 없음)') : ''; }
+  function renderHub() {
+    // 종류 탭
+    $('#hubKinds').innerHTML = [['', '전체'], ['goal', '🌱 꿈과 목표'], ['work', '🛠 하는 일']].map(([k, label]) =>
+      `<button type="button" class="hub-tab ${(hub.kind || '') === k ? 'on' : ''}" data-kind="${k}">${label}</button>`).join('');
+    // 그룹 칩
+    const cards = allCards().filter(c => !hub.kind || c.kind === hub.kind);
+    const countOf = gid => cards.filter(c => (c.it.group || '') === gid).length;
+    $('#hubGroups').innerHTML =
+      `<button type="button" class="chip-btn ${hub.group === 'all' ? 'on' : ''}" data-group="all">전체 ${cards.length}</button>` +
+      state.groups.map(g => `<button type="button" class="chip-btn ${hub.group === g.id ? 'on' : ''}" data-group="${g.id}">${esc(g.name || '(이름 없음)')} ${countOf(g.id)}</button>`).join('') +
+      `<button type="button" class="chip-btn ${hub.group === '' ? 'on' : ''}" data-group="">그룹 없음 ${countOf('')}</button>` +
+      `<button type="button" class="chip-btn ghost" data-group="__edit">${hub.editGroups ? '✓ 그룹 관리 끝' : '⚙️ 그룹 관리'}</button>`;
+    // 그룹 편집기
+    $('#hubGroupEditor').hidden = !hub.editGroups;
+    if (hub.editGroups) {
+      $('#hubGroupList').innerHTML = state.groups.length ? state.groups.map(g =>
+        `<li data-gid="${g.id}"><input value="${esc(g.name)}" maxlength="20" placeholder="그룹 이름"><span class="muted small">${allCards().filter(c => c.it.group === g.id).length}개</span><button type="button" class="text-btn danger group-del">지우기</button></li>`).join('')
+        : '<li class="muted small">아직 그룹이 없어요. 아래에서 만들어 보세요.</li>';
+    }
+    // 게시판(카드) 목록
+    const rows = cards.filter(c => hub.group === 'all' || (c.it.group || '') === hub.group);
+    $('#hubList').innerHTML = rows.length ? rows.map(({ kind, it }) => {
+      const n = (it.notes || []).length;
+      const last = n ? Math.max.apply(null, it.notes.map(x => x.updatedAt || x.at || 0)) : 0;
+      return `<li class="hub-row ${it.hidden ? 'is-hidden' : ''}" data-kind="${kind}" data-id="${it.id}">
+        <span class="hub-emoji">${esc(it.emoji || '📌')}</span>
+        <div class="hub-main">
+          <div class="hub-title"><b>${esc(it.title || '(제목 없음)')}</b> <span class="muted small">${kind === 'work' ? '하는 일' : '꿈과 목표'}${it.group ? ' · ' + esc(groupName(it.group)) : ''}</span></div>
+          <div class="muted small">글 ${n}개${last ? ' · 마지막 ' + whenLabel(last) : ''}${it.hidden ? ' · 홈에서 숨김' : ''}</div>
+        </div>
+        <select class="hub-group" title="그룹"></select>
+        <label class="switch hub-show" title="홈 화면에 표시"><input type="checkbox" ${it.hidden ? '' : 'checked'}><span>홈</span></label>
+        <button type="button" class="text-btn hub-open">열기 →</button>
+      </li>`;
+    }).join('') : '<li class="muted small hub-empty">여기에 해당하는 게시판이 없어요.</li>';
+    $$('#hubList .hub-row').forEach(li => { const it = findItem(li.dataset.kind, li.dataset.id); if (it) fillGroupSelect(li.querySelector('.hub-group'), it.group || ''); });
+    $('#hubQ').value = hub.q || '';
+  }
+  $('#hubKinds').addEventListener('click', e => {
+    const b = e.target.closest('.hub-tab'); if (!b) return;
+    go('boards' + (b.dataset.kind ? '/' + b.dataset.kind : ''), true);
+  });
+  $('#hubGroups').addEventListener('click', e => {
+    const b = e.target.closest('.chip-btn'); if (!b) return;
+    if (b.dataset.group === '__edit') hub.editGroups = !hub.editGroups; else hub.group = b.dataset.group;
+    renderHub();
+  });
+  $('#hubGroupAdd').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = $('#hubGroupName').value.trim(); if (!name) return;
+    state.groups.push({ id: uid(), name });
+    $('#hubGroupName').value = '';
+    save(); renderHub();
+  });
+  $('#hubGroupList').addEventListener('change', e => {
+    const li = e.target.closest('li[data-gid]'); if (!li) return;
+    const g = state.groups.find(x => x.id === li.dataset.gid); if (!g) return;
+    g.name = li.querySelector('input').value.trim(); save(); renderHub();
+  });
+  $('#hubGroupList').addEventListener('click', e => {
+    const b = e.target.closest('.group-del'); if (!b) return;
+    const li = b.closest('li[data-gid]'); const g = state.groups.find(x => x.id === li.dataset.gid); if (!g) return;
+    if (!confirm(`"${g.name}" 그룹을 지울까요? 안에 있던 게시판은 "그룹 없음"으로 돌아가요.`)) return;
+    allCards().forEach(c => { if (c.it.group === g.id) c.it.group = ''; });
+    state.groups = state.groups.filter(x => x.id !== g.id);
+    if (hub.group === g.id) hub.group = 'all';
+    save(); renderHub();
+  });
+  $('#hubList').addEventListener('change', e => {
+    const li = e.target.closest('.hub-row'); if (!li) return;
+    const it = findItem(li.dataset.kind, li.dataset.id); if (!it) return;
+    if (e.target.matches('.hub-group')) it.group = e.target.value;
+    else if (e.target.matches('.hub-show input')) it.hidden = !e.target.checked;
+    save(); renderHub(); renderGoals(); renderWork();
+  });
+  $('#hubList').addEventListener('click', e => {
+    const li = e.target.closest('.hub-row'); if (!li) return;
+    if (e.target.closest('.hub-open') || e.target.closest('.hub-main') || e.target.closest('.hub-emoji')) {
+      current = { kind: li.dataset.kind, id: li.dataset.id }; openList();
+    }
+  });
+  $('#hubSearch').addEventListener('submit', e => { e.preventDefault(); go('posts/' + encodeURIComponent($('#hubQ').value.trim())); });
+  $('#hubAllPosts').addEventListener('click', () => go('posts'));
+
+  // 전체 글 · 찾기
+  function renderAllPosts() {
+    const q = (hub.q || '').trim().toLowerCase();
+    let rows = [];
+    allCards().forEach(({ kind, it }) => (it.notes || []).forEach(n => rows.push({ kind, it, n })));
+    if (q) rows = rows.filter(r => ((r.n.title || '') + ' ' + (r.n.text || '') + ' ' + (r.it.title || '')).toLowerCase().indexOf(q) >= 0);
+    rows.sort((a, b) => (b.n.at || 0) - (a.n.at || 0));
+    $('#allQ').value = hub.q || '';
+    $('#allInfo').textContent = q ? `"${hub.q}" 검색 결과 ${rows.length}개` : `모든 게시판의 글 ${rows.length}개 · 최신순`;
+    $('#allPosts').innerHTML = rows.length ? rows.map(({ kind, it, n }) => {
+      const thumb = n.photos && n.photos.length ? `<img class="post-thumb" src="${n.photos[0]}" alt="">` : '';
+      const snip = (n.text || '').replace(/\s+/g, ' ').trim().slice(0, 90);
+      return `<li data-kind="${kind}" data-id="${it.id}" data-pid="${n.id}" tabindex="0">${thumb}<div class="post-item-body">
+        <div class="post-item-title">${esc(postTitle(n))}</div>
+        ${snip ? `<div class="post-item-snip muted small">${esc(snip)}</div>` : ''}
+        <div class="muted small"><span class="todo-tag">${esc(it.emoji || '')} ${esc(it.title || '')}</span> ${whenLabel(n.at)}${n.photos && n.photos.length ? ` · 사진 ${n.photos.length}` : ''}</div>
+      </div></li>`;
+    }).join('') : `<li class="im-empty muted small">${q ? '찾은 글이 없어요.' : '아직 글이 없어요.'}</li>`;
+  }
+  $('#allSearch').addEventListener('submit', e => { e.preventDefault(); go('posts/' + encodeURIComponent($('#allQ').value.trim()), true); });
+  $('#allClear').addEventListener('click', () => go('posts', true));
+  function allPostClick(e) {
+    const li = e.target.closest('li[data-pid]'); if (!li) return;
+    if (e.type === 'keydown' && e.key !== 'Enter') return;
+    current = { kind: li.dataset.kind, id: li.dataset.id };
+    openPost(li.dataset.pid);
+  }
+  $('#allPosts').addEventListener('click', allPostClick);
+  $('#allPosts').addEventListener('keydown', allPostClick);
+
   /* ---------- 호로록 메모장 ---------- */
   const memoText = $('#memoText');
   let memoTimer = null;
@@ -1188,7 +1341,7 @@
       langLog: remote.langLog || {},
       useStocks: !!remote.useStocks,
       showDone: state.showDone,
-      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo')
+      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), groups: keep('groups')
     }));
     saveLocal();
     return true;
@@ -1309,7 +1462,7 @@
     if (e.key !== 'Escape') return;
     if (!$('#memoPanel').hidden) { closeMemo(); return; }
     if (modalOpen) closePinModal();
-    else if (document.body.classList.contains('on-board')) { if (board.view === 'list') go('', true); else openList(true); }
+    else if (document.body.classList.contains('on-board')) { if (board.view === 'list' || board.view === 'hub' || board.view === 'all') go('', true); else openList(true); }
     else if (itemOpen) closeItemModal();
   });
   $('#syncBadge').addEventListener('click', e => {
@@ -1383,6 +1536,8 @@
     if (document.body.classList.contains('on-board')) {
       if (board.view === 'post' && board.postId) renderPostPage(board.postId);
       else if (board.view === 'list') renderList();
+      else if (board.view === 'hub') renderHub();
+      else if (board.view === 'all') renderAllPosts();
     }
   }
   renderAll();

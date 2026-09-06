@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260907i">
+<link rel="stylesheet" href="css/style.css?v=20260907j">
 </head>
 <body>
 
@@ -65,7 +65,7 @@
   <section id="goals" class="block" data-sec="goals">
     <div class="sec-tools" hidden><span class="sec-name">꿈과 목표</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
-      <h2 data-t="goals.h2">🌱 꿈과 목표</h2>
+      <div class="head-row"><h2 data-t="goals.h2">🌱 꿈과 목표</h2><a href="#boards/goal" class="see-all">전체보기 →</a></div>
       <p data-t="goals.p">내가 가고 싶은 곳. 카드를 누르면 자세히 적을 수 있어요.</p>
     </div>
     <div class="goal-grid" id="goalGrid"></div>
@@ -139,7 +139,7 @@
   <section id="work" class="block" data-sec="work">
     <div class="sec-tools" hidden><span class="sec-name">하는 일</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
-      <h2 data-t="work.h2">🛠 하는 일</h2>
+      <div class="head-row"><h2 data-t="work.h2">🛠 하는 일</h2><a href="#boards/work" class="see-all">전체보기 →</a></div>
       <p data-t="work.p">지금 굴러가는 것들. 카드를 누르면 상태와 기록을 적을 수 있어요.</p>
     </div>
     <div class="work-grid" id="workGrid"></div>
@@ -285,6 +285,29 @@
       <button type="button" class="primary" id="bdNew" hidden>＋ 새 글</button>
     </div>
 
+    <!-- 게시판 전체보기 -->
+    <div class="bd-view" id="bdViewHub" hidden>
+      <div class="hub-tools">
+        <div class="hub-tabs" id="hubKinds"></div>
+        <form class="hub-search" id="hubSearch"><input id="hubQ" placeholder="글 찾기 (제목·내용)" maxlength="60"><button type="submit" class="primary">찾기</button></form>
+        <button type="button" class="text-btn" id="hubAllPosts">📚 전체 글 보기</button>
+      </div>
+      <div class="hub-groups" id="hubGroups"></div>
+      <div class="hub-group-editor card" id="hubGroupEditor" hidden>
+        <p class="eyebrow">그룹 관리</p>
+        <ul id="hubGroupList" class="group-list"></ul>
+        <form class="group-add" id="hubGroupAdd"><input id="hubGroupName" placeholder="새 그룹 이름 (예: 사업, 건강, 취미)" maxlength="20"><button type="submit" class="primary">＋ 그룹 추가</button></form>
+      </div>
+      <ul class="hub-list" id="hubList"></ul>
+    </div>
+
+    <!-- 전체 글 / 검색 결과 -->
+    <div class="bd-view" id="bdViewAll" hidden>
+      <form class="hub-search wide" id="allSearch"><input id="allQ" placeholder="글 찾기 (제목·내용)" maxlength="60"><button type="submit" class="primary">찾기</button><button type="button" class="text-btn" id="allClear">전체 글</button></form>
+      <p class="muted small" id="allInfo"></p>
+      <ul class="post-list page" id="allPosts"></ul>
+    </div>
+
     <!-- 글 목록 -->
     <div class="bd-view" id="bdViewList" hidden>
       <ul class="post-list page" id="bdPosts"></ul>
@@ -401,6 +424,12 @@
             <option value="weight">체중 44kg</option>
           </select>
         </label>
+        <label class="im-field">그룹
+          <select id="imGroup"><option value="">그룹 없음</option></select>
+        </label>
+        <label class="im-field im-check">홈 화면
+          <span class="switch"><input type="checkbox" id="imShow" checked><span>홈에 표시</span></span>
+        </label>
         <label class="im-field" id="imStatusWrap" hidden>상태
           <select id="imStatus">
             <option value="build">개발 중</option>
@@ -465,6 +494,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260907i"></script>
+<script src="js/app.js?v=20260907j"></script>
 </body>
 </html>
