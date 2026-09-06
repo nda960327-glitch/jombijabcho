@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260907d">
+<link rel="stylesheet" href="css/style.css?v=20260907e">
 </head>
 <body>
 
@@ -270,47 +270,100 @@
 <!-- ===== 카드 상세 팝업 ===== -->
 <div class="modal" id="itemModal" hidden>
   <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="imTitle">
-    <div class="im-head">
-      <input id="imEmoji" class="im-emoji" maxlength="4" placeholder="🙂" title="이모지">
-      <input id="imTitle" class="im-title" placeholder="제목" maxlength="60">
-      <button type="button" class="icon-btn" id="imClose" aria-label="닫기">×</button>
+
+    <!-- 1) 카드 정보 -->
+    <div class="im-view" id="imViewCard">
+      <div class="im-head">
+        <input id="imEmoji" class="im-emoji" maxlength="4" placeholder="🙂" title="이모지">
+        <input id="imTitle" class="im-title" placeholder="제목" maxlength="60">
+        <button type="button" class="icon-btn" id="imClose" aria-label="닫기">×</button>
+      </div>
+      <textarea id="imDesc" rows="2" placeholder="한 줄 설명" maxlength="200"></textarea>
+      <div class="im-row">
+        <label class="im-field">할일 태그<input id="imTag" placeholder="예: 집" maxlength="20"></label>
+        <label class="im-field" id="imBarWrap">진행 표시
+          <select id="imBar">
+            <option value="">없음</option>
+            <option value="jeonse">전세 잔금 (도장깨기 1)</option>
+            <option value="car">캐스퍼 (도장깨기 2)</option>
+            <option value="house">집 짓기 (도장깨기 3)</option>
+            <option value="weight">체중 44kg</option>
+          </select>
+        </label>
+        <label class="im-field" id="imStatusWrap" hidden>상태
+          <select id="imStatus">
+            <option value="build">개발 중</option>
+            <option value="run">자동 운영</option>
+            <option value="todo">상용화 대기</option>
+            <option value="pause">잠시 멈춤</option>
+            <option value="done">완료</option>
+          </select>
+        </label>
+      </div>
+      <div class="im-row im-actions">
+        <button type="button" class="text-btn" id="imTodo">+ 할일</button>
+        <button type="button" class="text-btn" id="imLeft">◀ 앞으로</button>
+        <button type="button" class="text-btn" id="imRight">뒤로 ▶</button>
+        <span class="spacer"></span>
+        <button type="button" class="text-btn danger" id="imDelete">삭제</button>
+      </div>
+
+      <div class="board-teaser">
+        <div class="board-teaser-head">
+          <h4>📝 기록 게시판 <span class="muted small" id="imNoteCount"></span></h4>
+          <div class="board-teaser-btns">
+            <button type="button" class="text-btn" id="imOpenBoard">글 목록</button>
+            <button type="button" class="primary" id="imNewPost">새 글 쓰기</button>
+          </div>
+        </div>
+        <ul class="post-list compact" id="imRecent"></ul>
+      </div>
+      <p class="muted small im-saved" id="imSaved"></p>
     </div>
-    <textarea id="imDesc" rows="2" placeholder="한 줄 설명" maxlength="200"></textarea>
-    <div class="im-row">
-      <label class="im-field">할일 태그<input id="imTag" placeholder="예: 집" maxlength="20"></label>
-      <label class="im-field" id="imBarWrap">진행 표시
-        <select id="imBar">
-          <option value="">없음</option>
-          <option value="jeonse">전세 잔금 (도장깨기 1)</option>
-          <option value="car">캐스퍼 (도장깨기 2)</option>
-          <option value="house">집 짓기 (도장깨기 3)</option>
-          <option value="weight">체중 44kg</option>
-        </select>
-      </label>
-      <label class="im-field" id="imStatusWrap" hidden>상태
-        <select id="imStatus">
-          <option value="build">개발 중</option>
-          <option value="run">자동 운영</option>
-          <option value="todo">상용화 대기</option>
-          <option value="pause">잠시 멈춤</option>
-          <option value="done">완료</option>
-        </select>
-      </label>
+
+    <!-- 2) 글 목록 -->
+    <div class="im-view" id="imViewList" hidden>
+      <div class="board-head">
+        <button type="button" class="text-btn" id="bdBackCard">← 카드</button>
+        <h3 class="board-title" id="bdListTitle">기록</h3>
+        <button type="button" class="primary" id="bdNew">새 글</button>
+      </div>
+      <ul class="post-list" id="bdPosts"></ul>
     </div>
-    <div class="im-row im-actions">
-      <button type="button" class="text-btn" id="imTodo">+ 할일</button>
-      <button type="button" class="text-btn" id="imLeft">◀ 앞으로</button>
-      <button type="button" class="text-btn" id="imRight">뒤로 ▶</button>
-      <span class="spacer"></span>
-      <button type="button" class="text-btn danger" id="imDelete">삭제</button>
+
+    <!-- 3) 글 보기 -->
+    <div class="im-view" id="imViewPost" hidden>
+      <div class="board-head">
+        <button type="button" class="text-btn" id="bdBackList">← 목록</button>
+        <span class="spacer"></span>
+        <button type="button" class="text-btn" id="bdEdit">수정</button>
+        <button type="button" class="text-btn danger" id="bdDelete">삭제</button>
+      </div>
+      <article class="post">
+        <h3 class="post-title" id="bdPostTitle"></h3>
+        <p class="muted small" id="bdPostMeta"></p>
+        <div class="post-photos" id="bdPostPhotos"></div>
+        <div class="post-body" id="bdPostBody"></div>
+      </article>
     </div>
-    <h4 class="im-notes-title">📝 기록</h4>
-    <div class="im-note-form">
-      <textarea id="imNoteText" rows="3" placeholder="생각, 진행 상황, 뭐든 적어요. Ctrl+Enter로 추가" maxlength="2000"></textarea>
-      <button type="button" class="primary" id="imNoteAdd">기록 추가</button>
+
+    <!-- 4) 글쓰기 / 수정 -->
+    <div class="im-view" id="imViewEdit" hidden>
+      <div class="board-head">
+        <button type="button" class="text-btn" id="bdCancel">← 취소</button>
+        <h3 class="board-title" id="bdEditTitle">새 글</h3>
+        <button type="button" class="primary" id="bdSave">저장</button>
+      </div>
+      <input id="bdTitle" class="post-title-input" placeholder="제목 (비워도 돼요)" maxlength="80">
+      <textarea id="bdBody" rows="9" placeholder="생각, 진행 상황, 뭐든 적어요. Ctrl+Enter로 저장" maxlength="8000"></textarea>
+      <div class="photo-row">
+        <div class="photo-thumbs" id="bdThumbs"></div>
+        <label class="text-btn file-btn">📷 사진 붙이기<input type="file" id="bdPhoto" accept="image/*" multiple hidden></label>
+        <span class="muted small">사진은 알아볼 정도로만 아주 작게 줄여서 저장돼요</span>
+      </div>
+      <p class="muted small" id="bdEditNote"></p>
     </div>
-    <ul class="im-notes" id="imNotes"></ul>
-    <p class="muted small im-saved" id="imSaved"></p>
+
   </div>
 </div>
 
@@ -329,6 +382,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260907d"></script>
+<script src="js/app.js?v=20260907e"></script>
 </body>
 </html>

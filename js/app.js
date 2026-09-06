@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260907d';
+  const APP_VER = '20260907e';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -541,15 +541,15 @@
     $('#imStatusWrap').hidden = kind !== 'work';
     if (kind === 'goal') $('#imBar').value = it.bar || '';
     else $('#imStatus').value = it.status || 'build';
-    $('#imNoteText').value = '';
     $('#imSaved').textContent = '';
-    renderNotes();
+    board.postId = null; board.draft = null;
+    renderTeaser(); showView('card');
     $('#itemModal').hidden = false;
-    setTimeout(() => (isNew ? $('#imTitle') : $('#imNoteText')).focus(), 50);
+    if (isNew) setTimeout(() => $('#imTitle').focus(), 50);
   }
   function closeItemModal() {
     if (!itemOpen) return;
-    itemOpen = false; current = null;
+    itemOpen = false; current = null; board.draft = null; board.postId = null;
     $('#itemModal').hidden = true;
   }
   function curItem() { return current ? findItem(current.kind, current.id) : null; }
@@ -576,35 +576,143 @@
   bindField('#imBar', 'bar');
   bindField('#imStatus', 'status');
 
-  function renderNotes() {
-    const it = curItem(); if (!it) return;
-    const notes = (it.notes || []).slice().sort((a, b) => b.at - a.at);
-    $('#imNotes').innerHTML = notes.length ? notes.map(n => `
-      <li data-nid="${n.id}">
-        <div class="im-note-head"><span class="muted small">${whenLabel(n.at)}</span><button type="button" class="todo-del" title="삭제">×</button></div>
-        <div class="im-note-text">${esc(n.text).replace(/\n/g, '<br>')}</div>
-      </li>`).join('') : '<li class="muted small im-empty">아직 기록이 없어요. 위에 첫 줄을 남겨보자.</li>';
+  /* ---------- 기록 게시판 (카드마다 글 목록 · 보기 · 쓰기 · 수정) ---------- */
+  const board = { view: 'card', postId: null, draft: null };
+  const PHOTO_MAX = 240;      // 긴 변 기준 픽셀. 알아볼 정도로만 작게.
+  const PHOTO_Q = 0.6;
+  const PHOTO_LIMIT = 6;      // 글 하나당 사진 수
+  function showView(v) {
+    board.view = v;
+    ['Card', 'List', 'Post', 'Edit'].forEach(n => { $('#imView' + n).hidden = (n.toLowerCase() !== v); });
+    const box = $('#itemModal .modal-box'); if (box) box.scrollTop = 0;
   }
-  function addNote() {
-    const it = curItem(); if (!it) return;
-    const text = $('#imNoteText').value.trim();
-    if (!text) { $('#imNoteText').focus(); return; }
-    it.notes.push({ id: uid(), text, at: Date.now() });
-    $('#imNoteText').value = '';
-    renderNotes(); touched();
+  function postsOf(it) { return (it.notes || []).slice().sort((x, y) => (y.at || 0) - (x.at || 0)); }
+  function postTitle(n) {
+    return (n.title && n.title.trim()) || (n.text || '').split('\n')[0].trim().slice(0, 40) || (n.photos && n.photos.length ? '(사진)' : '(제목 없음)');
   }
-  $('#imNoteAdd').addEventListener('click', addNote);
-  $('#imNoteText').addEventListener('keydown', e => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); addNote(); }
+  function postItemHtml(n) {
+    const thumb = n.photos && n.photos.length ? `<img class="post-thumb" src="${n.photos[0]}" alt="">` : '';
+    const snip = (n.text || '').replace(/\s+/g, ' ').trim().slice(0, 70);
+    return `<li data-pid="${n.id}" tabindex="0">${thumb}<div class="post-item-body">
+      <div class="post-item-title">${esc(postTitle(n))}</div>
+      ${snip ? `<div class="post-item-snip muted small">${esc(snip)}</div>` : ''}
+      <div class="muted small">${whenLabel(n.at)}${n.photos && n.photos.length ? ` · 사진 ${n.photos.length}` : ''}</div>
+    </div></li>`;
+  }
+  function renderTeaser() {
+    const it = curItem(); if (!it) return;
+    const ps = postsOf(it);
+    $('#imNoteCount').textContent = ps.length ? `${ps.length}개` : '';
+    $('#imRecent').innerHTML = ps.length
+      ? ps.slice(0, 3).map(postItemHtml).join('')
+      : '<li class="im-empty muted small">아직 글이 없어요. 새 글 쓰기로 첫 기록을 남겨보자.</li>';
+  }
+  function renderList() {
+    const it = curItem(); if (!it) return;
+    $('#bdListTitle').textContent = `📝 ${it.title || '기록'}`;
+    const ps = postsOf(it);
+    $('#bdPosts').innerHTML = ps.length ? ps.map(postItemHtml).join('') : '<li class="im-empty muted small">아직 글이 없어요.</li>';
+  }
+  function openPost(pid) {
+    const it = curItem(); const n = it && it.notes.find(x => x.id === pid); if (!n) return;
+    board.postId = pid;
+    $('#bdPostTitle').textContent = postTitle(n);
+    $('#bdPostMeta').textContent = whenLabel(n.at) + (n.updatedAt ? ` · 수정 ${whenLabel(n.updatedAt)}` : '');
+    $('#bdPostPhotos').innerHTML = (n.photos || []).map(p => `<img src="${p}" alt="" class="post-photo">`).join('');
+    $('#bdPostBody').innerHTML = esc(n.text || '').replace(/\n/g, '<br>');
+    showView('post');
+  }
+  function openEditor(pid) {
+    const it = curItem(); if (!it) return;
+    const n = pid ? it.notes.find(x => x.id === pid) : null;
+    board.draft = { id: n ? n.id : null, title: n ? (n.title || '') : '', text: n ? (n.text || '') : '', photos: n ? (n.photos || []).slice() : [] };
+    $('#bdEditTitle').textContent = n ? '글 수정' : '새 글';
+    $('#bdTitle').value = board.draft.title;
+    $('#bdBody').value = board.draft.text;
+    $('#bdEditNote').textContent = '';
+    renderThumbs();
+    showView('edit');
+    setTimeout(() => $(n ? '#bdBody' : '#bdTitle').focus(), 50);
+  }
+  function renderThumbs() {
+    $('#bdThumbs').innerHTML = (board.draft ? board.draft.photos : []).map((p, i) =>
+      `<span class="thumb"><img src="${p}" alt=""><button type="button" class="thumb-x" data-i="${i}" title="빼기">×</button></span>`).join('');
+  }
+  function saveDraft() {
+    const it = curItem(); if (!it || !board.draft) return;
+    const title = $('#bdTitle').value.trim(), text = $('#bdBody').value.trim();
+    if (!title && !text && !board.draft.photos.length) { $('#bdEditNote').textContent = '내용을 적어주세요.'; $('#bdBody').focus(); return; }
+    if (board.draft.id) {
+      const n = it.notes.find(x => x.id === board.draft.id);
+      if (n) { n.title = title; n.text = text; n.photos = board.draft.photos; n.updatedAt = Date.now(); }
+      board.postId = board.draft.id;
+    } else {
+      const n = { id: uid(), title, text, photos: board.draft.photos, at: Date.now() };
+      it.notes.push(n); board.postId = n.id;
+    }
+    board.draft = null;
+    touched(); renderTeaser(); renderList();
+    openPost(board.postId);
+  }
+  /** 사진을 아주 작게 줄인다 (긴 변 PHOTO_MAX px, JPEG). 방향 정보(EXIF)도 반영. */
+  async function shrinkImage(file) {
+    let src;
+    try { src = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch (e) {
+      src = await new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = URL.createObjectURL(file); });
+    }
+    const w = src.width, h = src.height, k = Math.min(1, PHOTO_MAX / Math.max(w, h));
+    const cw = Math.max(1, Math.round(w * k)), ch = Math.max(1, Math.round(h * k));
+    const c = document.createElement('canvas'); c.width = cw; c.height = ch;
+    c.getContext('2d').drawImage(src, 0, 0, cw, ch);
+    return c.toDataURL('image/jpeg', PHOTO_Q);
+  }
+  $('#bdPhoto').addEventListener('change', async e => {
+    const files = Array.from(e.target.files || []); e.target.value = '';
+    if (!files.length || !board.draft) return;
+    const room = PHOTO_LIMIT - board.draft.photos.length;
+    let note = files.length > room ? `사진은 글 하나에 ${PHOTO_LIMIT}장까지예요.` : '';
+    $('#bdEditNote').textContent = '사진 줄이는 중…';
+    for (const f of files.slice(0, Math.max(0, room))) {
+      try { board.draft.photos.push(await shrinkImage(f)); }
+      catch (x) { note = '사진을 읽지 못했어요: ' + f.name; }
+    }
+    $('#bdEditNote').textContent = note;
+    renderThumbs();
   });
-  $('#imNotes').addEventListener('click', e => {
-    const del = e.target.closest('.todo-del'); if (!del) return;
-    const li = del.closest('li[data-nid]'); const it = curItem(); if (!li || !it) return;
-    const n = it.notes.find(x => x.id === li.dataset.nid);
-    if (n && !confirm('이 기록을 지울까요?')) return;
-    it.notes = it.notes.filter(x => x.id !== li.dataset.nid);
-    renderNotes(); touched();
+  $('#bdThumbs').addEventListener('click', e => {
+    const b = e.target.closest('.thumb-x'); if (!b || !board.draft) return;
+    board.draft.photos.splice(Number(b.dataset.i), 1); renderThumbs();
   });
+  $('#imOpenBoard').addEventListener('click', () => { renderList(); showView('list'); });
+  $('#imNewPost').addEventListener('click', () => openEditor(null));
+  $('#bdNew').addEventListener('click', () => openEditor(null));
+  $('#bdBackCard').addEventListener('click', () => { renderTeaser(); showView('card'); });
+  $('#bdBackList').addEventListener('click', () => { renderList(); showView('list'); });
+  $('#bdEdit').addEventListener('click', () => openEditor(board.postId));
+  $('#bdDelete').addEventListener('click', () => {
+    const it = curItem(); if (!it || !board.postId) return;
+    if (!confirm('이 글을 지울까요?')) return;
+    it.notes = it.notes.filter(x => x.id !== board.postId);
+    board.postId = null;
+    touched(); renderTeaser(); renderList(); showView('list');
+  });
+  $('#bdCancel').addEventListener('click', () => {
+    const wasEditing = board.draft && board.draft.id;
+    board.draft = null;
+    if (wasEditing) openPost(wasEditing); else { renderList(); showView('list'); }
+  });
+  $('#bdSave').addEventListener('click', saveDraft);
+  $('#bdBody').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDraft(); } });
+  function postClick(e) {
+    const li = e.target.closest('li[data-pid]'); if (!li) return;
+    if (e.type === 'keydown' && e.key !== 'Enter') return;
+    openPost(li.dataset.pid);
+  }
+  $('#imRecent').addEventListener('click', postClick);
+  $('#bdPosts').addEventListener('click', postClick);
+  $('#bdPosts').addEventListener('keydown', postClick);
+
   $('#imTodo').addEventListener('click', () => {
     const it = curItem(); if (!it) return;
     const tag = it.tag || it.title;
@@ -877,8 +985,10 @@
     }
   }
 
+  let dirtyWhileSyncing = false;
   async function pushToCloud() {
-    if (!pin || syncing) return;
+    if (!pin) return;
+    if (syncing) { dirtyWhileSyncing = true; return; }   // 저장 중에 또 바뀌면, 끝난 뒤 한 번 더 보낸다
     syncing = true;
     setSync('저장 중…', 'wait');
     try {
@@ -888,7 +998,10 @@
       if (err.oldVersion) forgetPin(OLD_MSG);
       else if (err.badPin) forgetPin(err.message);
       else setSync('저장 실패: ' + err.message + ' (이 기기에는 저장돼 있어요)', 'err');
-    } finally { syncing = false; }
+    } finally {
+      syncing = false;
+      if (dirtyWhileSyncing) { dirtyWhileSyncing = false; pushToCloud(); }
+    }
   }
 
   function forgetPin(msg) {
