@@ -9,13 +9,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260908e">
+<link rel="stylesheet" href="css/style.css?v=20260908f">
 </head>
 <body>
 
 <header class="top">
   <div class="top-inner">
-    <div class="top-left">
+    <div class="top-left" id="topHome" title="대시보드로">
       <p class="eyebrow" id="todayLabel">오늘</p>
       <h1 id="greeting">안녕, 오늘도 한 걸음</h1>
     </div>
@@ -397,13 +397,13 @@
   <div class="board-page-inner">
     <div class="board-top">
       <button type="button" class="text-btn" id="bdBackList">← 목록으로</button>
-      <div class="board-card">
+      <button type="button" class="board-card" id="bdCardLogo" title="카테고리 화면으로">
         <span class="board-card-emoji" id="bdCardEmoji"></span>
         <div class="board-card-text">
           <p class="eyebrow" id="bdCardKind">기록</p>
           <h1 id="bdCardTitle"></h1>
         </div>
-      </div>
+      </button>
       <span class="spacer"></span>
       <button type="button" class="text-btn" id="bdEdit" hidden>수정</button>
       <button type="button" class="text-btn danger" id="bdDelete" hidden>삭제</button>
@@ -660,6 +660,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260908e"></script>
+<script src="js/app.js?v=20260908f"></script>
 </body>
 </html>

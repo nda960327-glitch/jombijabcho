@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908e';
+  const APP_VER = '20260908f';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -1573,6 +1573,17 @@
     }).join('') : '<li class="muted small">게시판이 없어요.</li>';
   }
   $('#hubManage').addEventListener('click', () => { hub.manage = !hub.manage; renderTree(); });
+  // 게시판 로고(이모지·제목) → 카테고리 트리가 있는 전체보기 화면. 전체보기에서 누르면 대시보드.
+  $('#bdCardLogo').addEventListener('click', () => {
+    const v = board.view;
+    if (v === 'hub' || v === 'all') { go('', true); return; }
+    const kind = current ? current.kind : null;
+    go('boards' + (kind ? '/' + kind : ''));
+  });
+  $('#topHome').addEventListener('click', () => {
+    if (document.body.classList.contains('on-board')) { current = null; go('', true); }
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
   $('#hubTree').addEventListener('click', e => {
     const b = e.target.closest('button[data-act]'); if (!b) return;
     const cardLi = b.closest('.tree-card'); if (!cardLi) return;

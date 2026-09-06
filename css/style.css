@@ -815,3 +815,10 @@ body.no-side .layout { grid-template-columns: minmax(0, 1fr); }
   .hub-body { grid-template-columns: 1fr; }
   .hub-tree { position: static; order: -1; }
 }
+
+/* ---------- 게시판 로고 / 상단 제목 클릭 ---------- */
+.board-card { border: 0; background: none; padding: 4px 8px 4px 4px; border-radius: 12px; cursor: pointer; font: inherit; text-align: left; color: inherit; }
+.board-card:hover { background: var(--gold-soft); }
+.board-card:hover h1 { text-decoration: underline; text-decoration-color: var(--gold); }
+.top-left { cursor: pointer; }
+.top-left:hover h1 { color: var(--accent); }
