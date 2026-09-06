@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260907k">
+<link rel="stylesheet" href="css/style.css?v=20260907m">
 </head>
 <body>
 
@@ -150,7 +150,7 @@
     <div class="sec-tools" hidden><span class="sec-name">달력</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
       <h2 data-t="cal.h2">📅 달력</h2>
-      <p data-t="cal.p">날짜를 누르면 그 날 할일을 바로 적을 수 있어요.</p>
+      <p data-t="cal.p">날짜를 누르면 일정·메모·형광펜·스티커를 남길 수 있고, 마우스만 올려도 그 날 내용이 보여요.</p>
     </div>
     <div class="cal">
       <div class="cal-head">
@@ -163,6 +163,36 @@
         <span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span>
       </div>
       <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend muted small">
+        <span><i class="lg lg-ev"></i> 일정 (며칠짜리는 띠로 이어져요)</span>
+        <span><i class="lg lg-todo"></i> 할일</span>
+        <span>📝 메모</span>
+        <span><i class="lg lg-hl"></i> 형광펜</span>
+        <span class="lg-hol">빨간 글씨 공휴일</span>
+      </div>
+    </div>
+    <div class="cal-upcoming" id="calUpcoming"></div>
+  </section>
+
+  <!-- ===== 다이어리 ===== -->
+  <section id="diary" class="block" data-sec="diary">
+    <div class="sec-tools" hidden><span class="sec-name">다이어리</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
+    <div class="block-head">
+      <div class="head-row"><h2 data-t="diary.h2">📔 다이어리</h2><a href="#list/diary/diary" class="see-all">전체보기 →</a></div>
+      <p data-t="diary.p">하루 한 줄이라도. 오늘 기분이랑 같이 남겨요.</p>
+    </div>
+    <div class="diary-widget card">
+      <div class="diary-today">
+        <div class="diary-today-text">
+          <p class="eyebrow" id="diaryTodayLabel"></p>
+          <strong id="diaryTodayState"></strong>
+          <p class="muted small" id="diaryStreak"></p>
+        </div>
+        <div class="diary-moods" id="diaryMoods" title="오늘 기분"></div>
+        <button type="button" class="primary" id="diaryWrite">오늘 일기 쓰기</button>
+      </div>
+      <div class="diary-strip" id="diaryStrip"></div>
+      <ul class="post-list compact" id="diaryRecent"></ul>
     </div>
   </section>
 
@@ -334,7 +364,9 @@
         <div class="ed-top">
           <p class="eyebrow" id="bdEditTitle">새 글</p>
           <label class="ed-board">세부 게시판 <select id="bdBoard"><option value="">미분류</option></select></label>
+          <label class="ed-board" id="bdDateWrap" hidden>날짜 <input type="date" id="bdDate"></label>
         </div>
+        <div class="diary-moods pick" id="bdMoodWrap" hidden></div>
         <input id="bdTitle" class="post-title-input" placeholder="제목 (비워도 돼요)" maxlength="80">
 
         <div class="ed-toolbar" id="edToolbar">
@@ -465,6 +497,37 @@
   </div>
 </div>
 
+<!-- ===== 날짜 상세 팝업 ===== -->
+<div class="modal" id="dayModal" hidden>
+  <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="dmTitle">
+    <div class="im-head">
+      <div class="dm-head-text"><h2 class="dm-title" id="dmTitle"></h2><p class="muted small" id="dmSub"></p></div>
+      <button type="button" class="icon-btn" id="dmClose" aria-label="닫기">×</button>
+    </div>
+    <div class="dm-row"><span class="dm-label">스티커</span><div class="dm-stickers" id="dmStickers"></div></div>
+    <div class="dm-row"><span class="dm-label">형광펜</span><div class="dm-hls" id="dmHls"></div></div>
+    <label class="im-field dm-memo">메모 <span class="muted small">(마우스만 올려도 달력에서 보여요 · 자동 저장)</span>
+      <textarea id="dmMemo" rows="3" placeholder="이 날에 대한 메모. 예: 엄마 생신, 병원 예약 3시, 월세 내는 날" maxlength="500"></textarea>
+    </label>
+
+    <h4 class="dm-h">📅 일정</h4>
+    <ul class="dm-events" id="dmEvents"></ul>
+    <form class="dm-event-form" id="dmEventForm">
+      <input id="dmEvTitle" placeholder="일정 제목 (예: 제주 여행, 치과, 친구 결혼식)" maxlength="60" autocomplete="off">
+      <div class="dm-dates"><input type="date" id="dmEvStart" required><span>부터</span><input type="date" id="dmEvEnd" required><span>까지</span></div>
+      <div class="dm-row"><span class="dm-label">색</span><div class="dm-colors" id="dmEvColors"></div></div>
+      <input id="dmEvMemo" placeholder="일정 메모 (선택) 예: 숙소 ○○, 준비물" maxlength="200" autocomplete="off">
+      <div class="editor-btns"><button type="button" class="text-btn" id="dmEvCancel" hidden>취소</button><button type="submit" class="primary" id="dmEvSave">일정 추가</button></div>
+    </form>
+
+    <h4 class="dm-h">✅ 할일</h4>
+    <ul class="dm-todos" id="dmTodos"></ul>
+    <form class="dm-todo-form" id="dmTodoForm"><input id="dmTodoText" placeholder="이 날 할일 추가" maxlength="120" autocomplete="off"><button type="submit" class="primary">추가</button></form>
+    <p class="muted small dm-diary" id="dmDiary"></p>
+  </div>
+</div>
+<div class="cal-tip" id="calTip" hidden></div>
+
 <!-- ===== 호로록 메모장 ===== -->
 <button type="button" class="memo-fab" id="memoFab" title="메모장 (아무거나 호로록)">📝</button>
 <div class="memo-panel" id="memoPanel" hidden>
@@ -495,6 +558,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260907k"></script>
+<script src="js/app.js?v=20260907m"></script>
 </body>
 </html>
