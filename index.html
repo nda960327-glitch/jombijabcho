@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260907b">
+<link rel="stylesheet" href="css/style.css?v=20260907c">
 </head>
 <body>
 
@@ -25,47 +25,58 @@
       <a href="#work">일</a>
       <a href="#calendar">달력</a>
       <a href="#me">나</a>
+      <button type="button" class="edit-toggle" id="editToggle" title="제목·문구 수정, 위젯 순서 바꾸기">✏️ 꾸미기</button>
       <a href="#sync" class="sync-badge" id="syncBadge" title="동기화 상태">☁️ 미연결</a>
     </nav>
   </div>
 </header>
 
+<div class="edit-bar" id="editBar" hidden>
+  <span>✏️ <b>꾸미기 모드</b> · 점선 글씨를 눌러 바로 고칠 수 있어요 · 섹션은 ▲▼로, 카드는 끌어서 순서를 바꿔요</span>
+  <button type="button" class="primary" id="editDone">완료</button>
+</div>
+
 <div class="layout">
-<main class="main">
+<main class="main" id="main">
 
   <!-- ===== 요약 ===== -->
-  <section class="summary">
-    <div class="stat">
-      <span class="stat-label">총 자산 (원금 기준)</span>
-      <strong class="stat-value" id="sumAssets">-</strong>
-      <span class="stat-sub" id="sumAssetsNow">평가금액 입력 시 손익 표시</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">당장 필요한 돈</span>
-      <strong class="stat-value" id="sumJeonse">-</strong>
-      <span class="stat-sub" id="sumJeonseSub">전세 잔금·수수료 7,100만 + 차 1,689만</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">오늘 할일</span>
-      <strong class="stat-value" id="sumTodos">0</strong>
-      <span class="stat-sub" id="sumTodosSub">남은 일이 없어요</span>
+  <section class="summary block" data-sec="summary">
+    <div class="sec-tools" hidden><span class="sec-name">요약</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
+    <div class="summary-grid">
+      <div class="stat">
+        <span class="stat-label" data-t="stat.assets">총 자산</span>
+        <strong class="stat-value" id="sumAssets">-</strong>
+        <span class="stat-sub" id="sumAssetsNow">평가금액 입력 시 손익 표시</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label" data-t="stat.need">당장 필요한 돈</span>
+        <strong class="stat-value" id="sumJeonse">-</strong>
+        <span class="stat-sub" id="sumJeonseSub">전세 잔금·수수료 7,100만 + 차 1,689만</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label" data-t="stat.todos">오늘 할일</span>
+        <strong class="stat-value" id="sumTodos">0</strong>
+        <span class="stat-sub" id="sumTodosSub">남은 일이 없어요</span>
+      </div>
     </div>
   </section>
 
   <!-- ===== 목표 ===== -->
-  <section id="goals" class="block">
+  <section id="goals" class="block" data-sec="goals">
+    <div class="sec-tools" hidden><span class="sec-name">꿈과 목표</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
-      <h2>🌱 꿈과 목표</h2>
-      <p>내가 가고 싶은 곳. 카드를 누르면 할일에 바로 추가할 수 있어요.</p>
+      <h2 data-t="goals.h2">🌱 꿈과 목표</h2>
+      <p data-t="goals.p">내가 가고 싶은 곳. 카드를 누르면 자세히 적을 수 있어요.</p>
     </div>
     <div class="goal-grid" id="goalGrid"></div>
   </section>
 
   <!-- ===== 자산 ===== -->
-  <section id="money" class="block">
+  <section id="money" class="block" data-sec="money">
+    <div class="sec-tools" hidden><span class="sec-name">자산 관리</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
-      <h2>💰 자산 관리</h2>
-      <p>주식은 <b>보유 수량</b>만 적으면 현재가를 자동으로 가져와 평가금액을 계산해요. 현금과 토지는 평가금액을 직접 적어요.</p>
+      <h2 data-t="money.h2">💰 자산 관리</h2>
+      <p data-t="money.p">주식은 보유 수량만 적으면 현재가를 자동으로 가져와 평가금액을 계산해요. 현금과 토지는 평가금액을 직접 적어요.</p>
     </div>
 
     <div class="table-wrap">
@@ -83,8 +94,8 @@
 
     <div class="ladder card">
       <div class="ladder-head">
-        <h3>🥊 도장깨기</h3>
-        <p class="muted small">가용 자금이 <b>위에서부터 차례로</b> 채워집니다. 앞 단계를 다 채워야 다음 칸으로 넘어가요. 같은 돈이 두 곳에 겹쳐 세어지지 않습니다.</p>
+        <h3 data-t="ladder.h3">🥊 도장깨기</h3>
+        <p class="muted small" data-t="ladder.p">가용 자금이 위에서부터 차례로 채워집니다. 앞 단계를 다 채워야 다음 칸으로 넘어가요. 같은 돈이 두 곳에 겹쳐 세어지지 않습니다.</p>
       </div>
       <div class="ladder-cash">
         <label class="field inline">
@@ -103,21 +114,21 @@
 
     <div class="money-cards">
       <div class="card">
-        <h3>🏠 전세 자금 계획</h3>
+        <h3 data-t="jeonse.h3">🏠 전세 자금 계획</h3>
         <ul class="plan">
-          <li><span>보증금 총액</span><b>3억 원</b></li>
-          <li class="done"><span>✅ 계약금 납입</span><b>3,000만 원</b></li>
-          <li><span>🏦 전세대출 (예정)</span><b>2억 원</b></li>
-          <li class="need"><span>💸 잔금</span><b>7,000만 원</b></li>
-          <li class="need"><span>💸 중개수수료</span><b>100만 원</b></li>
+          <li><span data-t="jeonse.l1">보증금 총액</span><b>3억 원</b></li>
+          <li class="done"><span data-t="jeonse.l2">✅ 계약금 납입</span><b>3,000만 원</b></li>
+          <li><span data-t="jeonse.l3">🏦 전세대출 (예정)</span><b>2억 원</b></li>
+          <li class="need"><span data-t="jeonse.l4">💸 잔금</span><b>7,000만 원</b></li>
+          <li class="need"><span data-t="jeonse.l5">💸 중개수수료</span><b>100만 원</b></li>
         </ul>
         <p class="bar-note" id="jeonseNote"></p>
       </div>
 
       <div class="card">
-        <h3>🏡 증평 미암리 집 짓기</h3>
-        <p class="price">건축비 목표 3억 원</p>
-        <p class="muted">대지 300평 보유 (6,800만 원) · 이 땅 위에 집을 짓는 게 꿈</p>
+        <h3 data-t="house.h3">🏡 증평 미암리 집 짓기</h3>
+        <p class="price" data-t="house.price">건축비 목표 3억 원</p>
+        <p class="muted" data-t="house.p">대지 300평 보유 (6,800만 원) · 이 땅 위에 집을 짓는 게 꿈</p>
         <div class="bar"><div class="bar-fill" id="houseBar"></div></div>
         <p class="bar-note" id="houseNote"></p>
       </div>
@@ -125,19 +136,21 @@
   </section>
 
   <!-- ===== 일 ===== -->
-  <section id="work" class="block">
+  <section id="work" class="block" data-sec="work">
+    <div class="sec-tools" hidden><span class="sec-name">하는 일</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
-      <h2>🛠 하는 일</h2>
-      <p>지금 굴러가는 것들. "할일 +"를 누르면 오른쪽 목록에 태그가 붙어서 들어가요.</p>
+      <h2 data-t="work.h2">🛠 하는 일</h2>
+      <p data-t="work.p">지금 굴러가는 것들. 카드를 누르면 상태와 기록을 적을 수 있어요.</p>
     </div>
     <div class="work-grid" id="workGrid"></div>
   </section>
 
   <!-- ===== 달력 ===== -->
-  <section id="calendar" class="block">
+  <section id="calendar" class="block" data-sec="calendar">
+    <div class="sec-tools" hidden><span class="sec-name">달력</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
-      <h2>📅 달력</h2>
-      <p>날짜를 누르면 그 날 할일을 바로 적을 수 있어요.</p>
+      <h2 data-t="cal.h2">📅 달력</h2>
+      <p data-t="cal.p">날짜를 누르면 그 날 할일을 바로 적을 수 있어요.</p>
     </div>
     <div class="cal">
       <div class="cal-head">
@@ -154,14 +167,15 @@
   </section>
 
   <!-- ===== 나 ===== -->
-  <section id="me" class="block">
+  <section id="me" class="block" data-sec="me">
+    <div class="sec-tools" hidden><span class="sec-name">나</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
-      <h2>🙂 나</h2>
-      <p>몸, 말, 취미, 그리고 소중한 것.</p>
+      <h2 data-t="me.h2">🙂 나</h2>
+      <p data-t="me.p">몸, 말, 취미, 그리고 소중한 것.</p>
     </div>
     <div class="me-grid">
       <div class="card">
-        <h3>⚖️ 다이어트 → 44kg</h3>
+        <h3 data-t="diet.h3">⚖️ 다이어트 → 44kg</h3>
         <label class="field">
           <span>현재 체중 (kg)</span>
           <input type="number" step="0.1" min="30" max="150" id="weightInput" placeholder="예: 52.3">
@@ -171,30 +185,30 @@
       </div>
 
       <div class="card">
-        <h3>🗣 언어</h3>
+        <h3 data-t="lang.h3">🗣 언어</h3>
         <ul class="check-list" id="langList"></ul>
-        <p class="muted small">오늘 공부한 언어에 체크 · 매일 자정 리셋 · 연속일이 쌓여요</p>
+        <p class="muted small" data-t="lang.p">오늘 공부한 언어에 체크 · 매일 자정 리셋 · 연속일이 쌓여요</p>
       </div>
 
       <div class="card">
-        <h3>🎸 취미</h3>
+        <h3 data-t="hobby.h3">🎸 취미</h3>
         <ul class="tag-list">
-          <li>🥁 드럼 배우기</li>
-          <li>🎸 기타 배우기</li>
-          <li>💬 언어로 할 수 있는 무언가</li>
+          <li data-t="hobby.1">🥁 드럼 배우기</li>
+          <li data-t="hobby.2">🎸 기타 배우기</li>
+          <li data-t="hobby.3">💬 언어로 할 수 있는 무언가</li>
         </ul>
       </div>
 
       <div class="card warm">
-        <h3>💛 소중한 것</h3>
-        <p>가족.</p>
-        <p>소중한 사람들과 추억을 남기고, 함께 여행하는 것.</p>
-        <p class="muted small">아이는 낳고 싶지만, 결혼은 생각 없음.</p>
+        <h3 data-t="love.h3">💛 소중한 것</h3>
+        <p data-t="love.1">가족.</p>
+        <p data-t="love.2">소중한 사람들과 추억을 남기고, 함께 여행하는 것.</p>
+        <p class="muted small" data-t="love.3">아이는 낳고 싶지만, 결혼은 생각 없음.</p>
       </div>
     </div>
   </section>
 
-  <section id="sync" class="block">
+  <section id="sync" class="block" data-fixed>
     <div class="card sync-card">
       <h3>☁️ 동기화</h3>
       <p class="muted small">내용은 구글 계정에 저장돼서 폰과 컴퓨터에서 똑같이 보입니다. 주식 현재가도 여기서 가져와요. 기기마다 <b>PIN만 한 번</b> 넣으면 그다음부터는 바로 열립니다.</p>
@@ -227,9 +241,10 @@
     </div>
   </section>
 
-  <footer class="foot">
+  <footer class="foot" data-fixed>
     <button class="text-btn" id="exportBtn">데이터 내보내기</button>
     <label class="text-btn file-btn">데이터 불러오기<input type="file" id="importFile" accept="application/json" hidden></label>
+    <button class="text-btn" id="resetTexts">문구·순서 원래대로</button>
     <span class="muted small">연결 전에는 이 브라우저에만 저장돼요.</span>
   </footer>
 </main>
@@ -237,7 +252,7 @@
 <!-- ===== 할일 사이드바 ===== -->
 <aside class="side" id="side">
   <div class="side-head">
-    <h2>✅ 할일</h2>
+    <h2 data-t="side.h2">✅ 할일</h2>
     <span class="muted small" id="sideCount"></span>
   </div>
   <form class="todo-form" id="todoForm">
@@ -250,6 +265,53 @@
   </form>
   <div class="todo-groups" id="todoGroups"></div>
 </aside>
+</div>
+
+<!-- ===== 카드 상세 팝업 ===== -->
+<div class="modal" id="itemModal" hidden>
+  <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="imTitle">
+    <div class="im-head">
+      <input id="imEmoji" class="im-emoji" maxlength="4" placeholder="🙂" title="이모지">
+      <input id="imTitle" class="im-title" placeholder="제목" maxlength="60">
+      <button type="button" class="icon-btn" id="imClose" aria-label="닫기">×</button>
+    </div>
+    <textarea id="imDesc" rows="2" placeholder="한 줄 설명" maxlength="200"></textarea>
+    <div class="im-row">
+      <label class="im-field">할일 태그<input id="imTag" placeholder="예: 집" maxlength="20"></label>
+      <label class="im-field" id="imBarWrap">진행 표시
+        <select id="imBar">
+          <option value="">없음</option>
+          <option value="jeonse">전세 잔금 (도장깨기 1)</option>
+          <option value="car">캐스퍼 (도장깨기 2)</option>
+          <option value="house">집 짓기 (도장깨기 3)</option>
+          <option value="weight">체중 44kg</option>
+        </select>
+      </label>
+      <label class="im-field" id="imStatusWrap" hidden>상태
+        <select id="imStatus">
+          <option value="build">개발 중</option>
+          <option value="run">자동 운영</option>
+          <option value="todo">상용화 대기</option>
+          <option value="pause">잠시 멈춤</option>
+          <option value="done">완료</option>
+        </select>
+      </label>
+    </div>
+    <div class="im-row im-actions">
+      <button type="button" class="text-btn" id="imTodo">+ 할일</button>
+      <button type="button" class="text-btn" id="imLeft">◀ 앞으로</button>
+      <button type="button" class="text-btn" id="imRight">뒤로 ▶</button>
+      <span class="spacer"></span>
+      <button type="button" class="text-btn danger" id="imDelete">삭제</button>
+    </div>
+    <h4 class="im-notes-title">📝 기록</h4>
+    <div class="im-note-form">
+      <textarea id="imNoteText" rows="3" placeholder="생각, 진행 상황, 뭐든 적어요. Ctrl+Enter로 추가" maxlength="2000"></textarea>
+      <button type="button" class="primary" id="imNoteAdd">기록 추가</button>
+    </div>
+    <ul class="im-notes" id="imNotes"></ul>
+    <p class="muted small im-saved" id="imSaved"></p>
+  </div>
 </div>
 
 <!-- ===== PIN 팝업 ===== -->
@@ -267,6 +329,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260907b"></script>
+<script src="js/app.js?v=20260907c"></script>
 </body>
 </html>

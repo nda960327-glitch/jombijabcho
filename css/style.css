@@ -102,7 +102,7 @@ b, strong { font-weight: 700; }
 .file-btn { display: inline-block; }
 
 /* ---------- 요약 ---------- */
-.summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+/* .summary grid → .summary-grid 로 이동 */
 .stat {
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
   box-shadow: var(--shadow); padding: 16px 18px; display: flex; flex-direction: column; gap: 2px;
@@ -253,7 +253,6 @@ b, strong { font-weight: 700; }
   .layout { grid-template-columns: 1fr; }
   .side { position: static; max-height: none; order: -1; }
   .todo-groups { max-height: 360px; }
-  .summary { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
   .top-inner { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -362,3 +361,71 @@ b, strong { font-weight: 700; }
 
 .modal-ver { margin-top: 12px; font-size: .7rem; opacity: .6; }
 .link-btn { border: 0; background: none; color: var(--text-dim); text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; }
+
+/* ---------- 꾸미기 모드 ---------- */
+.edit-toggle { border: 1px solid var(--line-strong); background: var(--panel); border-radius: 999px; padding: 6px 12px; font-size: .82rem; cursor: pointer; color: var(--text-dim); }
+.edit-toggle:hover { border-color: var(--gold); color: #a9761c; background: var(--gold-soft); }
+body.editing .edit-toggle { background: var(--gold); border-color: var(--gold); color: #fff; }
+.edit-bar {
+  position: sticky; top: 61px; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: var(--gold-soft); border-bottom: 1px solid #f1e2bf; padding: 8px 24px; font-size: .84rem; color: #7a5411;
+}
+body.editing [data-t] { outline: 1.5px dashed var(--gold); outline-offset: 3px; border-radius: 4px; cursor: text; min-width: 1.5em; }
+body.editing [data-t]:focus { outline: 2px solid var(--gold); background: #fffdf5; }
+.sec-tools { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; padding: 6px 10px; background: var(--gold-soft); border-radius: 10px; font-size: .8rem; color: #7a5411; }
+.sec-tools .sec-name { font-weight: 700; margin-right: auto; }
+.sec-tools .icon-btn { width: 30px; height: 30px; font-size: .9rem; }
+.summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.summary { display: block; }
+@media (max-width: 1000px) { .summary-grid { grid-template-columns: 1fr; } }
+
+/* ---------- 카드 (목표/일) ---------- */
+.item { cursor: pointer; position: relative; }
+.item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.item .chip { margin-bottom: 4px; }
+.card-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 6px; }
+.card-meta { font-size: .74rem; white-space: nowrap; }
+.drag-handle { position: absolute; top: 10px; right: 12px; color: var(--text-dim); font-weight: 900; letter-spacing: -2px; cursor: grab; user-select: none; }
+.item.dragging { opacity: .4; }
+.item.drop-before { box-shadow: -4px 0 0 var(--accent); }
+.item.drop-after { box-shadow: 4px 0 0 var(--accent); }
+.add-card { border: 1.5px dashed var(--line-strong); background: transparent; box-shadow: none; text-align: left; cursor: pointer; font: inherit; color: var(--text-dim); align-items: flex-start; }
+.add-card:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); transform: none; box-shadow: none; }
+.add-card .goal-emoji { color: inherit; }
+.add-card h3 { color: inherit; }
+.chip.pause { background: #f0ebe3; color: var(--text-dim); }
+.chip.done { background: var(--accent-soft); color: var(--accent); }
+
+/* ---------- 카드 상세 팝업 ---------- */
+.modal-box.wide { max-width: 560px; text-align: left; max-height: calc(100vh - 40px); overflow-y: auto; }
+.im-head { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.modal-box.wide input, .modal-box.wide textarea, .modal-box.wide select {
+  width: 100%; border: 1px solid var(--line-strong); border-radius: 10px; padding: 8px 10px; font-size: .95rem;
+  background: #fdfbf7; letter-spacing: normal; text-align: left; font-family: inherit;
+}
+.modal-box.wide input:focus, .modal-box.wide textarea:focus, .modal-box.wide select:focus { outline: 0; border-color: var(--accent); background: #fff; }
+.im-emoji { width: 58px !important; text-align: center !important; font-size: 1.4rem !important; padding: 4px !important; flex: 0 0 58px; }
+.im-title { font-weight: 900 !important; font-size: 1.1rem !important; flex: 1; }
+.im-head .icon-btn { flex: 0 0 34px; }
+.modal-box.wide textarea { resize: vertical; line-height: 1.5; }
+.im-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; align-items: flex-end; }
+.im-field { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; color: var(--text-dim); flex: 1; min-width: 140px; }
+.im-actions { align-items: center; padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--line); }
+.im-actions .spacer { flex: 1; }
+.text-btn.danger:hover { border-color: var(--red); color: var(--red); background: var(--pink-soft); }
+.im-notes-title { font-size: .95rem; font-weight: 700; margin: 18px 0 8px; }
+.im-note-form { display: flex; flex-direction: column; gap: 8px; }
+.im-note-form .primary { align-self: flex-end; }
+.im-notes { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.im-notes li { background: #fdfbf7; border-radius: 10px; padding: 10px 12px; }
+.im-notes li.im-empty { background: none; text-align: center; padding: 14px; }
+.im-note-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.im-notes .todo-del { opacity: .5; }
+.im-notes li:hover .todo-del { opacity: 1; }
+.im-note-text { font-size: .92rem; line-height: 1.6; word-break: break-word; }
+.im-saved { margin-top: 10px; text-align: right; min-height: 1em; }
+@media (max-width: 600px) {
+  .edit-bar { top: 0; font-size: .78rem; padding: 8px 14px; }
+  .im-row { flex-direction: column; align-items: stretch; }
+  .im-actions { flex-direction: row; flex-wrap: wrap; }
+}

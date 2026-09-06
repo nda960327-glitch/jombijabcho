@@ -123,6 +123,7 @@ function getPrices_() {
         symbol: s.symbol,
         price: Number(meta.regularMarketPrice),
         prev: Number(meta.chartPreviousClose || meta.previousClose || 0),
+        marketTime: meta.regularMarketTime ? Number(meta.regularMarketTime) * 1000 : null,   // 마지막 체결 시각
         time: new Date().toISOString()
       };
     } catch (err) {
@@ -222,7 +223,7 @@ function loadState_() {
     });
   }
 
-  return {
+  var out = {
     todos: todos,
     qty: qty,
     now: now,
@@ -232,6 +233,20 @@ function loadState_() {
     useStocks: String(conf.useStocks || '') === 'Y',
     savedAt: conf.savedAt ? String(conf.savedAt) : null
   };
+  // 'json:이름' 으로 저장된 항목은 그대로 되살린다 (goals, works, order, texts …)
+  var chunks = {};
+  Object.keys(conf).forEach(function (k) {
+    if (k.indexOf('json:') !== 0) return;
+    var name = k.slice(5), idx = 0;
+    var m = name.match(/^(.*)#(d+)$/);
+    if (m) { name = m[1]; idx = Number(m[2]); }
+    (chunks[name] = chunks[name] || [])[idx] = String(conf[k] == null ? '' : conf[k]);
+  });
+  Object.keys(chunks).forEach(function (name) {
+    var v = jsonOr_(chunks[name].join(''), undefined);
+    if (v !== undefined) out[name] = v;
+  });
+  return out;
 }
 
 // ------------------------------------------------------------
@@ -289,6 +304,18 @@ function saveState_(st) {
     ['useStocks', st.useStocks ? 'Y' : ''],
     ['savedAt', new Date().toISOString()]
   ];
+  // 위에서 따로 다루지 않은 항목(goals, works, order, texts, 앞으로 생길 것)은 통째로 JSON 으로 보관
+  var SPECIAL = { todos: 1, qty: 1, now: 1, weight: 1, weightStart: 1, langLog: 1, useStocks: 1, savedAt: 1, showDone: 1 };
+  Object.keys(st).forEach(function (k) {
+    if (SPECIAL[k]) return;
+    var v = st[k];
+    if (v === undefined) return;
+    var txt = JSON.stringify(v === null ? null : v);
+    // 셀 한도(5만 자) 보호: 길면 여러 칸에 나눠 저장 (json:이름#0, json:이름#1 …)
+    var CH = 40000;
+    if (txt.length <= CH) conf.push(['json:' + k, txt]);
+    else for (var i = 0; i * CH < txt.length; i++) conf.push(['json:' + k + '#' + i, txt.slice(i * CH, (i + 1) * CH)]);
+  });
   shC.getRange(2, 1, conf.length, 2).setValues(conf);
 }
 
