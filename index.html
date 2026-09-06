@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260907f">
+<link rel="stylesheet" href="css/style.css?v=20260907h">
 </head>
 <body>
 
@@ -285,6 +285,11 @@
       <button type="button" class="primary" id="bdNew" hidden>＋ 새 글</button>
     </div>
 
+    <!-- 글 목록 -->
+    <div class="bd-view" id="bdViewList" hidden>
+      <ul class="post-list page" id="bdPosts"></ul>
+    </div>
+
     <!-- 글 보기 -->
     <div class="bd-view" id="bdViewPost" hidden>
       <article class="post page">
@@ -374,16 +379,21 @@
       <p class="muted small im-saved" id="imSaved"></p>
     </div>
 
-    <!-- 2) 글 목록 -->
-    <div class="im-view" id="imViewList" hidden>
-      <div class="board-head">
-        <button type="button" class="text-btn" id="bdBackCard">← 카드</button>
-        <h3 class="board-title" id="bdListTitle">기록</h3>
-        <button type="button" class="primary" id="bdNewFromList">＋ 새 글</button>
-      </div>
-      <ul class="post-list" id="bdPosts"></ul>
-    </div>
+  </div>
+</div>
 
+<!-- ===== 호로록 메모장 ===== -->
+<button type="button" class="memo-fab" id="memoFab" title="메모장 (아무거나 호로록)">📝</button>
+<div class="memo-panel" id="memoPanel" hidden>
+  <div class="memo-head">
+    <b>📝 메모장</b>
+    <span class="muted small" id="memoState">적는 대로 저장돼요</span>
+    <button type="button" class="icon-btn" id="memoClose" aria-label="닫기">×</button>
+  </div>
+  <textarea id="memoText" placeholder="아무거나 호로록. 생각난 것, 전화번호, 사야 할 것…&#10;자동으로 저장되고 폰에서도 똑같이 보여요." spellcheck="false"></textarea>
+  <div class="memo-foot">
+    <button type="button" class="text-btn" id="memoToTodo" title="첫 줄을 할일로 보내기">첫 줄 → 할일</button>
+    <button type="button" class="text-btn danger" id="memoClear">비우기</button>
   </div>
 </div>
 
@@ -402,6 +412,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260907f"></script>
+<script src="js/app.js?v=20260907h"></script>
 </body>
 </html>

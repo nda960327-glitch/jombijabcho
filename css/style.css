@@ -490,3 +490,44 @@ body.on-board .layout, body.on-board .edit-bar { display: none !important; }
   .post.page { padding: 20px 16px 24px; }
   .board-top .primary { order: 5; width: 100%; }
 }
+
+/* ---------- 목록 페이지 ---------- */
+.post-list.page li { padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); gap: 14px; }
+.post-list.page li:hover { border-color: var(--accent); }
+.post-list.page .post-thumb { width: 64px; height: 64px; border-radius: 10px; }
+.post-list.page .post-item-title { font-size: 1rem; white-space: normal; }
+.post-list.page .post-item-snip { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.post-list.page li.im-empty { background: none; border: 0; box-shadow: none; padding: 40px 0; }
+
+/* ---------- 호로록 메모장 ---------- */
+.memo-fab {
+  position: fixed; right: 20px; bottom: 20px; z-index: 150;
+  width: 54px; height: 54px; border-radius: 999px; border: 0; cursor: pointer;
+  background: var(--gold); color: #fff; font-size: 1.5rem; line-height: 1;
+  box-shadow: 0 8px 22px rgba(60,45,20,.28); transition: transform .15s, background .15s;
+}
+.memo-fab:hover { transform: translateY(-2px); }
+.memo-fab.open { background: var(--text); }
+.memo-fab.has-memo::after { content: ''; position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; border-radius: 999px; background: var(--red); border: 2px solid #fff; }
+.memo-panel {
+  position: fixed; right: 20px; bottom: 86px; z-index: 150;
+  width: 360px; max-width: calc(100vw - 40px); height: 380px; max-height: calc(100vh - 110px);
+  background: #fffdf5; border: 1px solid #f1e2bf; border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(43,39,35,.25); display: flex; flex-direction: column;
+  animation: popIn .18s ease;
+}
+.memo-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 8px 16px; }
+.memo-head #memoState { flex: 1; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.memo-head .icon-btn { flex: 0 0 30px; width: 30px; height: 30px; }
+.memo-panel textarea {
+  flex: 1; margin: 0 12px; border: 0; background: transparent; resize: none; padding: 4px 4px;
+  font-size: .98rem; line-height: 1.75; font-family: inherit; color: var(--text);
+  background-image: repeating-linear-gradient(transparent, transparent 1.74em, #f1e2bf 1.74em, #f1e2bf calc(1.74em + 1px));
+  background-attachment: local;
+}
+.memo-panel textarea:focus { outline: 0; }
+.memo-foot { display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px 12px; }
+@media (max-width: 600px) {
+  .memo-fab { right: 14px; bottom: 14px; width: 50px; height: 50px; }
+  .memo-panel { right: 10px; left: 10px; bottom: 74px; width: auto; max-width: none; height: 55vh; }
+}

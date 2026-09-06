@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260907f';
+  const APP_VER = '20260907h';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -64,7 +64,7 @@
   /* ---------- 상태 ---------- */
   const defaultState = () => ({
     todos: [], qty: {}, now: {}, weight: null, weightStart: null, langLog: {}, showDone: false, useStocks: false,
-    goals: null, works: null, order: null, texts: {}
+    goals: null, works: null, order: null, texts: {}, memo: ''
   });
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   let state = load();
@@ -98,6 +98,7 @@
     s.order = s.order.filter(k => SECTIONS.indexOf(k) >= 0);
     SECTIONS.forEach(k => { if (s.order.indexOf(k) < 0) s.order.push(k); });
     if (!s.texts || typeof s.texts !== 'object') s.texts = {};
+    if (typeof s.memo !== 'string') s.memo = '';
     return s;
   }
   function saveLocal() {
@@ -466,7 +467,7 @@
       return;
     }
     const notesBtn = e.target.closest('.card-notes');
-    if (notesBtn) { e.stopPropagation(); openItemModal(notesBtn.dataset.kind, notesBtn.dataset.id); renderList(); showView('list'); return; }
+    if (notesBtn) { e.stopPropagation(); current = { kind: notesBtn.dataset.kind, id: notesBtn.dataset.id }; openList(); return; }
     const add = e.target.closest('.add-card');
     if (add) { addItem(add.dataset.add); return; }
     const card = e.target.closest('.item[data-id]');
@@ -586,13 +587,15 @@
   const PHOTO_LIMIT = 6;      // 글 하나당 사진 수
   function showView(v) {
     board.view = v;
-    const onPage = v === 'post' || v === 'edit';
-    ['Card', 'List'].forEach(n => { $('#imView' + n).hidden = onPage || (n.toLowerCase() !== v); });
+    const onPage = v === 'list' || v === 'post' || v === 'edit';
+    $('#imViewCard').hidden = onPage;
+    $('#bdViewList').hidden = v !== 'list';
     $('#bdViewPost').hidden = v !== 'post';
     $('#bdViewEdit').hidden = v !== 'edit';
     $('#bdEdit').hidden = v !== 'post';
     $('#bdDelete').hidden = v !== 'post';
-    $('#bdNew').hidden = v !== 'post';
+    $('#bdNew').hidden = !(v === 'list' || v === 'post');
+    $('#bdBackList').textContent = v === 'list' ? '← 대시보드' : '← 목록으로';
     document.body.classList.toggle('on-board', onPage);
     $('#boardPage').hidden = !onPage;
     if (onPage) {
@@ -617,21 +620,22 @@
     if (replace) route();
   }
   function route() {
-    const m = location.hash.match(/^#(post|write|edit)\/(goal|work)\/([^/]+)(?:\/([^/]+))?$/);
+    const m = location.hash.match(/^#(list|post|write|edit)\/(goal|work)\/([^/]+)(?:\/([^/]+))?$/);
     if (!m) {
-      // 페이지에서 나옴 → 대시보드. 카드가 있었다면 목록 창을 다시 연다.
+      // 페이지에서 나옴 → 대시보드. 카드가 있었다면 카드 창을 다시 연다.
       if (document.body.classList.contains('on-board')) {
         const back = current;
         $('#boardPage').hidden = true; document.body.classList.remove('on-board');
         board.draft = null;
-        if (back && findItem(back.kind, back.id)) { openItemModal(back.kind, back.id); renderList(); showView('list'); }
+        if (back && findItem(back.kind, back.id)) openItemModal(back.kind, back.id);
       }
       return;
     }
     const kind = m[2], id = m[3], pid = m[4];
     if (!findItem(kind, id)) { history.replaceState(null, '', location.pathname + location.search); route(); return; }
     current = { kind, id };
-    if (m[1] === 'post') renderPostPage(pid);
+    if (m[1] === 'list') { renderList(); showView('list'); }
+    else if (m[1] === 'post') renderPostPage(pid);
     else if (m[1] === 'edit') renderEditorPage(pid);
     else renderEditorPage(null);
   }
@@ -659,10 +663,10 @@
   }
   function renderList() {
     const it = curItem(); if (!it) return;
-    $('#bdListTitle').textContent = `📝 ${it.title || '기록'}`;
     const ps = postsOf(it);
     $('#bdPosts').innerHTML = ps.length ? ps.map(postItemHtml).join('') : '<li class="im-empty muted small">아직 글이 없어요.</li>';
   }
+  function openList(replace) { if (!current) return; go(`list/${current.kind}/${current.id}`, replace); }
   function openPost(pid, replace) { if (!current) return; go(`post/${current.kind}/${current.id}/${pid}`, replace); }
   function openEditor(pid) { if (!current) return; go(pid ? `edit/${current.kind}/${current.id}/${pid}` : `write/${current.kind}/${current.id}`); }
   function renderPostPage(pid) {
@@ -745,12 +749,10 @@
     const b = e.target.closest('.thumb-x'); if (!b || !board.draft) return;
     board.draft.photos.splice(Number(b.dataset.i), 1); renderThumbs();
   });
-  $('#imOpenBoard').addEventListener('click', () => { renderList(); showView('list'); });
+  $('#imOpenBoard').addEventListener('click', () => openList());
   $('#imNewPost').addEventListener('click', () => openEditor(null));
-  $('#bdNewFromList').addEventListener('click', () => openEditor(null));
   $('#bdNew').addEventListener('click', () => openEditor(null));
-  $('#bdBackCard').addEventListener('click', () => { renderTeaser(); showView('card'); });
-  $('#bdBackList').addEventListener('click', () => go('', true));
+  $('#bdBackList').addEventListener('click', () => { if (board.view === 'list') go('', true); else openList(true); });
   $('#bdEdit').addEventListener('click', () => openEditor(board.postId));
   $('#bdDelete').addEventListener('click', () => {
     const it = curItem(); if (!it || !board.postId) return;
@@ -758,12 +760,12 @@
     it.notes = it.notes.filter(x => x.id !== board.postId);
     board.postId = null;
     touched(); renderTeaser(); renderList();
-    go('', true);
+    openList(true);
   });
   $('#bdCancel').addEventListener('click', () => {
     const wasEditing = board.draft && board.draft.id;
     board.draft = null;
-    if (wasEditing) openPost(wasEditing, true); else go('', true);
+    if (wasEditing) openPost(wasEditing, true); else openList(true);
   });
   $('#bdSave').addEventListener('click', saveDraft);
   $('#bdBody').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDraft(); } });
@@ -962,6 +964,53 @@
     save(); renderWeight(); renderGoals();
   });
 
+  /* ---------- 호로록 메모장 ---------- */
+  const memoText = $('#memoText');
+  let memoTimer = null;
+  function renderMemo() {
+    if (document.activeElement !== memoText) memoText.value = state.memo || '';
+    $('#memoFab').classList.toggle('has-memo', !!(state.memo || '').trim());
+  }
+  function openMemo() {
+    $('#memoPanel').hidden = false;
+    $('#memoFab').classList.add('open');
+    renderMemo();
+    setTimeout(() => { memoText.focus(); memoText.setSelectionRange(memoText.value.length, memoText.value.length); }, 40);
+  }
+  function closeMemo() {
+    $('#memoPanel').hidden = true;
+    $('#memoFab').classList.remove('open');
+  }
+  $('#memoFab').addEventListener('click', () => { $('#memoPanel').hidden ? openMemo() : closeMemo(); });
+  $('#memoClose').addEventListener('click', closeMemo);
+  memoText.addEventListener('input', () => {
+    state.memo = memoText.value;
+    $('#memoState').textContent = '적는 중…';
+    clearTimeout(memoTimer);
+    memoTimer = setTimeout(() => {
+      save();
+      $('#memoState').textContent = pin ? '저장됨 · ' + new Date().toLocaleTimeString('ko-KR') : '이 기기에 저장됨';
+      $('#memoFab').classList.toggle('has-memo', !!state.memo.trim());
+    }, 700);
+  });
+  $('#memoClear').addEventListener('click', () => {
+    if (!state.memo.trim() || !confirm('메모장을 비울까요?')) return;
+    state.memo = ''; memoText.value = ''; save(); renderMemo();
+    $('#memoState').textContent = '비웠어요';
+    memoText.focus();
+  });
+  $('#memoToTodo').addEventListener('click', () => {
+    const lines = (memoText.value || '').split('\n');
+    const i = lines.findIndex(l => l.trim());
+    if (i < 0) return;
+    const line = lines[i].trim();
+    lines.splice(i, 1);
+    state.memo = lines.join('\n'); memoText.value = state.memo;
+    state.todos.push({ id: uid(), text: line, date: null, done: false, created: Date.now() });
+    save(); renderTodos(); renderCalendar(); renderMemo();
+    $('#memoState').textContent = '할일로 보냈어요: ' + line.slice(0, 20);
+  });
+
   /* ---------- 언어 ---------- */
   function renderLang() {
     const today = todayStr();
@@ -1026,7 +1075,7 @@
       langLog: remote.langLog || {},
       useStocks: !!remote.useStocks,
       showDone: state.showDone,
-      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts')
+      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo')
     }));
     saveLocal();
     return true;
@@ -1145,8 +1194,9 @@
   $('#pinModal').addEventListener('click', e => { if (e.target === $('#pinModal')) closePinModal(); });
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
+    if (!$('#memoPanel').hidden) { closeMemo(); return; }
     if (modalOpen) closePinModal();
-    else if (document.body.classList.contains('on-board')) go('', true);
+    else if (document.body.classList.contains('on-board')) { if (board.view === 'list') go('', true); else openList(true); }
     else if (itemOpen) closeItemModal();
   });
   $('#syncBadge').addEventListener('click', e => {
@@ -1216,8 +1266,11 @@
   /* ---------- 시작 ---------- */
   function renderAll() {
     applyTexts(); applyOrder();
-    renderHeader(); renderAssets(); renderWork(); renderCalendar(); renderTodos(); renderWeight(); renderLang();
-    if (document.body.classList.contains('on-board') && board.view === 'post' && board.postId) renderPostPage(board.postId);
+    renderHeader(); renderAssets(); renderWork(); renderCalendar(); renderTodos(); renderWeight(); renderLang(); renderMemo();
+    if (document.body.classList.contains('on-board')) {
+      if (board.view === 'post' && board.postId) renderPostPage(board.postId);
+      else if (board.view === 'list') renderList();
+    }
   }
   renderAll();
   route();
