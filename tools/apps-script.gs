@@ -34,7 +34,7 @@
  * 기존 시트를 지정해도 안전합니다. 아래 탭 이름이 모두 MY_ 로 시작해서
  * 원래 있던 할일·프로젝트·업무일지 탭은 건드리지 않고 새 탭만 추가합니다.
  */
-var SHEET_ID  = '';
+var SHEET_ID  = '1IW65a8-4D4nkGQfbNSrVRZQYRV4128iRTYtK0d7FJi4';
 
 var SS_NAME   = 'MY HOME 데이터';
 var TAB_TODO  = 'MY_할일';
