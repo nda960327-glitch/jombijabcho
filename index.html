@@ -197,23 +197,32 @@
   <section id="sync" class="block">
     <div class="card sync-card">
       <h3>☁️ 동기화</h3>
-      <p class="muted small">구글 계정에 저장하면 폰과 컴퓨터에서 같은 내용을 봅니다. 주식 현재가도 여기서 가져와요.</p>
+      <p class="muted small">내용은 구글 계정에 저장돼서 폰과 컴퓨터에서 똑같이 보입니다. 주식 현재가도 여기서 가져와요. 기기마다 <b>PIN만 한 번</b> 넣으면 그다음부터는 바로 열립니다.</p>
       <div class="sync-row">
-        <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" spellcheck="false">
-        <button class="primary" id="apiSave">연결</button>
+        <input type="password" id="pinInput" placeholder="PIN" inputmode="numeric" autocomplete="current-password" maxlength="32">
+        <button class="primary" id="pinSave">잠금 풀기</button>
         <button class="text-btn" id="apiSync">지금 동기화</button>
+        <button class="text-btn" id="pinForget" hidden>이 기기에서 잠그기</button>
       </div>
       <p class="sync-state" id="syncState">아직 연결되지 않음 · 지금은 이 브라우저에만 저장됩니다.</p>
       <details class="sync-help">
-        <summary>연결하는 방법 (한 번만)</summary>
+        <summary>PIN을 정하거나 바꾸려면</summary>
         <ol>
-          <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com</a>에서 새 프로젝트를 만들어요.</li>
-          <li>저장소의 <code>tools/apps-script.gs</code> 내용을 전부 복사해 붙여넣고 저장해요.</li>
-          <li>[배포] → [새 배포] → 유형 ⚙️ → [웹 앱], 실행 <b>나</b>, 액세스 <b>모든 사용자</b> → 배포.</li>
-          <li>나온 주소를 위 칸에 붙여넣고 [연결]을 눌러요.</li>
+          <li><a href="https://script.google.com/home" target="_blank" rel="noopener">script.google.com</a>에서 내 프로젝트를 열어요.</li>
+          <li>맨 위 <code>var PIN = '';</code> 줄에 나만 아는 숫자를 넣어요. 예: <code>var PIN = '482913';</code></li>
+          <li>저장한 뒤 [배포] → [배포 관리] → ✏️ → 버전 <b>새 버전</b> → [배포].</li>
+          <li>여기로 돌아와 그 PIN을 넣고 [잠금 풀기]를 눌러요.</li>
         </ol>
-        <p class="muted small">시트는 자동으로 만들어져요. 예전에 쓰던 시트를 그대로 쓰고 싶으면 스크립트 위쪽 <code>SHEET_ID</code> 에 그 시트 ID만 넣으면 됩니다. 새 탭은 <code>MY_</code> 로 시작해서 원래 있던 탭은 건드리지 않아요.</p>
-        <p class="muted small">이 주소는 깃허브에 올라가지 않고 이 브라우저에만 저장돼요. 주소를 아는 사람은 내용을 볼 수 있으니 공유하지 마세요.</p>
+        <p class="muted small">주소는 코드에 들어 있지만 PIN은 들어 있지 않아요. PIN을 모르면 누구도 내용을 읽거나 지울 수 없습니다. 반드시 <b>새 버전</b>으로 배포하세요. [새 배포]를 누르면 주소가 바뀝니다.</p>
+        <p class="muted small">데이터는 기존 구글시트의 <code>MY_할일</code>, <code>MY_자산</code>, <code>MY_설정</code> 탭에 쌓여요. 원래 있던 탭은 건드리지 않습니다.</p>
+      </details>
+      <details class="sync-help">
+        <summary>주소가 바뀌었다면</summary>
+        <div class="sync-row">
+          <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" spellcheck="false">
+          <button class="text-btn" id="apiSave">주소 바꾸기</button>
+        </div>
+        <p class="muted small">비워두고 저장하면 기본 주소로 돌아갑니다.</p>
       </details>
     </div>
   </section>

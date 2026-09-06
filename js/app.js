@@ -8,6 +8,13 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api';
+  const PIN_KEY = 'myhome.pin';
+  /**
+   * 저장 서버 주소.
+   * ⚠️ Apps Script 쪽에 PIN을 설정하고 배포한 뒤에 여기에 주소를 넣으세요.
+   * PIN 검사가 있는 버전이면 주소가 공개돼도 안전합니다. PIN이 없으면 누구나 읽고 지울 수 있습니다.
+   */
+  const DEFAULT_API = '';
 
   /* ---------- 고정 데이터 ---------- */
   const ASSETS = [
@@ -57,11 +64,15 @@
   const defaultState = () => ({ todos: [], qty: {}, now: {}, weight: null, weightStart: null, langLog: {}, showDone: false, useStocks: false });
   let state = load();
   let prices = {};          // { emtec: {price, prev, name}, ... }
-  let apiUrl = '';
+  let apiUrl = DEFAULT_API;
+  let pin = '';
   let syncing = false;
   let pendingSave = null;
 
-  try { apiUrl = localStorage.getItem(API_KEY) || ''; } catch (e) { apiUrl = ''; }
+  try {
+    apiUrl = localStorage.getItem(API_KEY) || DEFAULT_API;
+    pin = localStorage.getItem(PIN_KEY) || '';
+  } catch (e) { apiUrl = DEFAULT_API; pin = ''; }
 
   function load() {
     try {
@@ -76,7 +87,7 @@
   /** 로컬에 먼저 저장하고, 연결돼 있으면 1.5초 뒤 웹에도 저장 */
   function save() {
     saveLocal();
-    if (!apiUrl) return;
+    if (!pin) return;
     clearTimeout(pendingSave);
     setSync('저장 대기 중…', 'wait');
     pendingSave = setTimeout(pushToCloud, 1500);
@@ -202,7 +213,7 @@
     // 시세 안내문
     const note = $('#quoteNote');
     const any = Object.keys(prices).length;
-    if (!apiUrl) note.textContent = '시세를 자동으로 가져오려면 아래 ☁️ 동기화를 연결해 주세요.';
+    if (!pin) note.textContent = '시세를 자동으로 가져오려면 아래 ☁️ 동기화에서 PIN을 넣어주세요.';
     else if (!any) note.textContent = '시세를 불러오는 중…';
     else {
       const t = prices.emtec && prices.emtec.time ? new Date(prices.emtec.time) : new Date();
@@ -533,21 +544,36 @@
     const el = $('#syncState'), badge = $('#syncBadge');
     el.textContent = msg;
     el.className = 'sync-state ' + (kind || '');
-    const icon = { ok: '☁️ 저장됨', wait: '☁️ 저장 중…', err: '⚠️ 오류', none: '☁️ 미연결' }[kind || 'none'];
-    badge.textContent = icon;
+    badge.textContent = { ok: '☁️ 저장됨', wait: '☁️ 저장 중…', err: '⚠️ 오류', none: '🔒 잠김' }[kind || 'none'];
     badge.className = 'sync-badge ' + (kind || 'none');
+    $('#pinForget').hidden = !pin;
+    $('#pinInput').value = '';
+    $('#pinInput').placeholder = pin ? '잠금 해제됨' : 'PIN';
+  }
+
+  /** Apps Script 는 GET 으로 데이터를 주지 않는다. 모두 POST + PIN. */
+  async function callApi(action, extra) {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // preflight 회피
+      body: JSON.stringify(Object.assign({ action, pin }, extra || {}))
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      const err = new Error(data.error || '서버 오류');
+      err.badPin = !!data.badPin;
+      throw err;
+    }
+    return data;
   }
 
   async function pullFromCloud(silent) {
-    if (!apiUrl) return;
+    if (!pin) return;
     if (!silent) setSync('불러오는 중…', 'wait');
     try {
-      const res = await fetch(apiUrl + (apiUrl.indexOf('?') < 0 ? '?' : '&') + 'action=load&_=' + Date.now(), { cache: 'no-store' });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || '서버 오류');
+      const data = await callApi('load');
       prices = data.prices || {};
       const remote = data.state || {};
-      // 원격에 내용이 있으면 그것을 기준으로 삼는다
       if ((remote.todos && remote.todos.length) || remote.savedAt) {
         state = Object.assign(defaultState(), {
           todos: remote.todos || [],
@@ -564,43 +590,64 @@
       renderAll();
       setSync(`불러옴 · ${new Date().toLocaleTimeString('ko-KR')}`, 'ok');
     } catch (err) {
-      setSync('불러오기 실패: ' + err.message + ' (이 기기 저장본을 보는 중)', 'err');
-      renderAll();
+      if (err.badPin) forgetPin(err.message);
+      else { setSync('불러오기 실패: ' + err.message + ' (이 기기 저장본을 보는 중)', 'err'); renderAll(); }
     }
   }
 
   async function pushToCloud() {
-    if (!apiUrl || syncing) return;
+    if (!pin || syncing) return;
     syncing = true;
     setSync('저장 중…', 'wait');
     try {
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // preflight 회피
-        body: JSON.stringify({ action: 'save', state })
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || '서버 오류');
+      await callApi('save', { state });
       setSync(`저장됨 · ${new Date().toLocaleTimeString('ko-KR')}`, 'ok');
     } catch (err) {
-      setSync('저장 실패: ' + err.message + ' (이 기기에는 저장돼 있어요)', 'err');
+      if (err.badPin) forgetPin(err.message);
+      else setSync('저장 실패: ' + err.message + ' (이 기기에는 저장돼 있어요)', 'err');
     } finally { syncing = false; }
   }
 
+  function forgetPin(msg) {
+    pin = '';
+    try { localStorage.removeItem(PIN_KEY); } catch (e) {}
+    prices = {};
+    setSync(msg || '잠겼습니다. PIN을 넣어주세요.', 'none');
+    renderAll();
+  }
+
+  function unlock() {
+    if (!apiUrl) {
+      setSync('저장 서버 주소가 아직 없어요. 아래 [주소가 바뀌었다면]을 열어 주소를 넣어주세요.', 'none');
+      return;
+    }
+    const v = $('#pinInput').value.trim();
+    if (!v) { setSync('PIN을 넣어주세요.', 'none'); $('#pinInput').focus(); return; }
+    pin = v;
+    try { localStorage.setItem(PIN_KEY, v); } catch (e) {}
+    pullFromCloud();
+  }
+  $('#pinSave').addEventListener('click', unlock);
+  $('#pinInput').addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.keyCode === 13) && !e.isComposing) { e.preventDefault(); unlock(); }
+  });
+  $('#pinForget').addEventListener('click', () => {
+    forgetPin('이 기기에서 잠갔어요. 다시 열려면 PIN을 넣으세요.');
+  });
+  $('#apiSync').addEventListener('click', () => {
+    if (!pin) { setSync('먼저 PIN을 넣어주세요.', 'none'); $('#pinInput').focus(); return; }
+    pushToCloud().then(() => pullFromCloud(true));
+  });
   $('#apiSave').addEventListener('click', () => {
     const v = $('#apiUrl').value.trim();
-    if (v && !/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec/.test(v)) {
+    if (v && (v.indexOf('https://script.google.com/macros/s/') !== 0 || v.slice(-5) !== '/exec')) {
       alert('주소 형식이 달라요.\nhttps://script.google.com/macros/s/…/exec 형태여야 합니다.');
       return;
     }
-    apiUrl = v;
+    apiUrl = v || DEFAULT_API;
     try { v ? localStorage.setItem(API_KEY, v) : localStorage.removeItem(API_KEY); } catch (e) {}
-    if (!v) { prices = {}; setSync('연결 해제됨 · 이 브라우저에만 저장됩니다.', 'none'); renderAll(); return; }
-    pullFromCloud();
-  });
-  $('#apiSync').addEventListener('click', () => {
-    if (!apiUrl) { alert('먼저 주소를 넣고 [연결]을 눌러주세요.'); return; }
-    pushToCloud().then(() => pullFromCloud(true));
+    setSync('주소를 바꿨어요. PIN을 다시 넣어주세요.', 'none');
+    if (pin) pullFromCloud();
   });
 
   /* ---------- 내보내기 / 불러오기 ---------- */
@@ -630,10 +677,12 @@
     renderHeader(); renderAssets(); renderWork(); renderCalendar(); renderTodos(); renderWeight(); renderLang();
   }
   renderAll();
-  if (apiUrl) { $('#apiUrl').value = apiUrl; pullFromCloud(); }
-  else setSync('아직 연결되지 않음 · 지금은 이 브라우저에만 저장됩니다.', 'none');
+  if (apiUrl !== DEFAULT_API) $('#apiUrl').value = apiUrl;
+  if (pin && apiUrl) pullFromCloud();
+  else if (!apiUrl) setSync('저장 서버 주소가 아직 설정되지 않았어요.', 'none');
+  else setSync('PIN을 넣으면 저장된 내용을 불러옵니다. 지금은 이 브라우저 저장본만 보여요.', 'none');
 
   // 30분마다 시세 갱신
-  setInterval(() => { if (apiUrl && !document.hidden) pullFromCloud(true); }, 30 * 60 * 1000);
+  setInterval(() => { if (pin && !document.hidden) pullFromCloud(true); }, 30 * 60 * 1000);
   window.addEventListener('resize', (() => { let t; return () => { clearTimeout(t); t = setTimeout(renderCalendar, 150); }; })());
 })();

@@ -12,16 +12,17 @@
  *  4. "다음 사용자 인증 정보로 실행": 나
  *     "액세스 권한이 있는 사용자": 모든 사용자   → [배포]
  *     (권한 허용 창이 뜨면 → 고급 → 프로젝트로 이동 → 허용)
- *  5. 나온 웹 앱 URL(https://script.google.com/macros/s/…/exec)을 복사해서
- *     대시보드 맨 아래 [☁️ 동기화] 칸에 붙여넣고 저장
+ *  5. 아래 PIN 을 내가 쓸 숫자로 바꾸고 저장 → 배포
+ *
+ * ⭐ 가장 중요: 아래 PIN 을 반드시 나만 아는 값으로 바꾸세요.
+ *    사이트 주소는 공개돼 있지만, 이 PIN 을 모르면 아무것도 읽거나 쓸 수 없습니다.
+ *    PIN 은 이 편집기 안에만 있고 깃허브에는 올라가지 않습니다.
  *
  * 기존 시트를 쓰고 싶다면 아래 SHEET_ID 에 시트 ID를 넣으세요 (선택).
  * 넣지 않으면 시트를 알아서 새로 만듭니다.
  *
  * 코드를 고친 뒤에는 [배포] → [배포 관리] → ✏️ → 버전: 새 버전 → [배포] 해야 반영됩니다.
- *
- * ⚠️ 이 URL을 아는 사람은 저장된 내용을 볼 수 있습니다. 남에게 공유하지 마세요.
- *    URL은 깃허브에 올라가지 않고, 각 기기의 브라우저에만 저장됩니다.
+ *    (이렇게 하면 주소가 그대로 유지됩니다. [새 배포]를 누르면 주소가 바뀌어요.)
  * ============================================================
  */
 
@@ -34,6 +35,13 @@
  * 기존 시트를 지정해도 안전합니다. 아래 탭 이름이 모두 MY_ 로 시작해서
  * 원래 있던 할일·프로젝트·업무일지 탭은 건드리지 않고 새 탭만 추가합니다.
  */
+/**
+ * ⭐ 나만 아는 값으로 바꾸세요. 숫자든 글자든 됩니다. (예: '482913')
+ * 이 값을 모르면 누구도 내 자산·할일을 읽거나 지울 수 없습니다.
+ * 비워두면 아무나 접근할 수 있으니 반드시 채우세요.
+ */
+var PIN = '';
+
 var SHEET_ID  = '1IW65a8-4D4nkGQfbNSrVRZQYRV4128iRTYtK0d7FJi4';
 
 var SS_NAME   = 'MY HOME 데이터';
@@ -50,29 +58,45 @@ var STOCKS = {
 // ------------------------------------------------------------
 // 진입점
 // ------------------------------------------------------------
+/** 브라우저로 주소만 열었을 때. 데이터는 절대 주지 않는다. */
 function doGet(e) {
-  var action = (e && e.parameter && e.parameter.action) || 'load';
-  try {
-    if (action === 'prices') return json_({ ok: true, prices: getPrices_() });
-    return json_({ ok: true, state: loadState_(), prices: getPrices_(), sheetUrl: getSS_().getUrl() });
-  } catch (err) {
-    return json_({ ok: false, error: String(err && err.message || err) });
-  }
+  return json_({ ok: true, msg: 'MY HOME API 작동 중', needPin: true });
 }
 
 function doPost(e) {
-  var lock = LockService.getScriptLock();
-  try { lock.waitLock(15000); } catch (x) { return json_({ ok: false, error: '다른 저장이 진행 중입니다' }); }
-  try {
-    var body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    if (body.action !== 'save') throw new Error('알 수 없는 action: ' + body.action);
-    saveState_(body.state || {});
-    return json_({ ok: true, savedAt: new Date().toISOString() });
-  } catch (err) {
-    return json_({ ok: false, error: String(err && err.message || err) });
-  } finally {
-    try { lock.releaseLock(); } catch (x) {}
+  var body;
+  try { body = JSON.parse((e && e.postData && e.postData.contents) || '{}'); }
+  catch (x) { return json_({ ok: false, error: '요청을 읽지 못했습니다' }); }
+
+  // --- PIN 확인 ---
+  if (!PIN) return json_({ ok: false, badPin: true, error: '스크립트에 PIN이 설정되지 않았습니다. Apps Script 편집기에서 PIN을 정하고 다시 배포해 주세요.' });
+  if (String(body.pin || '') !== String(PIN)) {
+    Utilities.sleep(700);   // 무차별 대입 늦추기
+    return json_({ ok: false, badPin: true, error: 'PIN이 맞지 않습니다' });
   }
+
+  if (body.action === 'load') {
+    try {
+      return json_({ ok: true, state: loadState_(), prices: getPrices_(), sheetUrl: getSS_().getUrl() });
+    } catch (err) {
+      return json_({ ok: false, error: String(err && err.message || err) });
+    }
+  }
+
+  if (body.action === 'save') {
+    var lock = LockService.getScriptLock();
+    try { lock.waitLock(15000); } catch (x) { return json_({ ok: false, error: '다른 저장이 진행 중입니다' }); }
+    try {
+      saveState_(body.state || {});
+      return json_({ ok: true, savedAt: new Date().toISOString() });
+    } catch (err) {
+      return json_({ ok: false, error: String(err && err.message || err) });
+    } finally {
+      try { lock.releaseLock(); } catch (x) {}
+    }
+  }
+
+  return json_({ ok: false, error: '알 수 없는 action: ' + body.action });
 }
 
 // ------------------------------------------------------------
