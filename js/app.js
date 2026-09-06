@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908f';
+  const APP_VER = '20260908g';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -65,7 +65,7 @@
   /* ---------- 상태 ---------- */
   const defaultState = () => ({
     todos: [], qty: {}, now: {}, weight: null, weightStart: null, langLog: {}, showDone: false, useStocks: false,
-    goals: null, works: null, order: null, texts: {}, memo: '', diary: null, events: [], days: {}, showTodos: true, months: {}, years: {}, panels: {}
+    goals: null, works: null, order: null, texts: {}, memo: '', diary: null, events: [], days: {}, showTodos: true, months: {}, years: {}, panels: {}, treeCounts: true
   });
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   let state = load();
@@ -112,6 +112,7 @@
     if (!s.days || typeof s.days !== 'object') s.days = {};
     if (typeof s.showTodos !== 'boolean') s.showTodos = true;
     if (!s.panels || typeof s.panels !== 'object') s.panels = {};
+    if (typeof s.treeCounts !== 'boolean') s.treeCounts = true;
     if (!s.years || typeof s.years !== 'object') s.years = {};
     Object.keys(s.years).forEach(k => { const m = s.years[k]; if (!m || typeof m !== 'object') { delete s.years[k]; return; } if (!Array.isArray(m.items)) m.items = []; m.items.forEach(i => { if (!i.id) i.id = uid(); }); if (typeof m.memo !== 'string') m.memo = ''; });
     if (!s.months || typeof s.months !== 'object') s.months = {};
@@ -1564,15 +1565,41 @@
       return `<li class="tree-card ${it.collapsed ? 'collapsed' : ''} ${it.hidden ? 'is-hidden' : ''}" data-kind="${kind}" data-id="${it.id}">
         <div class="tree-row">
           <button type="button" class="tw-btn" data-act="toggle" title="${it.collapsed ? '펼치기' : '접기'}">${it.collapsed ? '▸' : '▾'}</button>
-          <button type="button" class="tree-link main" data-act="open"><span class="tree-emoji">${esc(it.emoji || '📌')}</span> ${esc(it.title || '(제목 없음)')}</button>
+          <button type="button" class="tree-link is-main" data-act="open"><span class="tree-emoji">${esc(it.emoji || '📌')}</span> ${esc(it.title || '(제목 없음)')}</button>
           <span class="tree-n total">${total}</span>
-          ${mg && kind !== 'diary' ? `<span class="tree-ctl"><button type="button" data-act="cardup" title="위로" ${idx === 0 ? 'disabled' : ''}>▲</button><button type="button" data-act="carddown" title="아래로" ${idx >= list.length - 1 ? 'disabled' : ''}>▼</button></span>` : ''}
+          ${mg && kind !== 'diary' ? `<span class="tree-ctl"><button type="button" data-act="cardup" title="위로" ${idx === 0 ? 'disabled' : ''}>▲</button><button type="button" data-act="carddown" title="아래로" ${idx >= list.length - 1 ? 'disabled' : ''}>▼</button><button type="button" data-act="carddel" class="del" title="게시판 삭제">×</button></span>` : ''}
         </div>
         <ul class="tree-subs" ${it.collapsed ? 'hidden' : ''}>${subs}${unfiledRow}${addRow}${!subs && !mg ? '<li class="tree-sub none muted small">세부 게시판 없음</li>' : ''}</ul>
       </li>`;
     }).join('') : '<li class="muted small">게시판이 없어요.</li>';
+    if (mg) {
+      const k = hub.kind === 'work' ? 'work' : 'goal';
+      $('#hubTree').insertAdjacentHTML('beforeend', `<li class="tree-add-card"><form class="tree-add-card-form">
+        <select name="kind"><option value="goal" ${k === 'goal' ? 'selected' : ''}>🌱 꿈과 목표</option><option value="work" ${k === 'work' ? 'selected' : ''}>🛠 하는 일</option></select>
+        <input name="title" placeholder="새 게시판 이름" maxlength="60">
+        <button type="submit" class="primary">＋ 게시판</button>
+      </form></li>`);
+    }
+    $('#treeOpts').hidden = !mg;
+    $('#treeCounts').checked = !!state.treeCounts;
+    $('#hubTree').classList.toggle('no-counts', !state.treeCounts);
   }
   $('#hubManage').addEventListener('click', () => { hub.manage = !hub.manage; renderTree(); });
+  $('#treeExpandAll').addEventListener('click', () => { allCards().forEach(c => { c.it.collapsed = false; }); save(); renderTree(); });
+  $('#treeCollapseAll').addEventListener('click', () => { allCards().forEach(c => { c.it.collapsed = true; }); save(); renderTree(); });
+  $('#treeCounts').addEventListener('change', e => { state.treeCounts = e.target.checked; save(); renderTree(); });
+  $('#hubTree').addEventListener('submit', e => {
+    const f = e.target.closest('.tree-add-card-form'); if (!f) return;
+    e.preventDefault();
+    const kind = f.kind.value === 'work' ? 'work' : 'goal';
+    const title = f.title.value.trim(); if (!title) { f.title.focus(); return; }
+    const it = kind === 'work'
+      ? { id: uid(), emoji: '🛠', title, desc: '', tag: title, status: 'build', notes: [], boards: [], hidden: false, collapsed: false }
+      : { id: uid(), emoji: '🌟', title, desc: '', tag: title, bar: '', notes: [], boards: [], hidden: false, collapsed: false };
+    listOf(kind).push(it);
+    save(); renderHub(); renderGoals(); renderWork();
+    const again = $('#hubTree .tree-add-card-form input'); if (again) again.focus();
+  });
   // 게시판 로고(이모지·제목) → 카테고리 트리가 있는 전체보기 화면. 전체보기에서 누르면 대시보드.
   $('#bdCardLogo').addEventListener('click', () => {
     const v = board.view;
@@ -1606,6 +1633,14 @@
       if (i < 0 || j < 0 || j >= it.boards.length) return;
       [it.boards[i], it.boards[j]] = [it.boards[j], it.boards[i]];
       save(); renderTree(); return;
+    }
+    if (act === 'carddel') {
+      const n = (it.notes || []).length;
+      if (!confirm(`"${it.title || '(제목 없음)'}" 게시판을 지울까요?\n${n ? '안에 있는 글 ' + n + '개도 전부 삭제돼요.' : '글은 없어요.'}\n이 작업은 되돌릴 수 없어요.`)) return;
+      if (kind === 'work') state.works = state.works.filter(x => x.id !== it.id);
+      else state.goals = state.goals.filter(x => x.id !== it.id);
+      if (current && current.id === it.id) current = null;
+      save(); renderHub(); renderGoals(); renderWork(); return;
     }
     if (act === 'subdel') {
       const bd = it.boards.find(x => x.id === bid); if (!bd) return;
@@ -1974,7 +2009,7 @@
       langLog: remote.langLog || {},
       useStocks: !!remote.useStocks,
       showDone: state.showDone,
-      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), diary: keep('diary'), events: keep('events'), days: keep('days'), showTodos: remote.showTodos === undefined ? state.showTodos : !!remote.showTodos, panels: keep('panels'), months: keep('months'), years: keep('years')
+      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), diary: keep('diary'), events: keep('events'), days: keep('days'), showTodos: remote.showTodos === undefined ? state.showTodos : !!remote.showTodos, panels: keep('panels'), treeCounts: remote.treeCounts === undefined ? state.treeCounts : !!remote.treeCounts, months: keep('months'), years: keep('years')
     }));
     saveLocal();
     return true;

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260908f">
+<link rel="stylesheet" href="css/style.css?v=20260908g">
 </head>
 <body>
 
@@ -420,7 +420,18 @@
       <div class="hub-body">
         <ul class="hub-list" id="hubList"></ul>
         <aside class="hub-tree card">
-          <div class="tree-head"><b>📂 카테고리</b><button type="button" class="text-btn" id="hubManage">⚙️ 카테고리 관리</button></div>
+          <div class="tree-head">
+            <b>📂 카테고리</b>
+            <span class="tree-head-btns">
+              <button type="button" class="link-btn" id="treeExpandAll" title="모두 펼치기">모두 펼치기</button>
+              <button type="button" class="link-btn" id="treeCollapseAll" title="모두 접기">모두 접기</button>
+              <button type="button" class="text-btn" id="hubManage">⚙️ 카테고리 관리</button>
+            </span>
+          </div>
+          <div class="tree-opts" id="treeOpts" hidden>
+            <label class="switch"><input type="checkbox" id="treeCounts"><span>글 개수 표시</span></label>
+            <span class="muted small">▾▸ 상태는 저장돼요 (펼쳐놓기 / 접어놓기)</span>
+          </div>
           <ul class="tree" id="hubTree"></ul>
           <p class="muted small tree-help" id="treeHelp">▾▸로 펼치고 접어요. 접은 상태는 저장돼요.</p>
         </aside>
@@ -660,6 +671,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260908f"></script>
+<script src="js/app.js?v=20260908g"></script>
 </body>
 </html>
