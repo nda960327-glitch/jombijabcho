@@ -8,14 +8,14 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260907c';
+  const APP_VER = '20260907d';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
    * 서버가 PIN을 확인하므로 이 주소가 공개돼도 내용은 열리지 않습니다.
    * (PIN 검사가 없는 버전을 배포하면 이 전제가 깨집니다. 반드시 PIN 버전을 유지하세요.)
    */
-  const DEFAULT_API = 'https://script.google.com/macros/s/AKfycbywuEhAog3R8aU3EfOLSXaE97YUcOenOczh-_TY2wWM9En8uiuBNnjMRT6P16aFYEdEuw/exec';
+  const DEFAULT_API = 'https://script.google.com/macros/s/AKfycby-lVpo55ltoCZupAziQQrs_OeLUhPMM1h98HfJcZhDEX6ZlvoHQFCGyGaA0F9qmF-YKw/exec';
 
   /* ---------- 고정 데이터 (자산·도장깨기) ---------- */
   const ASSETS = [
