@@ -25,6 +25,7 @@
       <a href="#work">일</a>
       <a href="#calendar">달력</a>
       <a href="#me">나</a>
+      <a href="#sync" class="sync-badge" id="syncBadge" title="동기화 상태">☁️ 미연결</a>
     </nav>
   </div>
 </header>
@@ -40,9 +41,9 @@
       <span class="stat-sub" id="sumAssetsNow">평가금액 입력 시 손익 표시</span>
     </div>
     <div class="stat">
-      <span class="stat-label">전세 잔금까지</span>
+      <span class="stat-label">당장 필요한 돈</span>
       <strong class="stat-value" id="sumJeonse">-</strong>
-      <span class="stat-sub">보증금 3억 = 납입 3천만 + 대출 2억 + 잔금 7천만</span>
+      <span class="stat-sub" id="sumJeonseSub">전세 잔금·수수료 7,100만 + 차 1,689만</span>
     </div>
     <div class="stat">
       <span class="stat-label">오늘 할일</span>
@@ -64,19 +65,40 @@
   <section id="money" class="block">
     <div class="block-head">
       <h2>💰 자산 관리</h2>
-      <p>원금은 고정, <b>현재 평가금액</b>은 직접 입력하면 손익이 계산돼요. (이 기기에만 저장)</p>
+      <p>주식은 <b>보유 수량</b>만 적으면 현재가를 자동으로 가져와 평가금액을 계산해요. 현금과 토지는 평가금액을 직접 적어요.</p>
     </div>
 
     <div class="table-wrap">
       <table class="asset-table">
         <thead>
-          <tr><th>항목</th><th>어디에</th><th class="num">투자원금</th><th class="num">현재 평가</th><th class="num">손익</th></tr>
+          <tr><th>항목</th><th>어디에</th><th class="num">투자원금</th><th class="num">보유수량</th><th class="num">현재가</th><th class="num">평가금액</th><th class="num">손익</th></tr>
         </thead>
         <tbody id="assetBody"></tbody>
         <tfoot>
-          <tr><th colspan="2">합계</th><th class="num" id="assetTotalCost"></th><th class="num" id="assetTotalNow"></th><th class="num" id="assetTotalPnl"></th></tr>
+          <tr><th colspan="2">합계</th><th class="num" id="assetTotalCost"></th><th></th><th></th><th class="num" id="assetTotalNow"></th><th class="num" id="assetTotalPnl"></th></tr>
         </tfoot>
       </table>
+    </div>
+    <p class="quote-note muted small" id="quoteNote">시세를 불러오려면 아래 ☁️ 동기화를 먼저 연결해 주세요.</p>
+
+    <div class="ladder card">
+      <div class="ladder-head">
+        <h3>🥊 도장깨기</h3>
+        <p class="muted small">가용 자금이 <b>위에서부터 차례로</b> 채워집니다. 앞 단계를 다 채워야 다음 칸으로 넘어가요. 같은 돈이 두 곳에 겹쳐 세어지지 않습니다.</p>
+      </div>
+      <div class="ladder-cash">
+        <label class="field inline">
+          <span>가용 현금</span>
+          <input type="text" id="cashInput" inputmode="numeric" placeholder="10,000,000">
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="useStocks">
+          <span>주식까지 팔면 포함</span>
+        </label>
+        <span class="ladder-pool" id="ladderPool"></span>
+      </div>
+      <ol class="ladder-list" id="ladderList"></ol>
+      <p class="ladder-total" id="ladderTotal"></p>
     </div>
 
     <div class="money-cards">
@@ -86,18 +108,10 @@
           <li><span>보증금 총액</span><b>3억 원</b></li>
           <li class="done"><span>✅ 계약금 납입</span><b>3,000만 원</b></li>
           <li><span>🏦 전세대출 (예정)</span><b>2억 원</b></li>
-          <li class="need"><span>💸 잔금 (필요)</span><b>7,000만 원</b></li>
+          <li class="need"><span>💸 잔금</span><b>7,000만 원</b></li>
+          <li class="need"><span>💸 중개수수료</span><b>100만 원</b></li>
         </ul>
-        <div class="bar"><div class="bar-fill" id="jeonseBar"></div></div>
         <p class="bar-note" id="jeonseNote"></p>
-      </div>
-
-      <div class="card">
-        <h3>🚗 캐스퍼 터보 디에센셜</h3>
-        <p class="price">16,890,000 원</p>
-        <p class="muted">현대 스마트센스 1 · 컴포트 · 캐스퍼 액티브 2 · 스타일</p>
-        <div class="bar"><div class="bar-fill" id="carBar"></div></div>
-        <p class="bar-note" id="carNote"></p>
       </div>
 
       <div class="card">
@@ -180,10 +194,33 @@
     </div>
   </section>
 
+  <section id="sync" class="block">
+    <div class="card sync-card">
+      <h3>☁️ 동기화</h3>
+      <p class="muted small">구글 계정에 저장하면 폰과 컴퓨터에서 같은 내용을 봅니다. 주식 현재가도 여기서 가져와요.</p>
+      <div class="sync-row">
+        <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" spellcheck="false">
+        <button class="primary" id="apiSave">연결</button>
+        <button class="text-btn" id="apiSync">지금 동기화</button>
+      </div>
+      <p class="sync-state" id="syncState">아직 연결되지 않음 · 지금은 이 브라우저에만 저장됩니다.</p>
+      <details class="sync-help">
+        <summary>연결하는 방법 (한 번만)</summary>
+        <ol>
+          <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com</a>에서 새 프로젝트를 만들어요.</li>
+          <li>저장소의 <code>tools/apps-script.gs</code> 내용을 전부 복사해 붙여넣고 저장해요.</li>
+          <li>[배포] → [새 배포] → 유형 ⚙️ → [웹 앱], 실행 <b>나</b>, 액세스 <b>모든 사용자</b> → 배포.</li>
+          <li>나온 주소를 위 칸에 붙여넣고 [연결]을 눌러요.</li>
+        </ol>
+        <p class="muted small">이 주소는 깃허브에 올라가지 않고 이 브라우저에만 저장돼요. 주소를 아는 사람은 내용을 볼 수 있으니 공유하지 마세요.</p>
+      </details>
+    </div>
+  </section>
+
   <footer class="foot">
     <button class="text-btn" id="exportBtn">데이터 내보내기</button>
     <label class="text-btn file-btn">데이터 불러오기<input type="file" id="importFile" accept="application/json" hidden></label>
-    <span class="muted small">할일·평가금액·체중은 이 브라우저에만 저장돼요.</span>
+    <span class="muted small">연결 전에는 이 브라우저에만 저장돼요.</span>
   </footer>
 </main>
 
