@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260907m">
+<link rel="stylesheet" href="css/style.css?v=20260908d">
 </head>
 <body>
 
@@ -33,6 +33,7 @@
 
 <div class="edit-bar" id="editBar" hidden>
   <span>✏️ <b>꾸미기 모드</b> · 점선 글씨를 눌러 바로 고칠 수 있어요 · 섹션은 ▲▼로, 카드는 끌어서 순서를 바꿔요</span>
+  <label class="switch edit-switch"><input type="checkbox" id="showTodosToggle"><span>📋 오른쪽 패널 보이기</span></label>
   <button type="button" class="primary" id="editDone">완료</button>
 </div>
 
@@ -58,6 +59,61 @@
         <strong class="stat-value" id="sumTodos">0</strong>
         <span class="stat-sub" id="sumTodosSub">남은 일이 없어요</span>
       </div>
+    </div>
+  </section>
+
+  <!-- ===== 올해 목표 ===== -->
+  <section id="year" class="block" data-sec="year">
+    <div class="sec-tools" hidden><span class="sec-name">올해 목표</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
+    <div class="block-head">
+      <h2 data-t="year.h2">🎯 올해 목표</h2>
+      <p data-t="year.p">1년 동안 꼭 이루고 싶은 것. 달마다 쪼개서 이번 달 메모로 내려요.</p>
+    </div>
+    <div class="month-widget year-widget card">
+      <div class="month-head">
+        <button type="button" class="icon-btn" id="yearPrev" aria-label="이전 해">‹</button>
+        <strong id="yearTitle"></strong>
+        <button type="button" class="icon-btn" id="yearNext" aria-label="다음 해">›</button>
+        <button type="button" class="text-btn" id="yearToday">올해</button>
+        <span class="month-progress-text" id="yearProgressText"></span>
+      </div>
+      <div class="bar"><div class="bar-fill gold" id="yearBar"></div></div>
+      <p class="muted small" id="yearDays"></p>
+      <form class="month-add" id="yearAdd"><input id="yearText" placeholder="올해 목표 추가 (예: 전세 잔금 마련, 44kg, 일본어 N3, 캐스퍼 계약)" maxlength="100" autocomplete="off"><button type="submit" class="primary">추가</button></form>
+      <ul class="check-list month-list" id="yearList"></ul>
+      <div class="month-foot">
+        <button type="button" class="text-btn" id="yearCarry" hidden>지난해에서 안 끝난 것 가져오기</button>
+      </div>
+      <label class="im-field month-memo">올해 다짐 <span class="muted small">(자유롭게 · 자동 저장)</span>
+        <textarea id="yearMemo" rows="3" placeholder="올해를 한 문장으로. 지키고 싶은 원칙, 올해의 단어…" maxlength="1000"></textarea>
+      </label>
+    </div>
+  </section>
+
+  <!-- ===== 이번 달 메모 ===== -->
+  <section id="month" class="block" data-sec="month">
+    <div class="sec-tools" hidden><span class="sec-name">이번 달 메모</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
+    <div class="block-head">
+      <h2 data-t="month.h2">🗓 이번 달 메모</h2>
+      <p data-t="month.p">이번 달에 꼭 할 것들. 체크하면서 채워가요.</p>
+    </div>
+    <div class="month-widget card">
+      <div class="month-head">
+        <button type="button" class="icon-btn" id="monthPrev" aria-label="이전 달">‹</button>
+        <strong id="monthTitle"></strong>
+        <button type="button" class="icon-btn" id="monthNext" aria-label="다음 달">›</button>
+        <button type="button" class="text-btn" id="monthToday">이번 달</button>
+        <span class="month-progress-text" id="monthProgressText"></span>
+      </div>
+      <div class="bar"><div class="bar-fill" id="monthBar"></div></div>
+      <form class="month-add" id="monthAdd"><input id="monthText" placeholder="이번 달 목표 추가 (예: 책 2권, 3kg 감량, 부모님 뵙기)" maxlength="100" autocomplete="off"><button type="submit" class="primary">추가</button></form>
+      <ul class="check-list month-list" id="monthList"></ul>
+      <div class="month-foot">
+        <button type="button" class="text-btn" id="monthCarry" hidden>지난 달에서 안 끝난 것 가져오기</button>
+      </div>
+      <label class="im-field month-memo">이번 달 메모 <span class="muted small">(자유롭게 · 자동 저장)</span>
+        <textarea id="monthMemo" rows="3" placeholder="이번 달 마음가짐, 예산, 챙길 것…" maxlength="1000"></textarea>
+      </label>
     </div>
   </section>
 
@@ -281,19 +337,58 @@
 
 <!-- ===== 할일 사이드바 ===== -->
 <aside class="side" id="side">
-  <div class="side-head">
-    <h2 data-t="side.h2">✅ 할일</h2>
-    <span class="muted small" id="sideCount"></span>
-  </div>
-  <form class="todo-form" id="todoForm">
-    <input type="text" id="todoText" placeholder="할일을 적고 Enter" autocomplete="off" maxlength="120">
-    <div class="todo-form-row">
-      <input type="date" id="todoDate">
-      <button type="button" class="text-btn" id="todoDateClear">날짜 없이</button>
-      <button type="submit" class="primary">추가</button>
+  <div class="side-day">
+    <button type="button" class="icon-btn" id="sideDayPrev" aria-label="어제">‹</button>
+    <div class="side-day-text">
+      <p class="eyebrow" id="sideDayLabel">오늘</p>
+      <strong id="sideDayTitle"></strong>
     </div>
-  </form>
-  <div class="todo-groups" id="todoGroups"></div>
+    <button type="button" class="icon-btn" id="sideDayNext" aria-label="내일">›</button>
+    <button type="button" class="text-btn" id="sideDayToday">오늘</button>
+  </div>
+
+  <div class="panels" id="sidePanels">
+    <section class="panel" data-panel="events">
+      <button type="button" class="panel-h"><span class="tw">▾</span><span class="panel-t">📅 일정</span><span class="panel-n" id="pnEventsN"></span></button>
+      <div class="panel-b" id="pnEvents"></div>
+    </section>
+
+    <section class="panel" data-panel="memo">
+      <button type="button" class="panel-h"><span class="tw">▾</span><span class="panel-t">📝 이 날 메모</span><span class="panel-n" id="pnMemoN"></span></button>
+      <div class="panel-b">
+        <textarea id="pnMemoText" rows="3" placeholder="이 날 기억할 것. 적는 대로 저장돼요." maxlength="500"></textarea>
+        <div class="pn-marks">
+          <div class="dm-stickers" id="pnStickers"></div>
+          <div class="dm-hls" id="pnHls"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="todos">
+      <button type="button" class="panel-h"><span class="tw">▾</span><span class="panel-t">✅ 할일</span><span class="panel-n" id="sideCount"></span></button>
+      <div class="panel-b">
+        <form class="todo-form" id="todoForm">
+          <input type="text" id="todoText" placeholder="할일을 적고 Enter" autocomplete="off" maxlength="120">
+          <div class="todo-form-row">
+            <input type="date" id="todoDate">
+            <button type="button" class="text-btn" id="todoDateClear">날짜 없이</button>
+            <button type="submit" class="primary">추가</button>
+          </div>
+        </form>
+        <div class="todo-groups" id="todoGroups"></div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="diary">
+      <button type="button" class="panel-h"><span class="tw">▾</span><span class="panel-t">📔 이 날 일기</span><span class="panel-n" id="pnDiaryN"></span></button>
+      <div class="panel-b" id="pnDiary"></div>
+    </section>
+
+    <section class="panel" data-panel="upcoming">
+      <button type="button" class="panel-h"><span class="tw">▾</span><span class="panel-t">🗓 다가오는 일정</span><span class="panel-n" id="pnUpN"></span></button>
+      <div class="panel-b" id="pnUpcoming"></div>
+    </section>
+  </div>
 </aside>
 </div>
 
@@ -558,6 +653,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260907m"></script>
+<script src="js/app.js?v=20260908d"></script>
 </body>
 </html>

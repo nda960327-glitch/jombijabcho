@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260907m';
+  const APP_VER = '20260908d';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -53,7 +53,7 @@
     { emoji: '📱', title: '캐치걸', desc: '앱 상용화 남음.', tag: '캐치걸', status: 'todo' },
   ];
   const STATUS_LABEL = { build: '개발 중', run: '자동 운영', todo: '상용화 대기', pause: '잠시 멈춤', done: '완료' };
-  const SECTIONS = ['summary', 'goals', 'money', 'work', 'calendar', 'diary', 'me'];
+  const SECTIONS = ['summary', 'year', 'month', 'goals', 'money', 'work', 'calendar', 'diary', 'me'];
   const MOODS = ['😊', '😌', '🥳', '😐', '😢', '😡', '😴', '🤒', '💪', '🥲'];
 
   const LANGS = [
@@ -65,7 +65,7 @@
   /* ---------- 상태 ---------- */
   const defaultState = () => ({
     todos: [], qty: {}, now: {}, weight: null, weightStart: null, langLog: {}, showDone: false, useStocks: false,
-    goals: null, works: null, order: null, texts: {}, memo: '', diary: null, events: [], days: {}
+    goals: null, works: null, order: null, texts: {}, memo: '', diary: null, events: [], days: {}, showTodos: true, months: {}, years: {}, panels: {}
   });
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   let state = load();
@@ -97,7 +97,12 @@
     s.works.forEach(w => { if (!w.id) w.id = uid(); if (!Array.isArray(w.notes)) w.notes = []; if (!w.status) w.status = 'build'; if (!w.tag) w.tag = w.title; });
     if (!Array.isArray(s.order) || !s.order.length) s.order = SECTIONS.slice();
     s.order = s.order.filter(k => SECTIONS.indexOf(k) >= 0);
-    SECTIONS.forEach(k => { if (s.order.indexOf(k) < 0) s.order.push(k); });
+    SECTIONS.forEach(k => {
+      if (s.order.indexOf(k) >= 0) return;
+      if (k === 'month') { const gi = s.order.indexOf('goals'); s.order.splice(gi >= 0 ? gi : 1, 0, k); }   // 목표 바로 위에
+      else if (k === 'year') { const mi = s.order.indexOf('month'); s.order.splice(mi >= 0 ? mi : 1, 0, k); }  // 이번 달 바로 위에
+      else s.order.push(k);
+    });
     if (!s.texts || typeof s.texts !== 'object') s.texts = {};
     if (typeof s.memo !== 'string') s.memo = '';
     delete s.groups;
@@ -105,6 +110,12 @@
     s.events = s.events.filter(e => e && e.start).map(e => Object.assign({ id: uid(), title: '', end: e.start, color: 'blue', memo: '' }, e));
     s.events.forEach(e => { if (!e.end || e.end < e.start) e.end = e.start; });
     if (!s.days || typeof s.days !== 'object') s.days = {};
+    if (typeof s.showTodos !== 'boolean') s.showTodos = true;
+    if (!s.panels || typeof s.panels !== 'object') s.panels = {};
+    if (!s.years || typeof s.years !== 'object') s.years = {};
+    Object.keys(s.years).forEach(k => { const m = s.years[k]; if (!m || typeof m !== 'object') { delete s.years[k]; return; } if (!Array.isArray(m.items)) m.items = []; m.items.forEach(i => { if (!i.id) i.id = uid(); }); if (typeof m.memo !== 'string') m.memo = ''; });
+    if (!s.months || typeof s.months !== 'object') s.months = {};
+    Object.keys(s.months).forEach(k => { const m = s.months[k]; if (!m || typeof m !== 'object') { delete s.months[k]; return; } if (!Array.isArray(m.items)) m.items = []; m.items.forEach(i => { if (!i.id) i.id = uid(); }); if (typeof m.memo !== 'string') m.memo = ''; });
     if (!s.diary || typeof s.diary !== 'object') s.diary = { id: 'diary', emoji: '📔', title: '다이어리', desc: '', tag: '일기', notes: [], boards: [], hidden: false };
     s.diary.id = 'diary'; if (!Array.isArray(s.diary.notes)) s.diary.notes = []; if (!s.diary.title) s.diary.title = '다이어리'; if (!s.diary.emoji) s.diary.emoji = '📔';
     s.diary.notes.forEach(n => { if (!n.date) n.date = ymd(new Date(n.at || Date.now())); if (typeof n.mood !== 'string') n.mood = ''; });
@@ -225,6 +236,135 @@
     if (!confirm('제목·문구와 위젯 순서를 처음 상태로 되돌릴까요? 목표·일 카드와 기록은 그대로예요.')) return;
     state.texts = {}; state.order = SECTIONS.slice();
     applyTexts(); applyOrder(); save();
+  });
+
+  /* ---------- 할일 창 보이기/숨기기 ---------- */
+  function applySide() {
+    document.body.classList.toggle('no-side', !state.showTodos);
+    $('#side').hidden = !state.showTodos;
+    $('#showTodosToggle').checked = !!state.showTodos;
+    if (state.showTodos) renderPanel();
+  }
+  $('#showTodosToggle').addEventListener('change', e => { state.showTodos = e.target.checked; applySide(); save(); });
+  /** 할일 입력으로 보내기: 창이 있으면 사이드바, 없으면 오늘 날짜 창 */
+  function sendToTodo(prefix) {
+    if (state.showTodos) {
+      const inp = $('#todoText');
+      inp.value = prefix;
+      $('#side').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      inp.focus();
+    } else {
+      openDay(todayStr());
+      const inp = $('#dmTodoText');
+      inp.value = prefix;
+      setTimeout(() => { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }, 60);
+    }
+  }
+
+  /* ---------- 오른쪽 패널 (그 날의 일정·메모·할일·일기) ---------- */
+  const PANEL_KEYS = ['events', 'memo', 'todos', 'diary', 'upcoming'];
+  function panelOpen(k) { return state.panels[k] !== false; }   // 기본은 펼침
+  function shiftDay(n) {
+    const [y, m, d] = (selectedDate || todayStr()).split('-').map(Number);
+    const dt = new Date(y, m - 1, d); dt.setDate(dt.getDate() + n);
+    selectedDate = ymd(dt);
+    calCursor = new Date(dt.getFullYear(), dt.getMonth(), 1);
+    $('#todoDate').value = selectedDate;
+    renderCalendar(); renderTodos(); renderPanel();
+  }
+  $('#sideDayPrev').addEventListener('click', () => shiftDay(-1));
+  $('#sideDayNext').addEventListener('click', () => shiftDay(1));
+  $('#sideDayToday').addEventListener('click', () => {
+    selectedDate = todayStr();
+    calCursor = new Date(); calCursor.setDate(1);
+    $('#todoDate').value = selectedDate;
+    renderCalendar(); renderTodos(); renderPanel();
+  });
+  $('#sidePanels').addEventListener('click', e => {
+    const head = e.target.closest('.panel-h'); if (!head) return;
+    const key = head.closest('.panel').dataset.panel;
+    state.panels[key] = !panelOpen(key);
+    save(); applyPanels();
+  });
+  function applyPanels() {
+    $$('#sidePanels .panel').forEach(p => {
+      const open = panelOpen(p.dataset.panel);
+      p.classList.toggle('closed', !open);
+      p.querySelector('.panel-b').hidden = !open;
+      p.querySelector('.tw').textContent = open ? '▾' : '▸';
+    });
+  }
+  function renderPanel() {
+    if (!state.showTodos) return;
+    const sd = selectedDate || todayStr();
+    const [yy, mm, dd] = sd.split('-').map(Number);
+    const wd = '일월화수목금토'[new Date(yy, mm - 1, dd).getDay()];
+    const diff = daysFromToday(sd), hol = HOLIDAYS[sd];
+    $('#sideDayLabel').textContent = (diff === 0 ? '오늘' : diff === 1 ? '내일' : diff === -1 ? '어제' : diff > 0 ? `D-${diff}` : `${-diff}일 전`) + (hol ? ' · ' + hol : '');
+    $('#sideDayTitle').textContent = `${mm}월 ${dd}일 (${wd})`;
+    $('#sideDayTitle').className = hol || wd === '일' ? 'sun' : wd === '토' ? 'sat' : '';
+
+    // 일정
+    const evs = eventsOn(sd);
+    $('#pnEventsN').textContent = evs.length || '';
+    $('#pnEvents').innerHTML = (evs.length ? evs.map(e => `<div class="pn-ev" data-ev="${e.id}"><span class="ev-dot ev-${e.color}"></span><div class="pn-ev-body"><b>${esc(e.title || '(제목 없음)')}</b><div class="muted small">${evRange(e)}${e.memo ? ' · ' + esc(e.memo) : ''}</div></div></div>`).join('')
+      : '<p class="muted small pn-empty">이 날 일정이 없어요.</p>')
+      + '<button type="button" class="text-btn pn-add" id="pnAddEvent">＋ 일정 추가</button>';
+
+    // 메모 + 표시
+    const meta = dayOf(sd);
+    $('#pnMemoN').textContent = meta.memo ? '있음' : '';
+    if (document.activeElement !== $('#pnMemoText')) $('#pnMemoText').value = meta.memo || '';
+    $('#pnStickers').innerHTML = `<button type="button" class="mood sm ${!meta.sticker ? 'on' : ''}" data-sticker="">없음</button>` + STICKERS.slice(0, 8).map(st => `<button type="button" class="mood sm ${meta.sticker === st ? 'on' : ''}" data-sticker="${st}">${st}</button>`).join('');
+    $('#pnHls').innerHTML = `<button type="button" class="hl-btn sm none ${!meta.hl ? 'on' : ''}" data-hl="" title="없음">×</button>` + HL_COLORS.map(c => `<button type="button" class="hl-btn sm hl-${c} ${meta.hl === c ? 'on' : ''}" data-hl="${c}"></button>`).join('');
+
+    // 일기
+    const di = state.diary.notes.find(n => n.date === sd);
+    $('#pnDiaryN').textContent = di ? (di.mood || '✓') : '';
+    $('#pnDiary').innerHTML = di
+      ? `<div class="pn-diary" data-pid="${di.id}"><b>${esc(postTitle(di))}</b><p class="muted small">${esc((di.text || '').slice(0, 80))}</p></div><button type="button" class="text-btn pn-add" id="pnOpenDiary">일기 열기</button>`
+      : `<p class="muted small pn-empty">이 날 일기가 없어요.</p><button type="button" class="text-btn pn-add" id="pnWriteDiary">＋ 이 날 일기 쓰기</button>`;
+
+    // 다가오는 일정
+    const today = todayStr();
+    const up = state.events.filter(e => e.end >= today).sort((x, y) => x.start.localeCompare(y.start)).slice(0, 5);
+    $('#pnUpN').textContent = up.length || '';
+    $('#pnUpcoming').innerHTML = up.length ? up.map(e => {
+      const dd2 = daysBetween(today, e.start);
+      const tag = dd2 > 0 ? `D-${dd2}` : (e.start <= today && e.end >= today ? '진행 중' : '오늘');
+      return `<div class="pn-ev" data-date="${e.start}"><span class="ev-dot ev-${e.color}"></span><div class="pn-ev-body"><b>${esc(e.title || '(제목 없음)')}</b><div class="muted small">${evRange(e)}</div></div><span class="up-tag ${dd2 <= 0 ? 'now' : ''}">${tag}</span></div>`;
+    }).join('') : '<p class="muted small pn-empty">예정된 일정이 없어요.</p>';
+
+    applyPanels();
+  }
+  let pnMemoTimer = null;
+  $('#pnMemoText').addEventListener('input', () => {
+    const sd = selectedDate || todayStr();
+    setDay(sd, { memo: $('#pnMemoText').value.trim() });
+    clearTimeout(pnMemoTimer);
+    pnMemoTimer = setTimeout(() => { save(); renderCalendar(); $('#pnMemoN').textContent = dayOf(sd).memo ? '있음' : ''; }, 600);
+  });
+  $('#pnStickers').addEventListener('click', e => { const b2 = e.target.closest('[data-sticker]'); if (!b2) return; setDay(selectedDate, { sticker: b2.dataset.sticker }); save(); renderPanel(); renderCalendar(); });
+  $('#pnHls').addEventListener('click', e => { const b2 = e.target.closest('[data-hl]'); if (!b2) return; setDay(selectedDate, { hl: b2.dataset.hl }); save(); renderPanel(); renderCalendar(); });
+  $('#pnEvents').addEventListener('click', e => {
+    if (e.target.closest('#pnAddEvent')) { openDay(selectedDate); setTimeout(() => $('#dmEvTitle').focus(), 80); return; }
+    const row = e.target.closest('.pn-ev'); if (row) openDay(selectedDate);
+  });
+  $('#pnDiary').addEventListener('click', e => {
+    if (e.target.closest('#pnWriteDiary')) { openDiaryDate(selectedDate); return; }
+    if (e.target.closest('#pnOpenDiary') || e.target.closest('.pn-diary')) {
+      const di = state.diary.notes.find(n => n.date === selectedDate);
+      if (di) { current = { kind: 'diary', id: 'diary' }; openPost(di.id); }
+    }
+  });
+  $('#pnUpcoming').addEventListener('click', e => {
+    const row = e.target.closest('[data-date]'); if (!row) return;
+    selectedDate = row.dataset.date;
+    const [y2, m2] = selectedDate.split('-').map(Number);
+    calCursor = new Date(y2, m2 - 1, 1);
+    $('#todoDate').value = selectedDate;
+    renderCalendar(); renderTodos(); renderPanel();
+    $('#calendar').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   /* ---------- 섹션 순서 ---------- */
@@ -477,11 +617,8 @@
     const addBtn = e.target.closest('.goal-add');
     if (addBtn) {
       e.stopPropagation();
-      const inp = $('#todoText');
-      inp.value = `[${addBtn.dataset.tag}] `;
       closeItemModal();
-      $('#side').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      inp.focus();
+      sendToTodo(`[${addBtn.dataset.tag}] `);
       return;
     }
     const notesBtn = e.target.closest('.card-notes');
@@ -1012,11 +1149,8 @@
     const it = curItem(); if (!it) return;
     const tag = it.tag || it.title;
     if (!tag) { $('#imTag').focus(); return; }
-    const inp = $('#todoText');
-    inp.value = `[${tag}] `;
     closeItemModal();
-    $('#side').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    inp.focus();
+    sendToTodo(`[${tag}] `);
   });
   function moveCurrent(delta) {
     if (!current) return;
@@ -1044,7 +1178,7 @@
 
   /* ---------- 달력 ---------- */
   let calCursor = new Date(); calCursor.setDate(1);
-  let selectedDate = null;
+  let selectedDate = todayStr();
 
   /* ---------- 달력: 일정 · 기간 일정 · 메모 · 형광펜 · 스티커 · 공휴일 ---------- */
   const EV_COLORS = ['blue', 'green', 'yellow', 'pink', 'purple', 'orange'];
@@ -1157,7 +1291,7 @@
     tip.hidden = true;
     renderDay();
     $('#dayModal').hidden = false;
-    renderCalendar(); renderTodos();
+    renderCalendar(); renderTodos(); renderPanel();
   }
   function closeDay() { dayOpen = null; dayEditing = null; $('#dayModal').hidden = true; }
   function renderDay() {
@@ -1212,7 +1346,7 @@
     } else {
       state.events.push({ id: uid(), title, start: st, end: en, color: dmColor, memo: $('#dmEvMemo').value.trim() });
     }
-    save(); renderDay(); renderCalendar();
+    save(); renderDay(); renderCalendar(); renderPanel();
   });
   $('#dmEvCancel').addEventListener('click', () => { dayEditing = null; renderDay(); });
   $('#dmEvents').addEventListener('click', e => {
@@ -1236,7 +1370,7 @@
     const text = $('#dmTodoText').value.trim(); if (!text || !dayOpen) return;
     state.todos.push({ id: uid(), text, date: dayOpen, done: false, created: Date.now() });
     $('#dmTodoText').value = '';
-    save(); renderDay(); renderTodos(); renderCalendar();
+    save(); renderDay(); renderTodos(); renderCalendar(); renderPanel();
   });
   $('#dmTodos').addEventListener('click', e => {
     const li = e.target.closest('li[data-id]'); if (!li) return;
@@ -1317,6 +1451,7 @@
       : g.today.length ? '오늘 안에 끝내자' : '남은 일이 없어요';
 
     renderWork(); renderGoals();
+    if (state.showTodos) renderPanel();
   }
 
   $('#todoForm').addEventListener('submit', e => {
@@ -1446,6 +1581,125 @@
   }
   $('#allPosts').addEventListener('click', allPostClick);
   $('#allPosts').addEventListener('keydown', allPostClick);
+
+  /* ---------- 이번 달 메모 (월별 목표 체크리스트) ---------- */
+  let monthCursor = (() => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1); })();
+  const thisMonthKey = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1); };
+  function monthOf(key) { return state.months[key] || { items: [], memo: '' }; }
+  function ensureMonth(key) { if (!state.months[key]) state.months[key] = { items: [], memo: '' }; return state.months[key]; }
+  function prevMonthKey(key) { const [y, m] = key.split('-').map(Number); const d = new Date(y, m - 2, 1); return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
+  function cleanMonth(key) { const m = state.months[key]; if (m && !m.items.length && !m.memo) delete state.months[key]; }
+  function renderMonth() {
+    const [y, m] = monthCursor.split('-').map(Number);
+    const cur = monthOf(monthCursor);
+    const isNow = monthCursor === thisMonthKey();
+    $('#monthTitle').textContent = `${y}년 ${m}월` + (isNow ? '' : monthCursor < thisMonthKey() ? ' · 지난 달' : ' · 다음 달');
+    const done = cur.items.filter(i => i.done).length, total = cur.items.length;
+    $('#monthProgressText').textContent = total ? `${done} / ${total} 완료${done === total ? ' 🎉' : ''}` : '';
+    $('#monthBar').style.width = (total ? done / total * 100 : 0) + '%';
+    $('#monthList').innerHTML = cur.items.length ? cur.items.map((i, idx) =>
+      `<li class="${i.done ? 'on' : ''}" data-id="${i.id}"><input type="checkbox" ${i.done ? 'checked' : ''}><span class="month-text ${i.done ? 'done' : ''}">${esc(i.text)}</span><span class="month-btns"><button type="button" class="link-btn m-up" title="위로">▲</button><button type="button" class="link-btn m-down" title="아래로">▼</button><button type="button" class="todo-del" title="삭제">×</button></span></li>`).join('')
+      : '<li class="muted small month-empty">아직 없어요. 위에 이번 달 목표를 적어보자.</li>';
+    const prev = monthOf(prevMonthKey(monthCursor));
+    const leftover = prev.items.filter(i => !i.done && !cur.items.some(c => c.text === i.text));
+    $('#monthCarry').hidden = !leftover.length;
+    $('#monthCarry').textContent = `지난 달에서 안 끝난 ${leftover.length}개 가져오기`;
+    if (document.activeElement !== $('#monthMemo')) $('#monthMemo').value = cur.memo || '';
+  }
+  $('#monthPrev').addEventListener('click', () => { monthCursor = prevMonthKey(monthCursor); renderMonth(); });
+  $('#monthNext').addEventListener('click', () => { const [y, m] = monthCursor.split('-').map(Number); const d = new Date(y, m, 1); monthCursor = d.getFullYear() + '-' + pad(d.getMonth() + 1); renderMonth(); });
+  $('#monthToday').addEventListener('click', () => { monthCursor = thisMonthKey(); renderMonth(); });
+  $('#monthAdd').addEventListener('submit', e => {
+    e.preventDefault();
+    const text = $('#monthText').value.trim(); if (!text) return;
+    ensureMonth(monthCursor).items.push({ id: uid(), text, done: false });
+    $('#monthText').value = '';
+    save(); renderMonth(); $('#monthText').focus();
+  });
+  $('#monthList').addEventListener('click', e => {
+    const li = e.target.closest('li[data-id]'); if (!li) return;
+    const mo = ensureMonth(monthCursor); const i = mo.items.findIndex(x => x.id === li.dataset.id); if (i < 0) return;
+    if (e.target.closest('.todo-del')) { if (!mo.items[i].done && !confirm(`"${mo.items[i].text}" 지울까요?`)) return; mo.items.splice(i, 1); }
+    else if (e.target.closest('.m-up')) { if (i === 0) return; [mo.items[i - 1], mo.items[i]] = [mo.items[i], mo.items[i - 1]]; }
+    else if (e.target.closest('.m-down')) { if (i >= mo.items.length - 1) return; [mo.items[i + 1], mo.items[i]] = [mo.items[i], mo.items[i + 1]]; }
+    else if (e.target.matches('input[type=checkbox]')) { mo.items[i].done = e.target.checked; }
+    else return;
+    cleanMonth(monthCursor); save(); renderMonth();
+  });
+  $('#monthCarry').addEventListener('click', () => {
+    const prev = monthOf(prevMonthKey(monthCursor)); const cur = ensureMonth(monthCursor);
+    prev.items.filter(i => !i.done && !cur.items.some(c => c.text === i.text)).forEach(i => cur.items.push({ id: uid(), text: i.text, done: false }));
+    save(); renderMonth();
+  });
+  let monthMemoTimer = null;
+  $('#monthMemo').addEventListener('input', () => {
+    ensureMonth(monthCursor).memo = $('#monthMemo').value;
+    clearTimeout(monthMemoTimer); monthMemoTimer = setTimeout(() => { cleanMonth(monthCursor); save(); }, 700);
+  });
+
+  /* ---------- 올해 목표 (연간 체크리스트) ---------- */
+  let yearCursor = String(new Date().getFullYear());
+  const thisYearKey = () => String(new Date().getFullYear());
+  function yearOf(key) { return state.years[key] || { items: [], memo: '' }; }
+  function ensureYear(key) { if (!state.years[key]) state.years[key] = { items: [], memo: '' }; return state.years[key]; }
+  function cleanYear(key) { const m = state.years[key]; if (m && !m.items.length && !m.memo) delete state.years[key]; }
+  function renderYear() {
+    const cur = yearOf(yearCursor);
+    const isNow = yearCursor === thisYearKey();
+    $('#yearTitle').textContent = `${yearCursor}년 목표` + (isNow ? '' : yearCursor < thisYearKey() ? ' · 지난해' : ' · 내년');
+    const done = cur.items.filter(i => i.done).length, total = cur.items.length;
+    $('#yearProgressText').textContent = total ? `${done} / ${total} 완료${done === total ? ' 🎉' : ''}` : '';
+    $('#yearBar').style.width = (total ? done / total * 100 : 0) + '%';
+    if (isNow) {
+      const now = new Date(), end = new Date(now.getFullYear(), 11, 31);
+      const left = Math.round((end - now) / 86400000);
+      const passed = Math.round((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + 1;
+      $('#yearDays').textContent = `올해 ${passed}일째 · ${left}일 남음 (${Math.round(passed / 365 * 100)}% 지나감)`;
+    } else $('#yearDays').textContent = '';
+    $('#yearList').innerHTML = cur.items.length ? cur.items.map(i =>
+      `<li class="${i.done ? 'on' : ''}" data-id="${i.id}"><input type="checkbox" ${i.done ? 'checked' : ''}><span class="month-text ${i.done ? 'done' : ''}">${esc(i.text)}</span><span class="month-btns"><button type="button" class="link-btn m-up" title="위로">▲</button><button type="button" class="link-btn m-down" title="아래로">▼</button><button type="button" class="link-btn m-tomonth" title="이번 달 메모로 내리기">이번 달로</button><button type="button" class="todo-del" title="삭제">×</button></span></li>`).join('')
+      : '<li class="muted small month-empty">아직 없어요. 올해 꼭 이루고 싶은 것을 적어보자.</li>';
+    const prev = yearOf(String(Number(yearCursor) - 1));
+    const leftover = prev.items.filter(i => !i.done && !cur.items.some(c => c.text === i.text));
+    $('#yearCarry').hidden = !leftover.length;
+    $('#yearCarry').textContent = `지난해에서 안 끝난 ${leftover.length}개 가져오기`;
+    if (document.activeElement !== $('#yearMemo')) $('#yearMemo').value = cur.memo || '';
+  }
+  $('#yearPrev').addEventListener('click', () => { yearCursor = String(Number(yearCursor) - 1); renderYear(); });
+  $('#yearNext').addEventListener('click', () => { yearCursor = String(Number(yearCursor) + 1); renderYear(); });
+  $('#yearToday').addEventListener('click', () => { yearCursor = thisYearKey(); renderYear(); });
+  $('#yearAdd').addEventListener('submit', e => {
+    e.preventDefault();
+    const text = $('#yearText').value.trim(); if (!text) return;
+    ensureYear(yearCursor).items.push({ id: uid(), text, done: false });
+    $('#yearText').value = '';
+    save(); renderYear(); $('#yearText').focus();
+  });
+  $('#yearList').addEventListener('click', e => {
+    const li = e.target.closest('li[data-id]'); if (!li) return;
+    const yr = ensureYear(yearCursor); const i = yr.items.findIndex(x => x.id === li.dataset.id); if (i < 0) return;
+    if (e.target.closest('.todo-del')) { if (!yr.items[i].done && !confirm(`"${yr.items[i].text}" 지울까요?`)) return; yr.items.splice(i, 1); }
+    else if (e.target.closest('.m-up')) { if (i === 0) return; [yr.items[i - 1], yr.items[i]] = [yr.items[i], yr.items[i - 1]]; }
+    else if (e.target.closest('.m-down')) { if (i >= yr.items.length - 1) return; [yr.items[i + 1], yr.items[i]] = [yr.items[i], yr.items[i + 1]]; }
+    else if (e.target.closest('.m-tomonth')) {
+      const mo = ensureMonth(thisMonthKey());
+      if (!mo.items.some(c => c.text === yr.items[i].text)) mo.items.push({ id: uid(), text: yr.items[i].text, done: false });
+      monthCursor = thisMonthKey(); save(); renderMonth(); $('#month').scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+    }
+    else if (e.target.matches('input[type=checkbox]')) { yr.items[i].done = e.target.checked; }
+    else return;
+    cleanYear(yearCursor); save(); renderYear();
+  });
+  $('#yearCarry').addEventListener('click', () => {
+    const prev = yearOf(String(Number(yearCursor) - 1)); const cur = ensureYear(yearCursor);
+    prev.items.filter(i => !i.done && !cur.items.some(c => c.text === i.text)).forEach(i => cur.items.push({ id: uid(), text: i.text, done: false }));
+    save(); renderYear();
+  });
+  let yearMemoTimer = null;
+  $('#yearMemo').addEventListener('input', () => {
+    ensureYear(yearCursor).memo = $('#yearMemo').value;
+    clearTimeout(yearMemoTimer); yearMemoTimer = setTimeout(() => { cleanYear(yearCursor); save(); }, 700);
+  });
 
   /* ---------- 다이어리 위젯 ---------- */
   function diaryFor(date) { return state.diary.notes.find(n => n.date === date); }
@@ -1618,7 +1872,7 @@
       langLog: remote.langLog || {},
       useStocks: !!remote.useStocks,
       showDone: state.showDone,
-      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), diary: keep('diary'), events: keep('events'), days: keep('days')
+      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), diary: keep('diary'), events: keep('events'), days: keep('days'), showTodos: remote.showTodos === undefined ? state.showTodos : !!remote.showTodos, panels: keep('panels'), months: keep('months'), years: keep('years')
     }));
     saveLocal();
     return true;
@@ -1809,8 +2063,8 @@
 
   /* ---------- 시작 ---------- */
   function renderAll() {
-    applyTexts(); applyOrder();
-    renderHeader(); renderAssets(); renderWork(); renderCalendar(); renderTodos(); renderWeight(); renderLang(); renderMemo(); renderDiary();
+    applyTexts(); applyOrder(); applySide();
+    renderHeader(); renderAssets(); renderWork(); renderCalendar(); renderTodos(); renderWeight(); renderLang(); renderMemo(); renderDiary(); renderMonth(); renderYear();
     if (dayOpen) renderDay();
     if (document.body.classList.contains('on-board')) {
       if (board.view === 'post' && board.postId) renderPostPage(board.postId);
