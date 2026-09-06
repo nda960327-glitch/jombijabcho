@@ -23,6 +23,7 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+[hidden] { display: none !important; }   /* 클래스의 display 지정보다 숨김이 항상 우선 */
 html { scroll-behavior: smooth; }
 body {
   font-family: var(--font);
