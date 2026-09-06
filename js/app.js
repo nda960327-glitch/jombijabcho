@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260907h';
+  const APP_VER = '20260907i';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -675,8 +675,13 @@
     board.postId = pid;
     $('#bdPostTitle').textContent = postTitle(n);
     $('#bdPostMeta').textContent = whenLabel(n.at) + (n.updatedAt ? ` · 수정 ${whenLabel(n.updatedAt)}` : '');
-    $('#bdPostPhotos').innerHTML = (n.photos || []).map(p => `<img src="${p}" alt="" class="post-photo">`).join('');
-    $('#bdPostBody').innerHTML = esc(n.text || '').replace(/\n/g, '<br>');
+    if (n.html) {
+      $('#bdPostPhotos').innerHTML = '';
+      $('#bdPostBody').innerHTML = sanitizeHtml(n.html);
+    } else {
+      $('#bdPostPhotos').innerHTML = (n.photos || []).map(p => `<img src="${p}" alt="" class="post-photo">`).join('');
+      $('#bdPostBody').innerHTML = esc(n.text || '').replace(/\n/g, '<br>');
+    }
     const ps = postsOf(it), i = ps.findIndex(x => x.id === pid);
     $('#bdPrev').disabled = i >= ps.length - 1;   // 목록은 최신순 → 이전 글은 더 오래된 글
     $('#bdNext').disabled = i <= 0;
@@ -688,37 +693,147 @@
     const it = curItem(); if (!it) return;
     const n = pid ? it.notes.find(x => x.id === pid) : null;
     if (pid && !n) { go('', true); return; }
-    board.draft = { id: n ? n.id : null, title: n ? (n.title || '') : '', text: n ? (n.text || '') : '', photos: n ? (n.photos || []).slice() : [] };
+    board.draft = { id: n ? n.id : null, title: n ? (n.title || '') : '' };
     $('#bdEditTitle').textContent = n ? '글 수정' : '새 글';
     $('#bdTitle').value = board.draft.title;
-    $('#bdBody').value = board.draft.text;
+    // 예전 글(사진 배열 + 줄글)은 편집 가능한 서식으로 바꿔서 연다
+    edBody.innerHTML = n
+      ? (n.html ? sanitizeHtml(n.html)
+        : (n.photos || []).map(p => `<img src="${p}" class="pic size-m pos-center" alt="">`).join('') + '<p>' + esc(n.text || '').replace(/\n/g, '<br>') + '</p>')
+      : '';
     $('#bdEditNote').textContent = '';
-    renderThumbs();
+    $('#imgTools').hidden = true; selectedImg = null;
     showView('edit');
-    setTimeout(() => $(n ? '#bdBody' : '#bdTitle').focus(), 50);
+    setTimeout(() => $(n ? '#bdEditor' : '#bdTitle').focus(), 50);
   }
   $('#bdPrev').addEventListener('click', e => { if (e.target.dataset.pid) openPost(e.target.dataset.pid); });
   $('#bdNext').addEventListener('click', e => { if (e.target.dataset.pid) openPost(e.target.dataset.pid); });
-  function renderThumbs() {
-    $('#bdThumbs').innerHTML = (board.draft ? board.draft.photos : []).map((p, i) =>
-      `<span class="thumb"><img src="${p}" alt=""><button type="button" class="thumb-x" data-i="${i}" title="빼기">×</button></span>`).join('');
-  }
   function saveDraft() {
     const it = curItem(); if (!it || !board.draft) return;
-    const title = $('#bdTitle').value.trim(), text = $('#bdBody').value.trim();
-    if (!title && !text && !board.draft.photos.length) { $('#bdEditNote').textContent = '내용을 적어주세요.'; $('#bdBody').focus(); return; }
+    const title = $('#bdTitle').value.trim();
+    const html = sanitizeHtml(edBody.innerHTML);
+    const tmp = document.createElement('div'); tmp.innerHTML = html;
+    const text = tmp.innerText.replace(/\u00a0/g, ' ').trim();
+    const photos = Array.from(tmp.querySelectorAll('img')).map(i => i.getAttribute('src')).filter(Boolean);
+    if (!title && !text && !photos.length) { $('#bdEditNote').textContent = '내용을 적어주세요.'; edBody.focus(); return; }
     if (board.draft.id) {
       const n = it.notes.find(x => x.id === board.draft.id);
-      if (n) { n.title = title; n.text = text; n.photos = board.draft.photos; n.updatedAt = Date.now(); }
+      if (n) { n.title = title; n.text = text; n.html = html; n.photos = photos; n.updatedAt = Date.now(); }
       board.postId = board.draft.id;
     } else {
-      const n = { id: uid(), title, text, photos: board.draft.photos, at: Date.now() };
+      const n = { id: uid(), title, text, html, photos, at: Date.now() };
       it.notes.push(n); board.postId = n.id;
     }
     board.draft = null;
     touched(); renderTeaser(); renderList();
     openPost(board.postId, true);
   }
+
+  /* ---------- 서식 편집기 ---------- */
+  const edBody = $('#bdEditor');
+  let selectedImg = null;
+  const ALLOWED_FONTS = ['Nanum Myeongjo', 'Nanum Pen Script', 'Gaegu', 'Do Hyeon', 'Noto Sans KR'];
+  const SIZE_MAP = { 1: '.75em', 2: '.88em', 3: '1em', 4: '1.2em', 5: '1.5em', 6: '2em', 7: '2.6em' };
+  const IMG_CLASSES = ['pic', 'size-s', 'size-m', 'pos-left', 'pos-center', 'pos-right', 'pos-float'];
+  /** 저장·표시 전에 허용된 태그/속성만 남긴다. 사진은 data: 이미지만. */
+  function sanitizeHtml(html) {
+    const doc = new DOMParser().parseFromString('<div>' + (html || '') + '</div>', 'text/html');
+    const root = doc.body.firstChild;
+    const ALLOW = { P: 1, BR: 1, B: 1, STRONG: 1, I: 1, EM: 1, U: 1, S: 1, STRIKE: 1, SPAN: 1, DIV: 1, IMG: 1, UL: 1, OL: 1, LI: 1, H3: 1, H4: 1, BLOCKQUOTE: 1, FONT: 1 };
+    const walk = node => {
+      Array.from(node.childNodes).forEach(ch => {
+        if (ch.nodeType === 3) return;
+        if (ch.nodeType !== 1) { ch.remove(); return; }
+        let el = ch;
+        if (!ALLOW[el.tagName]) {                       // 허용 안 된 태그는 내용만 남긴다
+          const frag = doc.createDocumentFragment();
+          while (el.firstChild) frag.appendChild(el.firstChild);
+          el.replaceWith(frag);
+          return walk(node);
+        }
+        if (el.tagName === 'FONT') {                     // <font> → <span style>
+          const sp = doc.createElement('span');
+          const st = [];
+          const face = el.getAttribute('face'), size = el.getAttribute('size'), color = el.getAttribute('color');
+          if (face && ALLOWED_FONTS.indexOf(face.replace(/['"]/g, '')) >= 0) st.push('font-family:' + face.replace(/['"]/g, ''));
+          if (size && SIZE_MAP[size]) st.push('font-size:' + SIZE_MAP[size]);
+          if (color && /^#[0-9a-f]{3,6}$/i.test(color)) st.push('color:' + color);
+          if (st.length) sp.setAttribute('style', st.join(';'));
+          while (el.firstChild) sp.appendChild(el.firstChild);
+          el.replaceWith(sp); el = sp;
+        }
+        const keepStyle = [];
+        const style = el.getAttribute('style') || '';
+        style.split(';').forEach(rule => {
+          const m = rule.match(/^\s*([a-z-]+)\s*:\s*(.+?)\s*$/i); if (!m) return;
+          const k = m[1].toLowerCase(), v = m[2].replace(/['"]/g, '');
+          if (k === 'font-family' && ALLOWED_FONTS.some(f => v.indexOf(f) >= 0)) keepStyle.push('font-family:' + ALLOWED_FONTS.find(f => v.indexOf(f) >= 0));
+          else if (k === 'font-size' && /^([\d.]+(px|em|rem|%)|xx-small|x-small|small|medium|large|x-large|xx-large|xxx-large)$/.test(v)) keepStyle.push('font-size:' + v);
+          else if (k === 'color' && /^(#[0-9a-f]{3,6}|rgb\([\d\s,]+\))$/i.test(v)) keepStyle.push('color:' + v);
+          else if (k === 'text-align' && /^(left|center|right)$/.test(v)) keepStyle.push('text-align:' + v);
+        });
+        const cls = (el.getAttribute('class') || '').split(/\s+/).filter(c => IMG_CLASSES.indexOf(c) >= 0);
+        const src = el.tagName === 'IMG' ? el.getAttribute('src') : null;
+        Array.from(el.attributes).forEach(at => el.removeAttribute(at.name));
+        if (keepStyle.length) el.setAttribute('style', keepStyle.join(';'));
+        if (el.tagName === 'IMG') {
+          if (!src || src.indexOf('data:image/') !== 0) { el.remove(); return; }
+          el.setAttribute('src', src); el.setAttribute('alt', '');
+          if (cls.indexOf('pic') < 0) cls.push('pic');
+          if (!cls.some(c => c.indexOf('size-') === 0)) cls.push('size-m');
+          if (!cls.some(c => c.indexOf('pos-') === 0)) cls.push('pos-center');
+        }
+        if (cls.length) el.setAttribute('class', cls.join(' '));
+        walk(el);
+      });
+    };
+    walk(root);
+    return root.innerHTML;
+  }
+  function exec(cmd, val) {
+    edBody.focus();
+    try { document.execCommand('styleWithCSS', false, cmd === 'fontSize' ? false : true); } catch (e) {}
+    document.execCommand(cmd, false, val == null ? null : val);
+  }
+  $('#edToolbar').addEventListener('mousedown', e => { if (e.target.closest('button')) e.preventDefault(); });  // 선택 영역 유지
+  $('#edToolbar').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.cmd) exec(b.dataset.cmd);
+    else if (b.dataset.color) exec('foreColor', b.dataset.color);
+  });
+  $('#edFont').addEventListener('change', e => { if (e.target.value) exec('fontName', e.target.value); else exec('removeFormat'); e.target.value = ''; });
+  $('#edSize').addEventListener('change', e => { if (e.target.value) exec('fontSize', e.target.value); e.target.value = ''; });
+  // 붙여넣기는 글자만
+  edBody.addEventListener('paste', e => {
+    e.preventDefault();
+    const t = (e.clipboardData || window.clipboardData).getData('text');
+    document.execCommand('insertText', false, t);
+  });
+  // 사진 선택 → 도구 표시
+  edBody.addEventListener('click', e => {
+    const img = e.target.closest('img');
+    if (selectedImg) selectedImg.classList.remove('selected');
+    selectedImg = img || null;
+    if (img) { img.classList.add('selected'); $('#imgTools').hidden = false; }
+    else $('#imgTools').hidden = true;
+  });
+  $('#imgTools').addEventListener('mousedown', e => e.preventDefault());
+  $('#imgTools').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || !selectedImg) return;
+    const v = b.dataset.img;
+    if (v === 'remove') { selectedImg.remove(); selectedImg = null; $('#imgTools').hidden = true; return; }
+    const group = v.indexOf('size-') === 0 ? 'size-' : 'pos-';
+    Array.from(selectedImg.classList).forEach(c => { if (c.indexOf(group) === 0) selectedImg.classList.remove(c); });
+    selectedImg.classList.add(v);
+  });
+  function insertImage(dataUrl) {
+    edBody.focus();
+    const html = `<img src="${dataUrl}" class="pic size-m pos-center" alt="">`;
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount && edBody.contains(sel.anchorNode)) document.execCommand('insertHTML', false, html);
+    else edBody.insertAdjacentHTML('beforeend', html);
+  }
+
   /** 사진을 아주 작게 줄인다 (긴 변 PHOTO_MAX px, JPEG). 방향 정보(EXIF)도 반영. */
   async function shrinkImage(file) {
     let src;
@@ -735,19 +850,15 @@
   $('#bdPhoto').addEventListener('change', async e => {
     const files = Array.from(e.target.files || []); e.target.value = '';
     if (!files.length || !board.draft) return;
-    const room = PHOTO_LIMIT - board.draft.photos.length;
+    const have = edBody.querySelectorAll('img').length;
+    const room = PHOTO_LIMIT - have;
     let note = files.length > room ? `사진은 글 하나에 ${PHOTO_LIMIT}장까지예요.` : '';
     $('#bdEditNote').textContent = '사진 줄이는 중…';
     for (const f of files.slice(0, Math.max(0, room))) {
-      try { board.draft.photos.push(await shrinkImage(f)); }
+      try { insertImage(await shrinkImage(f)); }
       catch (x) { note = '사진을 읽지 못했어요: ' + f.name; }
     }
     $('#bdEditNote').textContent = note;
-    renderThumbs();
-  });
-  $('#bdThumbs').addEventListener('click', e => {
-    const b = e.target.closest('.thumb-x'); if (!b || !board.draft) return;
-    board.draft.photos.splice(Number(b.dataset.i), 1); renderThumbs();
   });
   $('#imOpenBoard').addEventListener('click', () => openList());
   $('#imNewPost').addEventListener('click', () => openEditor(null));
@@ -768,7 +879,9 @@
     if (wasEditing) openPost(wasEditing, true); else openList(true);
   });
   $('#bdSave').addEventListener('click', saveDraft);
-  $('#bdBody').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDraft(); } });
+  edBody.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDraft(); } });
+  // 편집기 글씨체 미리보기용: <font face> 를 화면에서 바로 보이게
+  edBody.addEventListener('input', () => { $('#bdEditNote').textContent = ''; });
   function postClick(e) {
     const li = e.target.closest('li[data-pid]'); if (!li) return;
     if (e.type === 'keydown' && e.key !== 'Enter') return;

@@ -531,3 +531,47 @@ body.on-board .layout, body.on-board .edit-bar { display: none !important; }
   .memo-fab { right: 14px; bottom: 14px; width: 50px; height: 50px; }
   .memo-panel { right: 10px; left: 10px; bottom: 74px; width: auto; max-width: none; height: 55vh; }
 }
+
+/* ---------- 서식 편집기 ---------- */
+.ed-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; background: #fdfbf7; border: 1px solid var(--line); border-radius: 10px; }
+.ed-toolbar select { width: auto; padding: 5px 8px; font-size: .82rem; border-radius: 8px; }
+.ed-toolbar button, .ed-photo { border: 1px solid var(--line-strong); background: #fff; border-radius: 8px; min-width: 30px; height: 30px; padding: 0 8px; font-size: .85rem; cursor: pointer; line-height: 1; }
+.ed-toolbar button:hover, .ed-photo:hover { border-color: var(--accent); color: var(--accent); }
+.ed-group { display: inline-flex; gap: 4px; }
+.ed-colors button { width: 22px; min-width: 22px; height: 22px; border-radius: 999px; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line-strong); padding: 0; }
+.ed-colors button:hover { transform: scale(1.15); }
+.ed-photo { display: inline-flex; align-items: center; }
+.ed-sep { width: 1px; height: 18px; background: var(--line-strong); margin: 0 2px; }
+.img-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; background: var(--gold-soft); border-radius: 10px; font-size: .82rem; }
+.img-tools button { border: 1px solid #e8d7ad; background: #fff; border-radius: 8px; padding: 4px 9px; font-size: .8rem; cursor: pointer; }
+.img-tools button:hover { border-color: var(--gold); }
+.img-tools button.danger:hover { border-color: var(--red); color: var(--red); }
+.ed-body {
+  min-height: 260px; border: 1px solid var(--line-strong); border-radius: 10px; padding: 14px 16px; background: #fff;
+  font-size: 1rem; line-height: 1.8; overflow-wrap: anywhere;
+}
+.ed-body:focus { outline: 0; border-color: var(--accent); }
+.ed-body:empty::before { content: attr(data-placeholder); color: var(--text-dim); pointer-events: none; }
+.ed-body img.selected { outline: 3px solid var(--gold); outline-offset: 2px; }
+.ed-body font[face="Nanum Myeongjo"], .ed-body [style*="Nanum Myeongjo"] { font-family: 'Nanum Myeongjo', serif; }
+.ed-body font[face="Nanum Pen Script"], .ed-body [style*="Nanum Pen Script"] { font-family: 'Nanum Pen Script', cursive; }
+.ed-body font[face="Gaegu"], .ed-body [style*="Gaegu"] { font-family: 'Gaegu', cursive; }
+.ed-body font[face="Do Hyeon"], .ed-body [style*="Do Hyeon"] { font-family: 'Do Hyeon', sans-serif; }
+/* 글 안 사진: 크기·위치 */
+.ed-body img.pic, .post-body img.pic { border-radius: 10px; background: #f0ebe3; height: auto; cursor: pointer; }
+.post-body img.pic { cursor: default; }
+img.pic.size-s { width: 120px; max-width: 60%; }
+img.pic.size-m { width: 240px; max-width: 100%; }
+img.pic.pos-left { display: block; margin: 8px auto 8px 0; }
+img.pic.pos-center { display: block; margin: 8px auto; }
+img.pic.pos-right { display: block; margin: 8px 0 8px auto; }
+img.pic.pos-float { float: left; margin: 4px 14px 6px 0; }
+.post-body::after, .ed-body::after { content: ''; display: block; clear: both; }
+.post-body p { margin: 0; min-height: 1.4em; }
+.post-body ul, .post-body ol, .ed-body ul, .ed-body ol { padding-left: 1.4em; }
+.post-body blockquote, .ed-body blockquote { border-left: 3px solid var(--line-strong); margin: 6px 0; padding-left: 12px; color: var(--text-dim); }
+@media (max-width: 600px) {
+  .ed-toolbar { gap: 4px; }
+  .ed-toolbar button, .ed-photo { height: 32px; min-width: 32px; }
+  img.pic.pos-float { float: none; display: block; margin: 8px auto; }
+}

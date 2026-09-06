@@ -8,8 +8,8 @@
 <title>MY HOME · 나의 목표와 자산</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260907h">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20260907i">
 </head>
 <body>
 
@@ -309,12 +309,65 @@
       <div class="editor card">
         <p class="eyebrow" id="bdEditTitle">새 글</p>
         <input id="bdTitle" class="post-title-input" placeholder="제목 (비워도 돼요)" maxlength="80">
-        <textarea id="bdBody" rows="14" placeholder="생각, 진행 상황, 뭐든 적어요. Ctrl+Enter로 저장" maxlength="8000"></textarea>
-        <div class="photo-row">
-          <div class="photo-thumbs" id="bdThumbs"></div>
-          <label class="text-btn file-btn">📷 사진 붙이기<input type="file" id="bdPhoto" accept="image/*" multiple hidden></label>
-          <span class="muted small">사진은 알아볼 정도로만 아주 작게 줄여서 저장돼요 (글 하나에 6장)</span>
+
+        <div class="ed-toolbar" id="edToolbar">
+          <select id="edFont" title="글씨체">
+            <option value="">기본 글씨체</option>
+            <option value="Nanum Myeongjo">나눔명조</option>
+            <option value="Nanum Pen Script">나눔 손글씨</option>
+            <option value="Gaegu">개구 (귀여운)</option>
+            <option value="Do Hyeon">도현 (굵은)</option>
+          </select>
+          <select id="edSize" title="글씨 크기">
+            <option value="">크기</option>
+            <option value="1">아주 작게</option>
+            <option value="2">작게</option>
+            <option value="3">보통</option>
+            <option value="4">조금 크게</option>
+            <option value="5">크게</option>
+            <option value="6">아주 크게</option>
+            <option value="7">제목처럼</option>
+          </select>
+          <span class="ed-group">
+            <button type="button" data-cmd="bold" title="굵게"><b>B</b></button>
+            <button type="button" data-cmd="italic" title="기울임"><i>I</i></button>
+            <button type="button" data-cmd="underline" title="밑줄"><u>U</u></button>
+            <button type="button" data-cmd="strikeThrough" title="취소선"><s>S</s></button>
+          </span>
+          <span class="ed-group ed-colors" title="글씨 색">
+            <button type="button" data-color="#2b2723" style="background:#2b2723"></button>
+            <button type="button" data-color="#d9534f" style="background:#d9534f"></button>
+            <button type="button" data-color="#3f9f6f" style="background:#3f9f6f"></button>
+            <button type="button" data-color="#4f86c6" style="background:#4f86c6"></button>
+            <button type="button" data-color="#d9a441" style="background:#d9a441"></button>
+            <button type="button" data-color="#e8798f" style="background:#e8798f"></button>
+            <button type="button" data-color="#8a8078" style="background:#8a8078"></button>
+          </span>
+          <span class="ed-group">
+            <button type="button" data-cmd="justifyLeft" title="왼쪽 정렬">⇤</button>
+            <button type="button" data-cmd="justifyCenter" title="가운데 정렬">≡</button>
+            <button type="button" data-cmd="justifyRight" title="오른쪽 정렬">⇥</button>
+            <button type="button" data-cmd="insertUnorderedList" title="점 목록">•</button>
+          </span>
+          <label class="ed-photo" title="사진 넣기 (커서 자리에 들어가요)">📷 사진<input type="file" id="bdPhoto" accept="image/*" multiple hidden></label>
+          <button type="button" data-cmd="removeFormat" title="서식 지우기">지우개</button>
         </div>
+
+        <div class="img-tools" id="imgTools" hidden>
+          <span class="muted small">사진:</span>
+          <button type="button" data-img="size-s">작게</button>
+          <button type="button" data-img="size-m">보통</button>
+          <span class="ed-sep"></span>
+          <button type="button" data-img="pos-left">왼쪽</button>
+          <button type="button" data-img="pos-center">가운데</button>
+          <button type="button" data-img="pos-right">오른쪽</button>
+          <button type="button" data-img="pos-float">글 옆에</button>
+          <span class="ed-sep"></span>
+          <button type="button" data-img="remove" class="danger">빼기</button>
+        </div>
+
+        <div class="ed-body" id="bdEditor" contenteditable="true" data-placeholder="생각, 진행 상황, 뭐든 적어요. 사진은 📷 버튼으로 커서 자리에 들어가고, 사진을 누르면 크기·위치를 바꿀 수 있어요. Ctrl+Enter로 저장"></div>
+
         <p class="muted small" id="bdEditNote"></p>
         <div class="editor-btns">
           <button type="button" class="text-btn" id="bdCancel">취소</button>
@@ -412,6 +465,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260907h"></script>
+<script src="js/app.js?v=20260907i"></script>
 </body>
 </html>
