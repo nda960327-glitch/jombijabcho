@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260907e';
+  const APP_VER = '20260907f';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -441,7 +441,7 @@
       ${pr ? `<div class="bar"><div class="bar-fill ${it.bar === 'weight' ? 'pink' : ''}" style="width:${pr.p}%"></div></div><p class="bar-note">${esc(pr.note)}</p>` : ''}
       <div class="card-foot">
         ${it.tag ? `<button type="button" class="goal-add" data-tag="${esc(it.tag)}">+ 할일</button>` : ''}
-        <span class="card-meta muted">${open ? `할일 ${open}` : ''}${open && noteCount ? ' · ' : ''}${noteCount ? `기록 ${noteCount}` : ''}</span>
+        <span class="card-meta muted">${open ? `할일 ${open}` : ''}${open && noteCount ? ' · ' : ''}${noteCount ? `<button type="button" class="link-btn card-notes" data-kind="${kind}" data-id="${it.id}">📝 기록 ${noteCount}</button>` : ''}</span>
       </div>
     </article>`;
   }
@@ -465,6 +465,8 @@
       inp.focus();
       return;
     }
+    const notesBtn = e.target.closest('.card-notes');
+    if (notesBtn) { e.stopPropagation(); openItemModal(notesBtn.dataset.kind, notesBtn.dataset.id); renderList(); showView('list'); return; }
     const add = e.target.closest('.add-card');
     if (add) { addItem(add.dataset.add); return; }
     const card = e.target.closest('.item[data-id]');
@@ -543,13 +545,14 @@
     else $('#imStatus').value = it.status || 'build';
     $('#imSaved').textContent = '';
     board.postId = null; board.draft = null;
-    renderTeaser(); showView('card');
+    renderTeaser(); renderList(); showView('card');
     $('#itemModal').hidden = false;
     if (isNew) setTimeout(() => $('#imTitle').focus(), 50);
   }
   function closeItemModal() {
     if (!itemOpen) return;
-    itemOpen = false; current = null; board.draft = null; board.postId = null;
+    itemOpen = false; board.draft = null;
+    if (!document.body.classList.contains('on-board')) current = null;
     $('#itemModal').hidden = true;
   }
   function curItem() { return current ? findItem(current.kind, current.id) : null; }
@@ -583,9 +586,56 @@
   const PHOTO_LIMIT = 6;      // 글 하나당 사진 수
   function showView(v) {
     board.view = v;
-    ['Card', 'List', 'Post', 'Edit'].forEach(n => { $('#imView' + n).hidden = (n.toLowerCase() !== v); });
-    const box = $('#itemModal .modal-box'); if (box) box.scrollTop = 0;
+    const onPage = v === 'post' || v === 'edit';
+    ['Card', 'List'].forEach(n => { $('#imView' + n).hidden = onPage || (n.toLowerCase() !== v); });
+    $('#bdViewPost').hidden = v !== 'post';
+    $('#bdViewEdit').hidden = v !== 'edit';
+    $('#bdEdit').hidden = v !== 'post';
+    $('#bdDelete').hidden = v !== 'post';
+    $('#bdNew').hidden = v !== 'post';
+    document.body.classList.toggle('on-board', onPage);
+    $('#boardPage').hidden = !onPage;
+    if (onPage) {
+      // 팝업은 닫고, 페이지 머리에 카드 정보를 채운다
+      $('#itemModal').hidden = true; itemOpen = false;
+      const it = curItem();
+      if (it) {
+        $('#bdCardEmoji').textContent = it.emoji || '📌';
+        $('#bdCardTitle').textContent = it.title || '(제목 없음)';
+        $('#bdCardKind').textContent = (current.kind === 'work' ? '하는 일' : '꿈과 목표') + ' · 기록';
+      }
+      window.scrollTo({ top: 0 });
+    } else {
+      const box = $('#itemModal .modal-box'); if (box) box.scrollTop = 0;
+    }
   }
+  /** 주소(#post/..., #write/..., #edit/...)로 페이지를 연다. 뒤로 가기가 동작한다. */
+  function go(sub, replace) {
+    const hash = '#' + sub;
+    if (location.hash === hash) { route(); return; }
+    if (replace) history.replaceState(null, '', location.pathname + location.search + hash); else location.hash = sub;
+    if (replace) route();
+  }
+  function route() {
+    const m = location.hash.match(/^#(post|write|edit)\/(goal|work)\/([^/]+)(?:\/([^/]+))?$/);
+    if (!m) {
+      // 페이지에서 나옴 → 대시보드. 카드가 있었다면 목록 창을 다시 연다.
+      if (document.body.classList.contains('on-board')) {
+        const back = current;
+        $('#boardPage').hidden = true; document.body.classList.remove('on-board');
+        board.draft = null;
+        if (back && findItem(back.kind, back.id)) { openItemModal(back.kind, back.id); renderList(); showView('list'); }
+      }
+      return;
+    }
+    const kind = m[2], id = m[3], pid = m[4];
+    if (!findItem(kind, id)) { history.replaceState(null, '', location.pathname + location.search); route(); return; }
+    current = { kind, id };
+    if (m[1] === 'post') renderPostPage(pid);
+    else if (m[1] === 'edit') renderEditorPage(pid);
+    else renderEditorPage(null);
+  }
+  window.addEventListener('hashchange', route);
   function postsOf(it) { return (it.notes || []).slice().sort((x, y) => (y.at || 0) - (x.at || 0)); }
   function postTitle(n) {
     return (n.title && n.title.trim()) || (n.text || '').split('\n')[0].trim().slice(0, 40) || (n.photos && n.photos.length ? '(사진)' : '(제목 없음)');
@@ -613,18 +663,27 @@
     const ps = postsOf(it);
     $('#bdPosts').innerHTML = ps.length ? ps.map(postItemHtml).join('') : '<li class="im-empty muted small">아직 글이 없어요.</li>';
   }
-  function openPost(pid) {
-    const it = curItem(); const n = it && it.notes.find(x => x.id === pid); if (!n) return;
+  function openPost(pid, replace) { if (!current) return; go(`post/${current.kind}/${current.id}/${pid}`, replace); }
+  function openEditor(pid) { if (!current) return; go(pid ? `edit/${current.kind}/${current.id}/${pid}` : `write/${current.kind}/${current.id}`); }
+  function renderPostPage(pid) {
+    const it = curItem(); const n = it && it.notes.find(x => x.id === pid);
+    if (!n) { go('', true); return; }
     board.postId = pid;
     $('#bdPostTitle').textContent = postTitle(n);
     $('#bdPostMeta').textContent = whenLabel(n.at) + (n.updatedAt ? ` · 수정 ${whenLabel(n.updatedAt)}` : '');
     $('#bdPostPhotos').innerHTML = (n.photos || []).map(p => `<img src="${p}" alt="" class="post-photo">`).join('');
     $('#bdPostBody').innerHTML = esc(n.text || '').replace(/\n/g, '<br>');
+    const ps = postsOf(it), i = ps.findIndex(x => x.id === pid);
+    $('#bdPrev').disabled = i >= ps.length - 1;   // 목록은 최신순 → 이전 글은 더 오래된 글
+    $('#bdNext').disabled = i <= 0;
+    $('#bdPrev').dataset.pid = i < ps.length - 1 ? ps[i + 1].id : '';
+    $('#bdNext').dataset.pid = i > 0 ? ps[i - 1].id : '';
     showView('post');
   }
-  function openEditor(pid) {
+  function renderEditorPage(pid) {
     const it = curItem(); if (!it) return;
     const n = pid ? it.notes.find(x => x.id === pid) : null;
+    if (pid && !n) { go('', true); return; }
     board.draft = { id: n ? n.id : null, title: n ? (n.title || '') : '', text: n ? (n.text || '') : '', photos: n ? (n.photos || []).slice() : [] };
     $('#bdEditTitle').textContent = n ? '글 수정' : '새 글';
     $('#bdTitle').value = board.draft.title;
@@ -634,6 +693,8 @@
     showView('edit');
     setTimeout(() => $(n ? '#bdBody' : '#bdTitle').focus(), 50);
   }
+  $('#bdPrev').addEventListener('click', e => { if (e.target.dataset.pid) openPost(e.target.dataset.pid); });
+  $('#bdNext').addEventListener('click', e => { if (e.target.dataset.pid) openPost(e.target.dataset.pid); });
   function renderThumbs() {
     $('#bdThumbs').innerHTML = (board.draft ? board.draft.photos : []).map((p, i) =>
       `<span class="thumb"><img src="${p}" alt=""><button type="button" class="thumb-x" data-i="${i}" title="빼기">×</button></span>`).join('');
@@ -652,7 +713,7 @@
     }
     board.draft = null;
     touched(); renderTeaser(); renderList();
-    openPost(board.postId);
+    openPost(board.postId, true);
   }
   /** 사진을 아주 작게 줄인다 (긴 변 PHOTO_MAX px, JPEG). 방향 정보(EXIF)도 반영. */
   async function shrinkImage(file) {
@@ -686,21 +747,23 @@
   });
   $('#imOpenBoard').addEventListener('click', () => { renderList(); showView('list'); });
   $('#imNewPost').addEventListener('click', () => openEditor(null));
+  $('#bdNewFromList').addEventListener('click', () => openEditor(null));
   $('#bdNew').addEventListener('click', () => openEditor(null));
   $('#bdBackCard').addEventListener('click', () => { renderTeaser(); showView('card'); });
-  $('#bdBackList').addEventListener('click', () => { renderList(); showView('list'); });
+  $('#bdBackList').addEventListener('click', () => go('', true));
   $('#bdEdit').addEventListener('click', () => openEditor(board.postId));
   $('#bdDelete').addEventListener('click', () => {
     const it = curItem(); if (!it || !board.postId) return;
     if (!confirm('이 글을 지울까요?')) return;
     it.notes = it.notes.filter(x => x.id !== board.postId);
     board.postId = null;
-    touched(); renderTeaser(); renderList(); showView('list');
+    touched(); renderTeaser(); renderList();
+    go('', true);
   });
   $('#bdCancel').addEventListener('click', () => {
     const wasEditing = board.draft && board.draft.id;
     board.draft = null;
-    if (wasEditing) openPost(wasEditing); else { renderList(); showView('list'); }
+    if (wasEditing) openPost(wasEditing, true); else go('', true);
   });
   $('#bdSave').addEventListener('click', saveDraft);
   $('#bdBody').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); saveDraft(); } });
@@ -1083,6 +1146,7 @@
   document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (modalOpen) closePinModal();
+    else if (document.body.classList.contains('on-board')) go('', true);
     else if (itemOpen) closeItemModal();
   });
   $('#syncBadge').addEventListener('click', e => {
@@ -1153,8 +1217,10 @@
   function renderAll() {
     applyTexts(); applyOrder();
     renderHeader(); renderAssets(); renderWork(); renderCalendar(); renderTodos(); renderWeight(); renderLang();
+    if (document.body.classList.contains('on-board') && board.view === 'post' && board.postId) renderPostPage(board.postId);
   }
   renderAll();
+  route();
   if (apiUrl !== DEFAULT_API) $('#apiUrl').value = apiUrl;
   if (pin && apiUrl) pullFromCloud();
   else if (!apiUrl) setSync('아직 저장 서버 주소가 코드에 없어요. 아래 [주소가 바뀌었다면]을 펼쳐 주소를 넣어주세요.', 'none');
