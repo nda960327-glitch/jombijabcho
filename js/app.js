@@ -11,10 +11,10 @@
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
-   * ⚠️ Apps Script 쪽에 PIN을 설정하고 배포한 뒤에 여기에 주소를 넣으세요.
-   * PIN 검사가 있는 버전이면 주소가 공개돼도 안전합니다. PIN이 없으면 누구나 읽고 지울 수 있습니다.
+   * 서버가 PIN을 확인하므로 이 주소가 공개돼도 내용은 열리지 않습니다.
+   * (PIN 검사가 없는 버전을 배포하면 이 전제가 깨집니다. 반드시 PIN 버전을 유지하세요.)
    */
-  const DEFAULT_API = '';
+  const DEFAULT_API = 'https://script.google.com/macros/s/AKfycbywuEhAog3R8aU3EfOLSXaE97YUcOenOczh-_TY2wWM9En8uiuBNnjMRT6P16aFYEdEuw/exec';
 
   /* ---------- 고정 데이터 ---------- */
   const ASSETS = [
