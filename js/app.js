@@ -540,6 +540,8 @@
   });
 
   /* ---------- 동기화 ---------- */
+  const OLD_MSG = '서버가 아직 옛 버전이에요. Apps Script에서 [배포] → [배포 관리] → ✏️ → 버전 "새 버전" → [배포]까지 해야 반영됩니다. 저장만으로는 바뀌지 않아요.';
+
   function setSync(msg, kind) {
     const el = $('#syncState'), badge = $('#syncBadge');
     el.textContent = msg;
@@ -562,6 +564,8 @@
     if (!data.ok) {
       const err = new Error(data.error || '서버 오류');
       err.badPin = !!data.badPin;
+      // 옛 스크립트는 load 를 모른다 → 배포가 갱신되지 않은 것
+      err.oldVersion = String(data.error || '').indexOf('알 수 없는 action') >= 0;
       throw err;
     }
     return data;
@@ -590,7 +594,8 @@
       renderAll();
       setSync(`불러옴 · ${new Date().toLocaleTimeString('ko-KR')}`, 'ok');
     } catch (err) {
-      if (err.badPin) forgetPin(err.message);
+      if (err.oldVersion) forgetPin(OLD_MSG);
+      else if (err.badPin) forgetPin(err.message);
       else { setSync('불러오기 실패: ' + err.message + ' (이 기기 저장본을 보는 중)', 'err'); renderAll(); }
     }
   }
@@ -603,7 +608,8 @@
       await callApi('save', { state });
       setSync(`저장됨 · ${new Date().toLocaleTimeString('ko-KR')}`, 'ok');
     } catch (err) {
-      if (err.badPin) forgetPin(err.message);
+      if (err.oldVersion) forgetPin(OLD_MSG);
+      else if (err.badPin) forgetPin(err.message);
       else setSync('저장 실패: ' + err.message + ' (이 기기에는 저장돼 있어요)', 'err');
     } finally { syncing = false; }
   }
@@ -618,7 +624,7 @@
 
   function unlock() {
     if (!apiUrl) {
-      setSync('저장 서버 주소가 아직 없어요. 아래 [주소가 바뀌었다면]을 열어 주소를 넣어주세요.', 'none');
+      setSync('아직 저장 서버 주소가 코드에 없어요. 아래 [주소가 바뀌었다면]을 펼쳐 주소를 넣고 [주소 바꾸기]를 먼저 눌러주세요.', 'none');
       return;
     }
     const v = $('#pinInput').value.trim();
@@ -679,7 +685,7 @@
   renderAll();
   if (apiUrl !== DEFAULT_API) $('#apiUrl').value = apiUrl;
   if (pin && apiUrl) pullFromCloud();
-  else if (!apiUrl) setSync('저장 서버 주소가 아직 설정되지 않았어요.', 'none');
+  else if (!apiUrl) setSync('아직 저장 서버 주소가 코드에 없어요. 아래 [주소가 바뀌었다면]을 펼쳐 주소를 넣어주세요.', 'none');
   else setSync('PIN을 넣으면 저장된 내용을 불러옵니다. 지금은 이 브라우저 저장본만 보여요.', 'none');
 
   // 30분마다 시세 갱신
