@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260906e';
+  const APP_VER = '20260907a';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -659,11 +659,41 @@
     $('#pinModalOk').textContent = '확인 중…';
     pin = v;
     try { localStorage.setItem(PIN_KEY, v); } catch (e) {}
-    await pullFromCloud();
-    $('#pinModalOk').disabled = false;
-    $('#pinModalOk').textContent = '잠금 풀기';
-    if (pin) closePinModal();     // 성공하면 pin 이 남아 있다
+    try {
+      // 팝업 안에서는 서버 응답을 직접 확인해 어떤 경우든 이유를 보여준다
+      const data = await callApi('load');
+      prices = data.prices || {};
+      const remote = data.state || {};
+      if ((remote.todos && remote.todos.length) || remote.savedAt) {
+        state = Object.assign(defaultState(), {
+          todos: remote.todos || [], qty: remote.qty || {}, now: remote.now || {},
+          weight: remote.weight, weightStart: remote.weightStart,
+          langLog: remote.langLog || {}, useStocks: !!remote.useStocks, showDone: state.showDone
+        });
+        saveLocal();
+      }
+      renderAll();
+      setSync(`불러옴 · ${new Date().toLocaleTimeString('ko-KR')}`, 'ok');
+      closePinModal();
+    } catch (err) {
+      pin = '';
+      try { localStorage.removeItem(PIN_KEY); } catch (e) {}
+      const why = err.oldVersion ? OLD_MSG
+        : err.badPin ? err.message
+        : /fetch|network|load failed/i.test(err.message) ? '서버에 연결하지 못했어요. 인터넷이나 광고 차단 설정을 확인해 주세요. (' + err.message + ')'
+        : '오류: ' + err.message;
+      showModalError(why);
+      setSync(why, 'err');
+    } finally {
+      $('#pinModalOk').disabled = false;
+      $('#pinModalOk').textContent = '잠금 풀기';
+    }
   }
+  $('#pinModalReset').addEventListener('click', () => {
+    if (!confirm('이 기기의 저장값을 지우고 최신 파일로 다시 엽니다. 서버에 저장된 내용은 그대로예요.')) return;
+    try { localStorage.clear(); } catch (e) {}
+    location.replace(location.pathname + '?r=' + Date.now());
+  });
   $('#pinModalOk').addEventListener('click', submitModalPin);
   $('#pinModalInput').addEventListener('keydown', e => {
     if ((e.key === 'Enter' || e.keyCode === 13) && !e.isComposing) { e.preventDefault(); submitModalPin(); }

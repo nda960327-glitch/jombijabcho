@@ -360,3 +360,4 @@ b, strong { font-weight: 700; }
 .sync-badge { cursor: pointer; }
 
 .modal-ver { margin-top: 12px; font-size: .7rem; opacity: .6; }
+.link-btn { border: 0; background: none; color: var(--text-dim); text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; }
