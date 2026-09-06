@@ -15,6 +15,9 @@
  *  5. 나온 웹 앱 URL(https://script.google.com/macros/s/…/exec)을 복사해서
  *     대시보드 맨 아래 [☁️ 동기화] 칸에 붙여넣고 저장
  *
+ * 기존 시트를 쓰고 싶다면 아래 SHEET_ID 에 시트 ID를 넣으세요 (선택).
+ * 넣지 않으면 시트를 알아서 새로 만듭니다.
+ *
  * 코드를 고친 뒤에는 [배포] → [배포 관리] → ✏️ → 버전: 새 버전 → [배포] 해야 반영됩니다.
  *
  * ⚠️ 이 URL을 아는 사람은 저장된 내용을 볼 수 있습니다. 남에게 공유하지 마세요.
@@ -22,10 +25,21 @@
  * ============================================================
  */
 
+/**
+ * 기존 구글시트를 쓰고 싶으면 여기에 시트 ID를 붙여넣으세요.
+ * 시트 주소에서 /d/ 와 /edit 사이의 긴 문자열이 ID입니다.
+ *   https://docs.google.com/spreadsheets/d/[이 부분]/edit
+ * 비워두면 "MY HOME 데이터" 시트를 새로 만들어 씁니다.
+ *
+ * 기존 시트를 지정해도 안전합니다. 아래 탭 이름이 모두 MY_ 로 시작해서
+ * 원래 있던 할일·프로젝트·업무일지 탭은 건드리지 않고 새 탭만 추가합니다.
+ */
+var SHEET_ID  = '';
+
 var SS_NAME   = 'MY HOME 데이터';
-var TAB_TODO  = '할일';
-var TAB_ASSET = '자산';
-var TAB_CONF  = '설정';
+var TAB_TODO  = 'MY_할일';
+var TAB_ASSET = 'MY_자산';
+var TAB_CONF  = 'MY_설정';
 
 /** 종목: 코드는 야후 파이낸스 심볼 (코스닥 .KQ / 코스피 .KS) */
 var STOCKS = {
@@ -99,14 +113,24 @@ function getPrices_() {
 // 스프레드시트 (없으면 자동 생성)
 // ------------------------------------------------------------
 function getSS_() {
+  // 1) 위에 직접 적어둔 시트가 있으면 그것을 쓴다
+  if (SHEET_ID) {
+    var ss0 = SpreadsheetApp.openById(SHEET_ID);   // 열리지 않으면 오류를 그대로 보여준다
+    initSheets_(ss0);
+    return ss0;
+  }
+  // 2) 전에 만들어 둔 시트가 있으면 재사용
   var props = PropertiesService.getScriptProperties();
   var id = props.getProperty('ssId');
   if (id) {
     try { return SpreadsheetApp.openById(id); } catch (x) { /* 지워졌으면 새로 만든다 */ }
   }
+  // 3) 없으면 새로 만든다
   var ss = SpreadsheetApp.create(SS_NAME);
   props.setProperty('ssId', ss.getId());
   initSheets_(ss);
+  var first = ss.getSheets()[0];
+  if (first.getName() === 'Sheet1' || first.getName() === '시트1') ss.deleteSheet(first);
   return ss;
 }
 
@@ -125,8 +149,6 @@ function initSheets_(ss) {
   tab_(ss, TAB_TODO,  ['id', '할 일', '마감일', '상태', '등록일', '완료일']);
   tab_(ss, TAB_ASSET, ['항목', '심볼', '투자원금', '보유수량', '현재가', '평가금액', '손익']);
   tab_(ss, TAB_CONF,  ['키', '값']);
-  var first = ss.getSheets()[0];
-  if (first.getName() === 'Sheet1' || first.getName() === '시트1') ss.deleteSheet(first);
 }
 
 // ------------------------------------------------------------
