@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260908j">
+<link rel="stylesheet" href="css/style.css?v=20260908k">
 </head>
 <body>
 
@@ -52,7 +52,7 @@
       <div class="stat">
         <span class="stat-label" data-t="stat.need">당장 필요한 돈</span>
         <strong class="stat-value" id="sumJeonse">-</strong>
-        <span class="stat-sub" id="sumJeonseSub">전세 잔금·수수료 7,100만 + 차 1,689만</span>
+        <span class="stat-sub" id="sumJeonseSub">도장깨기 목표 합계</span>
       </div>
       <div class="stat">
         <span class="stat-label" data-t="stat.todos">오늘 할일</span>
@@ -153,20 +153,12 @@
     <p class="quote-note muted small" id="quoteNote">시세를 불러오려면 아래 ☁️ 동기화를 먼저 연결해 주세요.</p>
 
     <div class="ladder card">
-      <div class="ladder-head">
-        <h3 data-t="ladder.h3">🥊 도장깨기</h3>
-        <p class="muted small" data-t="ladder.p">가용 자금이 위에서부터 차례로 채워집니다. 앞 단계를 다 채워야 다음 칸으로 넘어가요. 같은 돈이 두 곳에 겹쳐 세어지지 않습니다.</p>
-      </div>
-      <div class="ladder-cash">
-        <label class="field inline">
-          <span>가용 현금</span>
-          <input type="text" id="cashInput" inputmode="numeric" placeholder="10,000,000">
-        </label>
-        <label class="switch">
-          <input type="checkbox" id="useStocks">
-          <span>주식까지 팔면 포함</span>
-        </label>
-        <span class="ladder-pool" id="ladderPool"></span>
+      <div class="ladder-head head-row">
+        <div>
+          <h3 data-t="ladder.h3">🥊 도장깨기</h3>
+          <p class="muted small" data-t="ladder.p">모아야 할 돈을 하나씩. 모은 돈을 적으면 달성도가 채워져요.</p>
+        </div>
+        <button type="button" class="primary" id="ladderAdd">＋ 목표 추가</button>
       </div>
       <ol class="ladder-list" id="ladderList"></ol>
       <p class="ladder-total" id="ladderTotal"></p>
@@ -569,13 +561,7 @@
       <div class="im-row">
         <label class="im-field">할일 태그<input id="imTag" placeholder="예: 집" maxlength="20"></label>
         <label class="im-field" id="imBarWrap">진행 표시
-          <select id="imBar">
-            <option value="">없음</option>
-            <option value="jeonse">전세 잔금 (도장깨기 1)</option>
-            <option value="car">캐스퍼 (도장깨기 2)</option>
-            <option value="house">집 짓기 (도장깨기 3)</option>
-            <option value="weight">체중 44kg</option>
-          </select>
+          <select id="imBar"></select>
         </label>
         <label class="im-field im-check">홈 화면
           <span class="switch"><input type="checkbox" id="imShow" checked><span>홈에 표시</span></span>
@@ -675,6 +661,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260908j"></script>
+<script src="js/app.js?v=20260908k"></script>
 </body>
 </html>

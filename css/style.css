@@ -856,3 +856,22 @@ body.no-side .layout { grid-template-columns: minmax(0, 1fr); }
 .a-ctl button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .a-ctl button:disabled { opacity: .3; cursor: default; }
 .a-ctl .a-del:hover { border-color: var(--red); color: var(--red); }
+
+/* ---------- 도장깨기 (편집형) ---------- */
+.ladder-head.head-row { justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.lstep .step-top { align-items: center; }
+.l-title { flex: 1; min-width: 0; border: 1px solid transparent; background: transparent; font: inherit; font-weight: 700; font-size: 1rem; padding: 4px 6px; border-radius: 8px; color: var(--text); }
+.l-title:hover { border-color: var(--line-strong); background: #fdfbf7; }
+.l-title:focus { outline: 0; border-color: var(--accent); background: #fff; }
+.l-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px; font-size: .8rem; color: var(--text-dim); }
+.l-row label { display: flex; align-items: center; gap: 6px; }
+.l-row input { width: 140px; border: 1px solid var(--line-strong); border-radius: 8px; padding: 5px 8px; text-align: right; font-size: .9rem; background: #fdfbf7; font-variant-numeric: tabular-nums; }
+.l-row input:focus { outline: 0; border-color: var(--accent); background: #fff; }
+.l-pct { margin-left: auto; font-weight: 900; font-size: 1.05rem; color: var(--gold); }
+.l-pct.done { color: var(--accent); }
+.l-memo { width: 100%; margin-top: 8px; border: 1px solid transparent; background: #fdfbf7; border-radius: 8px; padding: 6px 8px; font: inherit; font-size: .84rem; line-height: 1.5; resize: vertical; color: var(--text); }
+.l-memo:hover { border-color: var(--line-strong); }
+.l-memo:focus { outline: 0; border-color: var(--accent); background: #fff; }
+.lstep.done { border-color: var(--accent); background: #f7fcf9; }
+.l-empty { padding: 20px; text-align: center; }
+@media (max-width: 600px) { .l-row input { width: 110px; } }

@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908j';
+  const APP_VER = '20260908k';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -31,10 +31,10 @@
   const JEONSE = { total: 300000000, paid: 30000000, loan: 200000000, need: 70000000, fee: 1000000 };
   const CAR = 16890000;
   const HOUSE = 300000000;
-  const LADDER = [
-    { id: 'jeonse', emoji: '🏠', title: '전세 잔금 + 중개수수료', amount: JEONSE.need + JEONSE.fee, desc: '잔금 7,000만 + 수수료 100만' },
-    { id: 'car',    emoji: '🚗', title: '캐스퍼 터보 디에센셜',   amount: CAR,                      desc: '스마트센스1 · 컴포트 · 액티브2 · 스타일' },
-    { id: 'house',  emoji: '🏡', title: '증평 미암리 집 짓기',     amount: HOUSE, long: true,        desc: '땅은 이미 내 것. 그 위에 집을' },
+  const SEED_LADDER = [
+    { id: 'jeonse', title: '전세 잔금 + 중개수수료', need: JEONSE.need + JEONSE.fee, saved: 0, memo: '잔금 7,000만 + 수수료 100만' },
+    { id: 'car',    title: '캐스퍼 터보 디에센셜',   need: CAR,   saved: 0, memo: '스마트센스1 · 컴포트 · 액티브2 · 스타일' },
+    { id: 'house',  title: '증평 미암리 집 짓기',     need: HOUSE, saved: 0, memo: '땅은 이미 내 것. 그 위에 집을 (장기)' },
   ];
   const TARGET_WEIGHT = 44;
 
@@ -69,7 +69,7 @@
   /* ---------- 상태 ---------- */
   const defaultState = () => ({
     todos: [], qty: {}, now: {}, weight: null, weightStart: null, langLog: {}, showDone: false, useStocks: false,
-    goals: null, works: null, order: null, texts: {}, memo: '', diary: null, events: [], days: {}, showTodos: true, months: {}, years: {}, panels: {}, treeCounts: true, assets: null
+    goals: null, works: null, order: null, texts: {}, memo: '', diary: null, events: [], days: {}, showTodos: true, months: {}, years: {}, panels: {}, treeCounts: true, assets: null, ladder: null
   });
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   let state = load();
@@ -127,6 +127,8 @@
       if (a.kind === 'stock' && typeof a.symbol !== 'string') a.symbol = '';
     });
     ASSETS = s.assets;
+    if (!Array.isArray(s.ladder)) s.ladder = SEED_LADDER.map(x => Object.assign({}, x));
+    s.ladder.forEach(x => { if (!x.id) x.id = uid(); if (typeof x.title !== 'string') x.title = ''; x.need = Number(x.need) || 0; x.saved = Number(x.saved) || 0; if (typeof x.memo !== 'string') x.memo = ''; });
     if (!s.years || typeof s.years !== 'object') s.years = {};
     Object.keys(s.years).forEach(k => { const m = s.years[k]; if (!m || typeof m !== 'object') { delete s.years[k]; return; } if (!Array.isArray(m.items)) m.items = []; m.items.forEach(i => { if (!i.id) i.id = uid(); }); if (typeof m.memo !== 'string') m.memo = ''; });
     if (!s.months || typeof s.months !== 'object') s.months = {};
@@ -583,68 +585,75 @@
     save(); renderAssets();
   });
 
-  /* ---------- 도장깨기 ---------- */
-  function poolAmount() {
-    let sum = cashTotal();
-    if (state.useStocks) ASSETS.forEach(a => { if (a.kind === 'stock') sum += (valueOf(a) ?? a.cost); });
-    return sum;
-  }
-  function allocate() {
-    let left = poolAmount();
-    return LADDER.map(step => {
-      const got = Math.min(left, step.amount);
-      left -= got;
-      return { step, got, short: step.amount - got, p: pct(got, step.amount) };
-    });
-  }
+  /* ---------- 도장깨기: 직접 편집하는 돈 목표 목록 ---------- */
+  function ladderPct(x) { return x.need > 0 ? pct(x.saved, x.need) : (x.saved > 0 ? 100 : 0); }
   function renderLadder() {
-    const rows = allocate();
-    const cashV = cashTotal();
-    const ci = $('#cashInput');
-    ci.disabled = !ASSETS.some(a => a.kind === 'cash');
-    if (document.activeElement !== ci) ci.value = cashV.toLocaleString('ko-KR');
-    $('#useStocks').checked = !!state.useStocks;
-    $('#ladderPool').textContent = '가용 자금 ' + korean(poolAmount());
-
-    $('#ladderList').innerHTML = rows.map((r, i) => {
-      const done = r.short <= 0;
-      const active = !done && rows.slice(0, i).every(x => x.short <= 0);
-      const fill = done ? '' : active ? 'gold' : 'dim';
-      const status = done ? '✓ 준비 완료' : active ? '지금 이 칸' : '순서 대기';
-      return `<li class="step ${done ? 'done' : ''} ${active ? 'active' : ''} ${r.step.long ? 'long' : ''}">
+    const list = state.ladder;
+    $('#ladderList').innerHTML = list.length ? list.map((x, i) => {
+      const p = ladderPct(x), left = Math.max(0, x.need - x.saved), done = x.need > 0 && x.saved >= x.need;
+      return `<li class="step lstep ${done ? 'done' : ''}" data-id="${x.id}">
         <span class="step-rank">${done ? '✓' : i + 1}</span>
         <div class="step-body">
           <div class="step-top">
-            <span class="step-title">${r.step.emoji} ${esc(r.step.title)}${r.step.long ? ' <em>장기</em>' : ''}</span>
-            <span class="step-amt">${won(r.step.amount)}</span>
+            <input class="l-title" data-id="${x.id}" value="${esc(x.title)}" placeholder="제목 (예: 전세 잔금)" maxlength="60">
+            <span class="tree-ctl"><button type="button" class="l-up" data-id="${x.id}" title="위로" ${i === 0 ? 'disabled' : ''}>▲</button><button type="button" class="l-down" data-id="${x.id}" title="아래로" ${i >= list.length - 1 ? 'disabled' : ''}>▼</button><button type="button" class="l-del del" data-id="${x.id}" title="삭제">×</button></span>
           </div>
-          <div class="bar"><div class="bar-fill ${fill}" style="width:${r.p}%"></div></div>
-          <div class="step-note"><b>${status}</b> · ${korean(r.got)} / ${korean(r.step.amount)}${done ? '' : ' · ' + korean(r.short) + ' 남음'}</div>
-          <div class="step-desc">${esc(r.step.desc)}</div>
+          <div class="l-row">
+            <label>필요한 돈 <input class="l-need" data-id="${x.id}" inputmode="numeric" value="${x.need ? x.need.toLocaleString('ko-KR') : ''}" placeholder="0"></label>
+            <label>모은 돈 <input class="l-saved" data-id="${x.id}" inputmode="numeric" value="${x.saved ? x.saved.toLocaleString('ko-KR') : ''}" placeholder="0"></label>
+            <span class="l-pct ${done ? 'done' : ''}">${Math.round(p)}%</span>
+          </div>
+          <div class="bar"><div class="bar-fill ${done ? '' : 'gold'}" style="width:${p}%"></div></div>
+          <div class="step-note">${done ? '<b>🎉 달성!</b>' : `<b>${korean(x.saved)}</b> 모음 · <b class="need">${korean(left)}</b> 남음`}</div>
+          <textarea class="l-memo" data-id="${x.id}" rows="2" placeholder="메모 (예: 매달 100만 원씩, 12월까지)" maxlength="300">${esc(x.memo)}</textarea>
         </div>
       </li>`;
-    }).join('');
-
-    const nowRows = rows.filter(r => !r.step.long);
-    const need = nowRows.reduce((a, r) => a + r.step.amount, 0);
-    const got = nowRows.reduce((a, r) => a + r.got, 0);
-    const shortAll = need - got;
-    $('#ladderTotal').innerHTML = `당장 목표 <b>${korean(need)}</b> 중 <b>${korean(got)}</b> 확보 · <b class="need">${korean(shortAll)}</b> 더 필요`;
-    $('#sumJeonse').textContent = shortAll > 0 ? korean(shortAll) + ' 더' : '준비 완료';
-    $('#sumJeonseSub').textContent = `${korean(need)} 중 ${korean(got)} 확보 · 전세 → 차 순서`;
-    $('#jeonseNote').textContent = rows[0].short <= 0 ? '✓ 잔금과 수수료 준비 완료' : `${korean(rows[0].short)} 더 모으면 이 칸 통과`;
+    }).join('') : '<li class="muted small l-empty">아직 목표가 없어요. ＋ 목표 추가로 첫 칸을 만들어요.</li>';
+    const need = list.reduce((t, x) => t + x.need, 0), saved = list.reduce((t, x) => t + Math.min(x.saved, x.need || x.saved), 0);
+    const left = Math.max(0, need - saved);
+    $('#ladderTotal').innerHTML = list.length ? `전체 <b>${korean(need)}</b> 중 <b>${korean(saved)}</b> 모음 · <b class="need">${korean(left)}</b> 남음 · 달성 ${need ? Math.round(saved / need * 100) : 0}%` : '';
+    $('#sumJeonse').textContent = list.length ? (left > 0 ? korean(left) + ' 더' : '모두 달성 🎉') : '-';
+    $('#sumJeonseSub').textContent = list.length ? `목표 ${list.length}개 · ${korean(need)} 중 ${korean(saved)} 모음` : '도장깨기에 목표를 추가해요';
+    const je = list.find(x => x.id === 'jeonse') || list[0];
+    $('#jeonseNote').textContent = je ? (je.saved >= je.need ? '✓ 잔금과 수수료 준비 완료' : `${korean(Math.max(0, je.need - je.saved))} 더 모으면 통과`) : '';
     const landNow = landTotal();
     $('#houseBar').style.width = pct(landNow, HOUSE) + '%';
-    $('#houseNote').textContent = `땅값 ${korean(landNow)}은 이미 확보 · 건축비는 도장깨기 3번째 칸`;
+    $('#houseNote').textContent = `땅값 ${korean(landNow)}은 이미 확보 · 건축비는 도장깨기에서 모아요`;
   }
-  $('#cashInput').addEventListener('change', e => {
-    const ca = ASSETS.find(a => a.kind === 'cash'); if (!ca) return;
-    const raw = e.target.value.replace(/[^\d.]/g, '');
-    if (raw === '') delete state.now[ca.id]; else state.now[ca.id] = Number(raw) || 0;
-    save(); renderAssets();
+  $('#ladderAdd').addEventListener('click', () => {
+    state.ladder.push({ id: uid(), title: '', need: 0, saved: 0, memo: '' });
+    save(); renderLadder();
+    const last = $$('#ladderList .l-title').pop(); if (last) last.focus();
   });
-  $('#cashInput').addEventListener('focusin', e => { e.target.value = e.target.value.replace(/,/g, ''); e.target.select(); });
-  $('#useStocks').addEventListener('change', e => { state.useStocks = e.target.checked; save(); renderAssets(); });
+  $('#ladderList').addEventListener('change', e => {
+    const el = e.target; const x = state.ladder.find(y => y.id === el.dataset.id); if (!x) return;
+    const num = v => { const n = Number(String(v).replace(/[^\d.]/g, '')); return isFinite(n) ? n : 0; };
+    if (el.classList.contains('l-title')) x.title = el.value.trim();
+    else if (el.classList.contains('l-need')) x.need = num(el.value);
+    else if (el.classList.contains('l-saved')) x.saved = num(el.value);
+    else if (el.classList.contains('l-memo')) x.memo = el.value.trim();
+    else return;
+    save(); renderLadder(); renderGoals();
+  });
+  $('#ladderList').addEventListener('focusin', e => {
+    const el = e.target.closest('.l-need, .l-saved'); if (!el) return;
+    el.value = el.value.replace(/,/g, ''); el.select();
+  });
+  $('#ladderList').addEventListener('click', e => {
+    const b = e.target.closest('.l-up, .l-down, .l-del'); if (!b) return;
+    const i = state.ladder.findIndex(y => y.id === b.dataset.id); if (i < 0) return;
+    if (b.classList.contains('l-del')) {
+      const x = state.ladder[i];
+      if (!confirm(`"${x.title || '(제목 없음)'}" 목표를 지울까요?`)) return;
+      state.ladder.splice(i, 1);
+      [].concat(state.goals).forEach(g => { if (g.bar === x.id) g.bar = ''; });
+    } else {
+      const j = b.classList.contains('l-up') ? i - 1 : i + 1;
+      if (j < 0 || j >= state.ladder.length) return;
+      [state.ladder[i], state.ladder[j]] = [state.ladder[j], state.ladder[i]];
+    }
+    save(); renderLadder(); renderGoals();
+  });
 
   /* ---------- 목표 / 일 카드 ---------- */
   function goalProgress(key) {
@@ -656,9 +665,10 @@
       const p = start > TARGET_WEIGHT ? pct(start - state.weight, start - TARGET_WEIGHT) : 100;
       return { p, note: left ? `${left.toFixed(1)}kg 남음` : '목표 달성!' };
     }
-    const r = allocate().find(x => x.step.id === key);
-    if (!r) return null;
-    return { p: r.p, note: r.short <= 0 ? '✓ 준비 완료' : `${korean(r.short)} 남음` };
+    const x = state.ladder.find(y => y.id === key);
+    if (!x) return null;
+    const left = Math.max(0, x.need - x.saved);
+    return { p: ladderPct(x), note: x.need > 0 && x.saved >= x.need ? '🎉 달성' : `${korean(left)} 남음 (${Math.round(ladderPct(x))}%)` };
   }
   function listOf(kind) { return kind === 'work' ? state.works : kind === 'diary' ? [state.diary] : state.goals; }
   function findItem(kind, id) { return listOf(kind).find(x => x.id === id); }
@@ -776,7 +786,11 @@
     $('#imTag').value = it.tag || '';
     $('#imBarWrap').hidden = kind !== 'goal';
     $('#imStatusWrap').hidden = kind !== 'work';
-    if (kind === 'goal') $('#imBar').value = it.bar || '';
+    if (kind === 'goal') {
+      $('#imBar').innerHTML = '<option value="">없음</option>' + state.ladder.map(x => `<option value="${x.id}">🥊 ${esc(x.title || '(제목 없음)')}</option>`).join('') + '<option value="weight">⚖️ 체중 44kg</option>';
+      $('#imBar').value = it.bar || '';
+      if ($('#imBar').value !== (it.bar || '')) $('#imBar').value = '';
+    }
     else $('#imStatus').value = it.status || 'build';
     $('#imShow').checked = !it.hidden;
     $('#imSaved').textContent = '';
@@ -2118,7 +2132,7 @@
       langLog: remote.langLog || {},
       useStocks: !!remote.useStocks,
       showDone: state.showDone,
-      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), diary: keep('diary'), events: keep('events'), days: keep('days'), showTodos: remote.showTodos === undefined ? state.showTodos : !!remote.showTodos, panels: keep('panels'), assets: keep('assets'), treeCounts: remote.treeCounts === undefined ? state.treeCounts : !!remote.treeCounts, months: keep('months'), years: keep('years')
+      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), diary: keep('diary'), events: keep('events'), days: keep('days'), showTodos: remote.showTodos === undefined ? state.showTodos : !!remote.showTodos, panels: keep('panels'), assets: keep('assets'), ladder: keep('ladder'), treeCounts: remote.treeCounts === undefined ? state.treeCounts : !!remote.treeCounts, months: keep('months'), years: keep('years')
     }));
     saveLocal();
     return true;
