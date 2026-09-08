@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908l';
+  const APP_VER = '20260908m';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -609,11 +609,6 @@
     const need = list.reduce((t, x) => t + x.need, 0), saved = list.reduce((t, x) => t + Math.min(x.saved, x.need || x.saved), 0);
     const left = Math.max(0, need - saved);
     $('#ladderTotal').innerHTML = list.length ? `전체 <b>${korean(need)}</b> 중 <b>${korean(saved)}</b> 모음 · <b class="need">${korean(left)}</b> 남음 · 달성 ${need ? Math.round(saved / need * 100) : 0}%` : '';
-    const je = list.find(x => x.id === 'jeonse') || list[0];
-    $('#jeonseNote').textContent = je ? (je.saved >= je.need ? '✓ 잔금과 수수료 준비 완료' : `${korean(Math.max(0, je.need - je.saved))} 더 모으면 통과`) : '';
-    const landNow = landTotal();
-    $('#houseBar').style.width = pct(landNow, HOUSE) + '%';
-    $('#houseNote').textContent = `땅값 ${korean(landNow)}은 이미 확보 · 건축비는 도장깨기에서 모아요`;
   }
   $('#ladderAdd').addEventListener('click', () => {
     state.ladder.push({ id: uid(), title: '', need: 0, saved: 0, memo: '' });
