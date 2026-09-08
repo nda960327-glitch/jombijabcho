@@ -275,8 +275,8 @@ function saveState_(st) {
   }
 
   // --- 자산 ---
-  var COST = { emtec: 341224360, hlb: 50673700, cash: 10000000, land: 68000000 };
-  var LABEL = { emtec: '이엠텍', hlb: 'HLB', cash: '현금', land: '토지 (증평 미암리 300평)' };
+  var COST = { emtec: 341224360, hlb: 50673700, cash: 10000000, land: 68000000, garden: 210000000, deposit: 10000000 };
+  var LABEL = { emtec: '이엠텍', hlb: 'HLB', cash: '현금', land: '토지 (증평 미암리 300평)', garden: 'stay in 비밀의정원 (보증금+인테리어)', deposit: '내 집 보증금' };
   var shA = ss.getSheetByName(TAB_ASSET);
   if (shA.getLastRow() > 1) shA.getRange(2, 1, shA.getLastRow() - 1, 7).clearContent();
   var rows = Object.keys(COST).map(function (k) {

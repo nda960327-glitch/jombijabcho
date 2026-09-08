@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908h';
+  const APP_VER = '20260908i';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -23,6 +23,8 @@
     { id: 'hlb',   name: 'HLB',    where: '키움증권', cost: 50673700,  kind: 'stock' },
     { id: 'cash',  name: '현금',   where: '계좌',     cost: 10000000,  kind: 'cash' },
     { id: 'land',  name: '토지 (증평 미암리 300평)', where: '부동산', cost: 68000000, kind: 'land' },
+    { id: 'garden',  name: 'stay in 비밀의정원', where: '보증금 1천만 + 인테리어 2억', cost: 210000000, kind: 'biz', defaultNow: 30000000 },
+    { id: 'deposit', name: '내 집 보증금', where: '월세 보증금 (돌려받는 돈)', cost: 10000000, kind: 'deposit', defaultNow: 10000000 },
   ];
   const JEONSE = { total: 300000000, paid: 30000000, loan: 200000000, need: 70000000, fee: 1000000 };
   const CAR = 16890000;
@@ -136,6 +138,7 @@
   }
   /** 로컬에 먼저 저장하고, 연결돼 있으면 1.5초 뒤 웹에도 저장 */
   function save() {
+    state.nowExtra = Object.assign({}, state.now);   // 서버의 자산 시트는 고정 4개만 저장하므로, 전체 평가금액을 따로도 보관
     saveLocal();
     if (!pin) return;
     clearTimeout(pendingSave);
@@ -398,7 +401,8 @@
       return (q > 0 && p > 0) ? q * p : null;
     }
     const v = state.now[a.id];
-    return (typeof v === 'number' && isFinite(v)) ? v : null;
+    if (typeof v === 'number' && isFinite(v)) return v;
+    return (typeof a.defaultNow === 'number') ? a.defaultNow : null;
   }
 
   function renderAssets() {
@@ -428,7 +432,7 @@
         qtyCell = '<span class="muted">—</span>';
         priceCell = '<span class="muted">—</span>';
         const v = state.now[a.id];
-        valCell = `<input class="now" data-id="${a.id}" inputmode="numeric" placeholder="${a.cost.toLocaleString('ko-KR')}" value="${(typeof v === 'number') ? v.toLocaleString('ko-KR') : ''}">`;
+        valCell = `<input class="now" data-id="${a.id}" inputmode="numeric" placeholder="${(typeof a.defaultNow === 'number' ? a.defaultNow : a.cost).toLocaleString('ko-KR')}" value="${(typeof v === 'number') ? v.toLocaleString('ko-KR') : ''}">`;
       }
 
       const tr = document.createElement('tr');
@@ -2035,7 +2039,7 @@
     state = migrate(Object.assign(defaultState(), {
       todos: remote.todos || [],
       qty: remote.qty || {},
-      now: remote.now || {},
+      now: Object.assign({}, remote.nowExtra || {}, remote.now || {}),
       weight: remote.weight,
       weightStart: remote.weightStart,
       langLog: remote.langLog || {},
