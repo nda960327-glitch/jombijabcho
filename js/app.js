@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908m';
+  const APP_VER = '20260908n';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -1829,6 +1829,28 @@
   $('#allPosts').addEventListener('click', allPostClick);
   $('#allPosts').addEventListener('keydown', allPostClick);
 
+  /* ---------- 체크리스트 항목 그 자리에서 고치기 ---------- */
+  function inlineEdit(li, item, onDone) {
+    const span = li.querySelector('.month-text'); if (!span || li.querySelector('input.m-inline')) return;
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'm-inline'; inp.value = item.text; inp.maxLength = 100;
+    span.replaceWith(inp); inp.focus(); inp.select();
+    let finished = false;
+    const finish = (commit) => {
+      if (finished) return; finished = true;
+      if (commit) {
+        const v = inp.value.trim();
+        if (!v) { if (confirm('내용이 비었어요. 이 항목을 지울까요?')) onDone(null); else onDone(item.text); return; }
+        onDone(v);
+      } else onDone(item.text);
+    };
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); finish(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+    inp.addEventListener('blur', () => finish(true));
+  }
+
   /* ---------- 이번 달 메모 (월별 목표 체크리스트) ---------- */
   let monthCursor = (() => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1); })();
   const thisMonthKey = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1); };
@@ -1845,7 +1867,7 @@
     $('#monthProgressText').textContent = total ? `${done} / ${total} 완료${done === total ? ' 🎉' : ''}` : '';
     $('#monthBar').style.width = (total ? done / total * 100 : 0) + '%';
     $('#monthList').innerHTML = cur.items.length ? cur.items.map((i, idx) =>
-      `<li class="${i.done ? 'on' : ''}" data-id="${i.id}"><input type="checkbox" ${i.done ? 'checked' : ''}><span class="month-text ${i.done ? 'done' : ''}">${esc(i.text)}</span><span class="month-btns"><button type="button" class="link-btn m-up" title="위로">▲</button><button type="button" class="link-btn m-down" title="아래로">▼</button><button type="button" class="todo-del" title="삭제">×</button></span></li>`).join('')
+      `<li class="${i.done ? 'on' : ''}" data-id="${i.id}"><input type="checkbox" ${i.done ? 'checked' : ''}><span class="month-text ${i.done ? 'done' : ''}" title="누르면 고쳐요">${esc(i.text)}</span><span class="month-btns"><button type="button" class="link-btn m-edit" title="고치기">✏️</button><button type="button" class="link-btn m-up" title="위로">▲</button><button type="button" class="link-btn m-down" title="아래로">▼</button><button type="button" class="todo-del" title="삭제">×</button></span></li>`).join('')
       : '<li class="muted small month-empty">아직 없어요. 위에 이번 달 목표를 적어보자.</li>';
     const prev = monthOf(prevMonthKey(monthCursor));
     const leftover = prev.items.filter(i => !i.done && !cur.items.some(c => c.text === i.text));
@@ -1866,6 +1888,10 @@
   $('#monthList').addEventListener('click', e => {
     const li = e.target.closest('li[data-id]'); if (!li) return;
     const mo = ensureMonth(monthCursor); const i = mo.items.findIndex(x => x.id === li.dataset.id); if (i < 0) return;
+    if (e.target.closest('.m-edit') || e.target.closest('.month-text')) {
+      inlineEdit(li, mo.items[i], v => { if (v === null) mo.items.splice(i, 1); else mo.items[i].text = v; cleanMonth(monthCursor); save(); renderMonth(); });
+      return;
+    }
     if (e.target.closest('.todo-del')) { if (!mo.items[i].done && !confirm(`"${mo.items[i].text}" 지울까요?`)) return; mo.items.splice(i, 1); }
     else if (e.target.closest('.m-up')) { if (i === 0) return; [mo.items[i - 1], mo.items[i]] = [mo.items[i], mo.items[i - 1]]; }
     else if (e.target.closest('.m-down')) { if (i >= mo.items.length - 1) return; [mo.items[i + 1], mo.items[i]] = [mo.items[i], mo.items[i + 1]]; }
@@ -1904,7 +1930,7 @@
       $('#yearDays').textContent = `올해 ${passed}일째 · ${left}일 남음 (${Math.round(passed / 365 * 100)}% 지나감)`;
     } else $('#yearDays').textContent = '';
     $('#yearList').innerHTML = cur.items.length ? cur.items.map(i =>
-      `<li class="${i.done ? 'on' : ''}" data-id="${i.id}"><input type="checkbox" ${i.done ? 'checked' : ''}><span class="month-text ${i.done ? 'done' : ''}">${esc(i.text)}</span><span class="month-btns"><button type="button" class="link-btn m-up" title="위로">▲</button><button type="button" class="link-btn m-down" title="아래로">▼</button><button type="button" class="link-btn m-tomonth" title="이번 달 메모로 내리기">이번 달로</button><button type="button" class="todo-del" title="삭제">×</button></span></li>`).join('')
+      `<li class="${i.done ? 'on' : ''}" data-id="${i.id}"><input type="checkbox" ${i.done ? 'checked' : ''}><span class="month-text ${i.done ? 'done' : ''}" title="누르면 고쳐요">${esc(i.text)}</span><span class="month-btns"><button type="button" class="link-btn m-edit" title="고치기">✏️</button><button type="button" class="link-btn m-up" title="위로">▲</button><button type="button" class="link-btn m-down" title="아래로">▼</button><button type="button" class="link-btn m-tomonth" title="이번 달 메모로 내리기">이번 달로</button><button type="button" class="todo-del" title="삭제">×</button></span></li>`).join('')
       : '<li class="muted small month-empty">아직 없어요. 올해 꼭 이루고 싶은 것을 적어보자.</li>';
     const prev = yearOf(String(Number(yearCursor) - 1));
     const leftover = prev.items.filter(i => !i.done && !cur.items.some(c => c.text === i.text));
@@ -1925,6 +1951,10 @@
   $('#yearList').addEventListener('click', e => {
     const li = e.target.closest('li[data-id]'); if (!li) return;
     const yr = ensureYear(yearCursor); const i = yr.items.findIndex(x => x.id === li.dataset.id); if (i < 0) return;
+    if (e.target.closest('.m-edit') || e.target.closest('.month-text')) {
+      inlineEdit(li, yr.items[i], v => { if (v === null) yr.items.splice(i, 1); else yr.items[i].text = v; cleanYear(yearCursor); save(); renderYear(); });
+      return;
+    }
     if (e.target.closest('.todo-del')) { if (!yr.items[i].done && !confirm(`"${yr.items[i].text}" 지울까요?`)) return; yr.items.splice(i, 1); }
     else if (e.target.closest('.m-up')) { if (i === 0) return; [yr.items[i - 1], yr.items[i]] = [yr.items[i], yr.items[i - 1]]; }
     else if (e.target.closest('.m-down')) { if (i >= yr.items.length - 1) return; [yr.items[i + 1], yr.items[i]] = [yr.items[i], yr.items[i + 1]]; }
