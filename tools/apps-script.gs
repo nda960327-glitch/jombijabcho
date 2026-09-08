@@ -77,7 +77,7 @@ function doPost(e) {
 
   if (body.action === 'load') {
     try {
-      return json_({ ok: true, state: loadState_(), prices: getPrices_(), sheetUrl: getSS_().getUrl() });
+      return json_({ ok: true, state: loadState_(), prices: getPrices_(body.stocks), sheetUrl: getSS_().getUrl() });
     } catch (err) {
       return json_({ ok: false, error: String(err && err.message || err) });
     }
@@ -102,14 +102,23 @@ function doPost(e) {
 // ------------------------------------------------------------
 // 시세 (야후 파이낸스) — 60초 캐시
 // ------------------------------------------------------------
-function getPrices_() {
+/** 페이지가 보낸 {id: 심볼} 목록이 있으면 그것을, 없으면 위 STOCKS 를 쓴다 */
+function getPrices_(extra) {
+  var list = {};
+  if (extra && typeof extra === 'object' && Object.keys(extra).length) {
+    Object.keys(extra).forEach(function (k) {
+      var sym = String(extra[k] || '').toUpperCase();
+      if (/^[A-Z0-9.\-^=]{1,16}$/.test(sym) && Object.keys(list).length < 20) list[k] = { name: k, symbol: sym };
+    });
+  } else list = STOCKS;
   var cache = CacheService.getScriptCache();
-  var hit = cache.get('prices');
+  var ckey = 'prices:' + Object.keys(list).map(function (k) { return k + '=' + list[k].symbol; }).join(',');
+  var hit = cache.get(ckey);
   if (hit) { try { return JSON.parse(hit); } catch (x) {} }
 
   var out = {};
-  Object.keys(STOCKS).forEach(function (key) {
-    var s = STOCKS[key];
+  Object.keys(list).forEach(function (key) {
+    var s = list[key];
     try {
       var url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + s.symbol + '?interval=1d&range=1d';
       var res = UrlFetchApp.fetch(url, {
@@ -130,7 +139,7 @@ function getPrices_() {
       out[key] = { name: s.name, symbol: s.symbol, error: String(err && err.message || err) };
     }
   });
-  cache.put('prices', JSON.stringify(out), 60);
+  cache.put(ckey, JSON.stringify(out), 60);
   return out;
 }
 
@@ -255,7 +264,9 @@ function loadState_() {
 function saveState_(st) {
   var ss = getSS_();
   initSheets_(ss);
-  var prices = getPrices_();
+  var stockMap = {};
+  (st.assets || []).forEach(function (a) { if (a && a.kind === 'stock' && a.symbol) stockMap[a.id] = a.symbol; });
+  var prices = getPrices_(stockMap);
 
   // --- 할일 ---
   var shT = ss.getSheetByName(TAB_TODO);
@@ -279,19 +290,19 @@ function saveState_(st) {
   var LABEL = { emtec: '이엠텍', hlb: 'HLB', cash: '현금', land: '토지 (증평 미암리 300평)', garden: 'stay in 비밀의정원 (보증금+인테리어)', deposit: '내 집 보증금' };
   var shA = ss.getSheetByName(TAB_ASSET);
   if (shA.getLastRow() > 1) shA.getRange(2, 1, shA.getLastRow() - 1, 7).clearContent();
-  var rows = Object.keys(COST).map(function (k) {
-    var cost = COST[k];
+  // 페이지가 자산 목록을 보내면 그것을, 아니면 위 고정 목록을 쓴다
+  var list = (st.assets && st.assets.length) ? st.assets.map(function (a) { return { id: a.id, name: a.name, cost: Number(a.cost) || 0, stock: a.kind === 'stock', symbol: a.symbol || '' }; })
+    : Object.keys(COST).map(function (k) { return { id: k, name: LABEL[k], cost: COST[k], stock: !!STOCKS[k], symbol: STOCKS[k] ? STOCKS[k].symbol : '' }; });
+  var rows = list.map(function (a) {
+    var k = a.id, cost = a.cost;
     var q = (st.qty && Number(st.qty[k])) || '';
     var p = prices[k] && prices[k].price ? prices[k].price : '';
     var val;
-    if (STOCKS[k]) val = (q && p) ? q * p : '';
+    if (a.stock && p) val = q ? q * p : '';
     else val = (st.now && st.now[k] !== undefined && st.now[k] !== null) ? Number(st.now[k]) : '';
-    return [LABEL[k], (STOCKS[k] ? STOCKS[k].symbol : ''), cost, q, p, val, val === '' ? '' : val - cost];
+    return [k, a.symbol, cost, q, p, val, val === '' ? '' : val - cost, a.name];
   });
-  shA.getRange(2, 1, rows.length, 7).setValues(rows);
-  // 사람이 보기 좋게: A열은 키 대신 이름이므로, 다시 읽을 때를 위해 키를 메모로 남긴다
-  shA.getRange(2, 1, rows.length, 1).setValues(Object.keys(COST).map(function (k) { return [k]; }));
-  shA.getRange(2, 8, rows.length, 1).setValues(Object.keys(COST).map(function (k) { return [LABEL[k]]; }));
+  if (rows.length) shA.getRange(2, 1, rows.length, 8).setValues(rows);
   shA.getRange(1, 8).setValue('이름').setFontWeight('bold').setBackground('#f0ebe3');
 
   // --- 설정 ---

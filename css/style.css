@@ -839,3 +839,20 @@ body.no-side .layout { grid-template-columns: minmax(0, 1fr); }
 /* ---------- 카테고리 트리: 이동 ---------- */
 .tree-move { border: 1px solid var(--line); border-radius: 6px; height: 22px; font-size: .72rem; background: #fff; color: var(--text-dim); max-width: 74px; padding: 0 2px; cursor: pointer; }
 .tree-move:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- 자산 편집 ---------- */
+.see-all.on { background: var(--gold-soft); color: #7a5411; }
+.asset-edit-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; padding: 10px 12px; background: var(--gold-soft); border-radius: 12px; }
+.a-kind-tag { display: inline-block; margin-left: 6px; font-size: .68rem; font-weight: 500; color: var(--text-dim); background: #f0ebe3; border-radius: 999px; padding: 0 6px; vertical-align: middle; }
+.asset-table tr.editing td { white-space: normal; vertical-align: top; }
+.asset-table tr.editing input, .asset-table tr.editing select { border: 1px solid var(--line-strong); border-radius: 8px; padding: 4px 8px; font-size: .85rem; background: #fdfbf7; width: 100%; box-sizing: border-box; margin: 2px 0; }
+.asset-table tr.editing input:focus, .asset-table tr.editing select:focus { outline: 0; border-color: var(--accent); background: #fff; }
+.asset-table tr.editing .a-name { min-width: 130px; }
+.asset-table tr.editing .a-where { min-width: 120px; }
+.asset-table tr.editing .a-cost { min-width: 120px; text-align: right; }
+.asset-table tr.editing input.qty, .asset-table tr.editing input.now { width: 110px; }
+.a-ctl { white-space: nowrap; }
+.a-ctl button { border: 1px solid var(--line); background: #fff; border-radius: 6px; width: 26px; height: 26px; font-size: .75rem; cursor: pointer; color: var(--text-dim); margin-left: 2px; }
+.a-ctl button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.a-ctl button:disabled { opacity: .3; cursor: default; }
+.a-ctl .a-del:hover { border-color: var(--red); color: var(--red); }

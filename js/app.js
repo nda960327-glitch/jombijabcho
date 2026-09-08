@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908i';
+  const APP_VER = '20260908j';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -18,9 +18,11 @@
   const DEFAULT_API = 'https://script.google.com/macros/s/AKfycby-lVpo55ltoCZupAziQQrs_OeLUhPMM1h98HfJcZhDEX6ZlvoHQFCGyGaA0F9qmF-YKw/exec';
 
   /* ---------- 고정 데이터 (자산·도장깨기) ---------- */
-  const ASSETS = [
-    { id: 'emtec', name: '이엠텍', where: '토스증권', cost: 341224360, kind: 'stock' },
-    { id: 'hlb',   name: 'HLB',    where: '키움증권', cost: 50673700,  kind: 'stock' },
+  const KINDS = { stock: '주식', cash: '현금', land: '부동산', biz: '가게·사업', deposit: '보증금', other: '기타' };
+  let ASSETS = [];   // 저장 데이터(state.assets)를 가리킨다. 처음 한 번만 아래 기본값으로 채운다.
+  const SEED_ASSETS = [
+    { id: 'emtec', name: '이엠텍', where: '토스증권', cost: 341224360, kind: 'stock', symbol: '091120.KQ' },
+    { id: 'hlb',   name: 'HLB',    where: '키움증권', cost: 50673700,  kind: 'stock', symbol: '028300.KQ' },
     { id: 'cash',  name: '현금',   where: '계좌',     cost: 10000000,  kind: 'cash' },
     { id: 'land',  name: '토지 (증평 미암리 300평)', where: '부동산', cost: 68000000, kind: 'land' },
     { id: 'garden',  name: 'stay in 비밀의정원', where: '보증금 1천만 + 인테리어 2억', cost: 210000000, kind: 'biz', defaultNow: 30000000 },
@@ -67,7 +69,7 @@
   /* ---------- 상태 ---------- */
   const defaultState = () => ({
     todos: [], qty: {}, now: {}, weight: null, weightStart: null, langLog: {}, showDone: false, useStocks: false,
-    goals: null, works: null, order: null, texts: {}, memo: '', diary: null, events: [], days: {}, showTodos: true, months: {}, years: {}, panels: {}, treeCounts: true
+    goals: null, works: null, order: null, texts: {}, memo: '', diary: null, events: [], days: {}, showTodos: true, months: {}, years: {}, panels: {}, treeCounts: true, assets: null
   });
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   let state = load();
@@ -115,6 +117,16 @@
     if (typeof s.showTodos !== 'boolean') s.showTodos = true;
     if (!s.panels || typeof s.panels !== 'object') s.panels = {};
     if (typeof s.treeCounts !== 'boolean') s.treeCounts = true;
+    if (!Array.isArray(s.assets) || !s.assets.length) s.assets = SEED_ASSETS.map(a => Object.assign({}, a));
+    s.assets.forEach(a => {
+      if (!a.id) a.id = uid();
+      if (typeof a.name !== 'string') a.name = '';
+      if (typeof a.where !== 'string') a.where = '';
+      a.cost = Number(a.cost) || 0;
+      if (!KINDS[a.kind]) a.kind = 'other';
+      if (a.kind === 'stock' && typeof a.symbol !== 'string') a.symbol = '';
+    });
+    ASSETS = s.assets;
     if (!s.years || typeof s.years !== 'object') s.years = {};
     Object.keys(s.years).forEach(k => { const m = s.years[k]; if (!m || typeof m !== 'object') { delete s.years[k]; return; } if (!Array.isArray(m.items)) m.items = []; m.items.forEach(i => { if (!i.id) i.id = uid(); }); if (typeof m.memo !== 'string') m.memo = ''; });
     if (!s.months || typeof s.months !== 'object') s.months = {};
@@ -398,19 +410,30 @@
     if (a.kind === 'stock') {
       const q = Number(state.qty[a.id]);
       const p = prices[a.id] && prices[a.id].price;
-      return (q > 0 && p > 0) ? q * p : null;
+      if (q > 0 && p > 0) return q * p;
+      if (p > 0) return null;
     }
     const v = state.now[a.id];
     if (typeof v === 'number' && isFinite(v)) return v;
     return (typeof a.defaultNow === 'number') ? a.defaultNow : null;
   }
 
+  function cashTotal() { return ASSETS.filter(a => a.kind === 'cash').reduce((t, a) => t + (valueOf(a) ?? a.cost), 0); }
+  function landTotal() { return ASSETS.filter(a => a.kind === 'land').reduce((t, a) => t + (valueOf(a) ?? a.cost), 0); }
+  let assetEditing = false;
+  function kindSelect(a) {
+    return `<select class="a-kind" data-id="${a.id}">${Object.keys(KINDS).map(k => `<option value="${k}" ${a.kind === k ? 'selected' : ''}>${KINDS[k]}</option>`).join('')}</select>`;
+  }
+
   function renderAssets() {
     const body = $('#assetBody');
     body.innerHTML = '';
     let totalCost = 0, totalNow = 0, anyNow = false;
+    $('#assetEditBar').hidden = !assetEditing;
+    $('#assetEditToggle').textContent = assetEditing ? '✓ 편집 끝' : '✏️ 자산 편집';
+    $('#assetEditToggle').classList.toggle('on', assetEditing);
 
-    ASSETS.forEach(a => {
+    ASSETS.forEach((a, idx) => {
       const val = valueOf(a);
       const use = val === null ? a.cost : val;
       const pnl = use - a.cost;
@@ -424,10 +447,15 @@
         const q = state.qty[a.id];
         qtyCell = `<input class="qty" data-id="${a.id}" inputmode="numeric" placeholder="수량" value="${q ? Number(q).toLocaleString('ko-KR') : ''}">`;
         const p = prices[a.id];
-        priceCell = p && p.price
+        const hasPrice = !!(p && p.price);
+        priceCell = hasPrice
           ? `${p.price.toLocaleString('ko-KR')}<br><span class="chg ${p.prev && p.price >= p.prev ? 'up' : 'down'}">${p.prev ? pct1((p.price - p.prev) / p.prev * 100) : ''}</span>`
-          : '<span class="muted">—</span>';
-        valCell = val === null ? '<span class="muted">수량 입력</span>' : won(val);
+          : `<span class="muted" title="${a.symbol ? '시세 없음 · 평가금액을 직접 적어요' : '심볼을 넣으면 시세를 가져와요'}">—</span>`;
+        if (hasPrice) valCell = val === null ? '<span class="muted">수량 입력</span>' : won(val);
+        else {
+          const v = state.now[a.id];
+          valCell = `<input class="now" data-id="${a.id}" inputmode="numeric" placeholder="평가금액 직접" value="${(typeof v === 'number') ? v.toLocaleString('ko-KR') : ''}">`;
+        }
       } else {
         qtyCell = '<span class="muted">—</span>';
         priceCell = '<span class="muted">—</span>';
@@ -436,14 +464,26 @@
       }
 
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="name">${esc(a.name)}</td>
-        <td class="where">${esc(a.where)}</td>
-        <td class="num">${won(a.cost)}</td>
-        <td class="num">${qtyCell}</td>
-        <td class="num">${priceCell}</td>
-        <td class="num">${valCell}</td>
-        <td class="num pnl ${cls}">${pnlText}</td>`;
+      if (assetEditing) {
+        tr.className = 'editing';
+        tr.innerHTML = `
+          <td class="name"><input class="a-name" data-id="${a.id}" value="${esc(a.name)}" placeholder="이름" maxlength="40">${kindSelect(a)}</td>
+          <td class="where"><input class="a-where" data-id="${a.id}" value="${esc(a.where)}" placeholder="어디에" maxlength="40">${a.kind === 'stock' ? `<input class="a-symbol" data-id="${a.id}" value="${esc(a.symbol || '')}" placeholder="심볼 예: 005930.KS" maxlength="16">` : ''}</td>
+          <td class="num"><input class="a-cost" data-id="${a.id}" inputmode="numeric" value="${a.cost.toLocaleString('ko-KR')}"></td>
+          <td class="num">${qtyCell}</td>
+          <td class="num">${priceCell}</td>
+          <td class="num">${valCell}</td>
+          <td class="num a-ctl"><button type="button" class="a-up" data-id="${a.id}" title="위로" ${idx === 0 ? 'disabled' : ''}>▲</button><button type="button" class="a-down" data-id="${a.id}" title="아래로" ${idx >= ASSETS.length - 1 ? 'disabled' : ''}>▼</button><button type="button" class="a-del" data-id="${a.id}" title="삭제">×</button></td>`;
+      } else {
+        tr.innerHTML = `
+          <td class="name">${esc(a.name)}<span class="a-kind-tag">${KINDS[a.kind] || ''}</span></td>
+          <td class="where">${esc(a.where)}</td>
+          <td class="num">${won(a.cost)}</td>
+          <td class="num">${qtyCell}</td>
+          <td class="num">${priceCell}</td>
+          <td class="num">${valCell}</td>
+          <td class="num pnl ${cls}">${pnlText}</td>`;
+      }
       body.appendChild(tr);
     });
 
@@ -508,13 +548,44 @@
     save(); renderAssets();
   });
   $('#assetBody').addEventListener('focusin', e => {
-    const inp = e.target.closest('input.qty, input.now'); if (!inp) return;
+    const inp = e.target.closest('input.qty, input.now, input.a-cost'); if (!inp) return;
     inp.value = inp.value.replace(/,/g, ''); inp.select();
+  });
+  $('#assetEditToggle').addEventListener('click', () => { assetEditing = !assetEditing; renderAssets(); });
+  $('#assetAdd').addEventListener('click', () => {
+    ASSETS.push({ id: uid(), name: '새 자산', where: '', cost: 0, kind: 'other' });
+    save(); renderAssets();
+    const last = $$('#assetBody input.a-name').pop(); if (last) { last.focus(); last.select(); }
+  });
+  $('#assetBody').addEventListener('change', e => {
+    const el = e.target;
+    const a = ASSETS.find(x => x.id === el.dataset.id); if (!a) return;
+    if (el.classList.contains('a-name')) a.name = el.value.trim();
+    else if (el.classList.contains('a-where')) a.where = el.value.trim();
+    else if (el.classList.contains('a-symbol')) { a.symbol = el.value.trim().toUpperCase(); if (pin) pullFromCloud(true); }
+    else if (el.classList.contains('a-cost')) { const n = Number(el.value.replace(/[^\d.]/g, '')); a.cost = isFinite(n) ? n : 0; }
+    else if (el.classList.contains('a-kind')) { a.kind = el.value; if (a.kind === 'stock' && typeof a.symbol !== 'string') a.symbol = ''; }
+    else return;
+    save(); renderAssets();
+  });
+  $('#assetBody').addEventListener('click', e => {
+    const b = e.target.closest('.a-up, .a-down, .a-del'); if (!b) return;
+    const i = ASSETS.findIndex(x => x.id === b.dataset.id); if (i < 0) return;
+    if (b.classList.contains('a-del')) {
+      const a = ASSETS[i];
+      if (!confirm(`"${a.name || '(이름 없음)'}" 자산을 표에서 지울까요?`)) return;
+      ASSETS.splice(i, 1); delete state.qty[a.id]; delete state.now[a.id];
+    } else {
+      const j = b.classList.contains('a-up') ? i - 1 : i + 1;
+      if (j < 0 || j >= ASSETS.length) return;
+      [ASSETS[i], ASSETS[j]] = [ASSETS[j], ASSETS[i]];
+    }
+    save(); renderAssets();
   });
 
   /* ---------- 도장깨기 ---------- */
   function poolAmount() {
-    let sum = valueOf(ASSETS[2]) ?? ASSETS[2].cost;
+    let sum = cashTotal();
     if (state.useStocks) ASSETS.forEach(a => { if (a.kind === 'stock') sum += (valueOf(a) ?? a.cost); });
     return sum;
   }
@@ -528,8 +599,9 @@
   }
   function renderLadder() {
     const rows = allocate();
-    const cashV = valueOf(ASSETS[2]) ?? ASSETS[2].cost;
+    const cashV = cashTotal();
     const ci = $('#cashInput');
+    ci.disabled = !ASSETS.some(a => a.kind === 'cash');
     if (document.activeElement !== ci) ci.value = cashV.toLocaleString('ko-KR');
     $('#useStocks').checked = !!state.useStocks;
     $('#ladderPool').textContent = '가용 자금 ' + korean(poolAmount());
@@ -561,13 +633,14 @@
     $('#sumJeonse').textContent = shortAll > 0 ? korean(shortAll) + ' 더' : '준비 완료';
     $('#sumJeonseSub').textContent = `${korean(need)} 중 ${korean(got)} 확보 · 전세 → 차 순서`;
     $('#jeonseNote').textContent = rows[0].short <= 0 ? '✓ 잔금과 수수료 준비 완료' : `${korean(rows[0].short)} 더 모으면 이 칸 통과`;
-    const landNow = valueOf(ASSETS[3]) ?? ASSETS[3].cost;
+    const landNow = landTotal();
     $('#houseBar').style.width = pct(landNow, HOUSE) + '%';
     $('#houseNote').textContent = `땅값 ${korean(landNow)}은 이미 확보 · 건축비는 도장깨기 3번째 칸`;
   }
   $('#cashInput').addEventListener('change', e => {
+    const ca = ASSETS.find(a => a.kind === 'cash'); if (!ca) return;
     const raw = e.target.value.replace(/[^\d.]/g, '');
-    if (raw === '') delete state.now.cash; else state.now.cash = Number(raw) || 0;
+    if (raw === '') delete state.now[ca.id]; else state.now[ca.id] = Number(raw) || 0;
     save(); renderAssets();
   });
   $('#cashInput').addEventListener('focusin', e => { e.target.value = e.target.value.replace(/,/g, ''); e.target.select(); });
@@ -2045,17 +2118,22 @@
       langLog: remote.langLog || {},
       useStocks: !!remote.useStocks,
       showDone: state.showDone,
-      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), diary: keep('diary'), events: keep('events'), days: keep('days'), showTodos: remote.showTodos === undefined ? state.showTodos : !!remote.showTodos, panels: keep('panels'), treeCounts: remote.treeCounts === undefined ? state.treeCounts : !!remote.treeCounts, months: keep('months'), years: keep('years')
+      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), diary: keep('diary'), events: keep('events'), days: keep('days'), showTodos: remote.showTodos === undefined ? state.showTodos : !!remote.showTodos, panels: keep('panels'), assets: keep('assets'), treeCounts: remote.treeCounts === undefined ? state.treeCounts : !!remote.treeCounts, months: keep('months'), years: keep('years')
     }));
     saveLocal();
     return true;
   }
 
+  function stockSymbols() {
+    const m = {};
+    ASSETS.forEach(a => { if (a.kind === 'stock' && a.symbol && /^[A-Z0-9.\-^=]{1,16}$/i.test(a.symbol)) m[a.id] = a.symbol.toUpperCase(); });
+    return m;
+  }
   async function pullFromCloud(silent) {
     if (!pin) return;
     if (!silent) setSync('불러오는 중…', 'wait');
     try {
-      const data = await callApi('load');
+      const data = await callApi('load', { stocks: stockSymbols() });
       prices = data.prices || {};
       adoptRemote(data.state || {});
       renderAll();
@@ -2128,7 +2206,7 @@
     pin = v;
     try { localStorage.setItem(PIN_KEY, v); } catch (e) {}
     try {
-      const data = await callApi('load');
+      const data = await callApi('load', { stocks: stockSymbols() });
       prices = data.prices || {};
       adoptRemote(data.state || {});
       renderAll();

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260908i">
+<link rel="stylesheet" href="css/style.css?v=20260908j">
 </head>
 <body>
 
@@ -131,8 +131,8 @@
   <section id="money" class="block" data-sec="money">
     <div class="sec-tools" hidden><span class="sec-name">자산 관리</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
-      <h2 data-t="money.h2">💰 자산 관리</h2>
-      <p data-t="money.p">주식은 보유 수량만 적으면 현재가를 자동으로 가져와 평가금액을 계산해요. 현금·토지·가게·보증금은 평가금액을 직접 적어요.</p>
+      <div class="head-row"><h2 data-t="money.h2">💰 자산 관리</h2><button type="button" class="see-all" id="assetEditToggle">✏️ 자산 편집</button></div>
+      <p data-t="money.p">주식은 보유 수량만 적으면 현재가를 자동으로 가져와 평가금액을 계산해요. 현금·토지·가게·보증금은 평가금액을 직접 적어요. 항목 자체를 고치려면 자산 편집.</p>
     </div>
 
     <div class="table-wrap">
@@ -145,6 +145,10 @@
           <tr><th colspan="2">합계</th><th class="num" id="assetTotalCost"></th><th></th><th></th><th class="num" id="assetTotalNow"></th><th class="num" id="assetTotalPnl"></th></tr>
         </tfoot>
       </table>
+    </div>
+    <div class="asset-edit-bar" id="assetEditBar" hidden>
+      <button type="button" class="primary" id="assetAdd">＋ 자산 추가</button>
+      <span class="muted small">이름·어디에·투자원금·종류를 바로 고쳐요. 주식은 야후 심볼(코스닥 .KQ / 코스피 .KS, 예: 005930.KS)을 넣으면 현재가를 가져와요. ▲▼로 순서, ×로 삭제.</span>
     </div>
     <p class="quote-note muted small" id="quoteNote">시세를 불러오려면 아래 ☁️ 동기화를 먼저 연결해 주세요.</p>
 
@@ -671,6 +675,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260908i"></script>
+<script src="js/app.js?v=20260908j"></script>
 </body>
 </html>
