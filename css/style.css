@@ -875,3 +875,11 @@ body.no-side .layout { grid-template-columns: minmax(0, 1fr); }
 .lstep.done { border-color: var(--accent); background: #f7fcf9; }
 .l-empty { padding: 20px; text-align: center; }
 @media (max-width: 600px) { .l-row input { width: 110px; } }
+
+/* ---------- 자산 관리 제목 옆 총자산 ---------- */
+.money-head { align-items: center; }
+.money-total { display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 4px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; box-shadow: var(--shadow); }
+.money-total b { font-size: 1.05rem; font-weight: 900; }
+.mt-sub { font-size: .76rem; color: var(--text-dim); }
+.mt-sub.up { color: var(--accent); } .mt-sub.down { color: var(--red); }
+.money-head .see-all { margin-left: auto; }

@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908k';
+  const APP_VER = '20260908l';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -57,7 +57,7 @@
     { emoji: '📱', title: '캐치걸', desc: '앱 상용화 남음.', tag: '캐치걸', status: 'todo' },
   ];
   const STATUS_LABEL = { build: '개발 중', run: '자동 운영', todo: '상용화 대기', pause: '잠시 멈춤', done: '완료' };
-  const SECTIONS = ['summary', 'year', 'month', 'goals', 'money', 'work', 'calendar', 'diary', 'me'];
+  const SECTIONS = ['year', 'month', 'goals', 'money', 'work', 'calendar', 'diary', 'me'];
   const MOODS = ['😊', '😌', '🥳', '😐', '😢', '😡', '😴', '🤒', '💪', '🥲'];
 
   const LANGS = [
@@ -496,14 +496,11 @@
     tpEl.innerHTML = anyNow ? `${signed(tp)}<br><span class="pnl-pct">${pct1(tp / totalCost * 100)}</span>` : '—';
     tpEl.className = 'num pnl ' + (anyNow ? (tp > 0 ? 'up' : tp < 0 ? 'down' : 'flat') : 'flat');
 
-    $('#sumAssets').textContent = anyNow ? korean(totalNow) : korean(totalCost);
-    const sub = $('#sumAssetsNow');
+    const mt = $('#moneyTotal');
     if (anyNow) {
-      sub.textContent = `원금 ${korean(totalCost)} · ${signed(tp)} 원 (${pct1(tp / totalCost * 100)})`;
-      sub.className = 'stat-sub ' + (tp > 0 ? 'up' : tp < 0 ? 'down' : '');
+      mt.innerHTML = `<b>${korean(totalNow)}</b><span class="mt-sub ${tp > 0 ? 'up' : tp < 0 ? 'down' : ''}">원금 ${korean(totalCost)} · ${signed(tp)} 원 (${pct1(tp / totalCost * 100)})</span>`;
     } else {
-      sub.textContent = '원금 기준 · 수량을 넣으면 평가금액이 나와요';
-      sub.className = 'stat-sub';
+      mt.innerHTML = `<b>${korean(totalCost)}</b><span class="mt-sub">원금 기준</span>`;
     }
 
     renderLadder();
@@ -612,8 +609,6 @@
     const need = list.reduce((t, x) => t + x.need, 0), saved = list.reduce((t, x) => t + Math.min(x.saved, x.need || x.saved), 0);
     const left = Math.max(0, need - saved);
     $('#ladderTotal').innerHTML = list.length ? `전체 <b>${korean(need)}</b> 중 <b>${korean(saved)}</b> 모음 · <b class="need">${korean(left)}</b> 남음 · 달성 ${need ? Math.round(saved / need * 100) : 0}%` : '';
-    $('#sumJeonse').textContent = list.length ? (left > 0 ? korean(left) + ' 더' : '모두 달성 🎉') : '-';
-    $('#sumJeonseSub').textContent = list.length ? `목표 ${list.length}개 · ${korean(need)} 중 ${korean(saved)} 모음` : '도장깨기에 목표를 추가해요';
     const je = list.find(x => x.id === 'jeonse') || list[0];
     $('#jeonseNote').textContent = je ? (je.saved >= je.need ? '✓ 잔금과 수수료 준비 완료' : `${korean(Math.max(0, je.need - je.saved))} 더 모으면 통과`) : '';
     const landNow = landTotal();
@@ -1539,9 +1534,6 @@
 
     const openCount = state.todos.filter(t => !t.done).length;
     $('#sideCount').textContent = openCount ? `남은 일 ${openCount}개` : '';
-    $('#sumTodos').textContent = g.today.length + '개';
-    $('#sumTodosSub').textContent = g.late.length ? `지난 일 ${g.late.length}개도 있어요`
-      : g.today.length ? '오늘 안에 끝내자' : '남은 일이 없어요';
 
     renderWork(); renderGoals();
     if (state.showTodos) renderPanel();

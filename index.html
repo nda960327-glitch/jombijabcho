@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260908k">
+<link rel="stylesheet" href="css/style.css?v=20260908l">
 </head>
 <body>
 
@@ -39,28 +39,6 @@
 
 <div class="layout">
 <main class="main" id="main">
-
-  <!-- ===== 요약 ===== -->
-  <section class="summary block" data-sec="summary">
-    <div class="sec-tools" hidden><span class="sec-name">요약</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <div class="summary-grid">
-      <div class="stat">
-        <span class="stat-label" data-t="stat.assets">총 자산</span>
-        <strong class="stat-value" id="sumAssets">-</strong>
-        <span class="stat-sub" id="sumAssetsNow">평가금액 입력 시 손익 표시</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label" data-t="stat.need">당장 필요한 돈</span>
-        <strong class="stat-value" id="sumJeonse">-</strong>
-        <span class="stat-sub" id="sumJeonseSub">도장깨기 목표 합계</span>
-      </div>
-      <div class="stat">
-        <span class="stat-label" data-t="stat.todos">오늘 할일</span>
-        <strong class="stat-value" id="sumTodos">0</strong>
-        <span class="stat-sub" id="sumTodosSub">남은 일이 없어요</span>
-      </div>
-    </div>
-  </section>
 
   <!-- ===== 올해 목표 ===== -->
   <section id="year" class="block" data-sec="year">
@@ -131,7 +109,11 @@
   <section id="money" class="block" data-sec="money">
     <div class="sec-tools" hidden><span class="sec-name">자산 관리</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
-      <div class="head-row"><h2 data-t="money.h2">💰 자산 관리</h2><button type="button" class="see-all" id="assetEditToggle">✏️ 자산 편집</button></div>
+      <div class="head-row money-head">
+        <h2 data-t="money.h2">💰 자산 관리</h2>
+        <span class="money-total" id="moneyTotal"></span>
+        <button type="button" class="see-all" id="assetEditToggle">✏️ 자산 편집</button>
+      </div>
       <p data-t="money.p">주식은 보유 수량만 적으면 현재가를 자동으로 가져와 평가금액을 계산해요. 현금·토지·가게·보증금은 평가금액을 직접 적어요. 항목 자체를 고치려면 자산 편집.</p>
     </div>
 
@@ -661,6 +643,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260908k"></script>
+<script src="js/app.js?v=20260908l"></script>
 </body>
 </html>
