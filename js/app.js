@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260913a';
+  const APP_VER = '20260913b';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -58,7 +58,9 @@
   ];
   const STATUS_LABEL = { build: '개발 중', run: '자동 운영', todo: '상용화 대기', pause: '잠시 멈춤', done: '완료' };
   const SECTIONS = ['year', 'month', 'goals', 'money', 'work', 'calendar', 'diary', 'me'];
-  const MOODS = ['😊', '😌', '🥳', '😐', '😢', '😡', '😴', '🤒', '💪', '🥲'];
+  const MOODS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];   // 스스로에 대한 만족도 점수
+  const scoreCls = v => { const n = Number(v); return !n ? '' : n <= 3 ? 'low' : n <= 6 ? 'mid' : 'high'; };
+  const moodLabel = v => /^\d+$/.test(String(v || '')) ? v + '점' : (v || '');
 
   const LANGS = [
     { id: 'ja', name: '🇯🇵 일본어' },
@@ -339,7 +341,7 @@
 
     // 일기
     const di = state.diary.notes.find(n => n.date === sd);
-    $('#pnDiaryN').textContent = di ? (di.mood || '✓') : '';
+    $('#pnDiaryN').textContent = di ? (di.mood ? moodLabel(di.mood) : '✓') : '';
     $('#pnDiary').innerHTML = di
       ? `<div class="pn-diary" data-pid="${di.id}"><b>${esc(postTitle(di))}</b><p class="muted small">${esc((di.text || '').slice(0, 80))}</p></div><button type="button" class="text-btn pn-add" id="pnOpenDiary">일기 열기</button>`
       : `<p class="muted small pn-empty">이 날 일기가 없어요.</p><button type="button" class="text-btn pn-add" id="pnWriteDiary">＋ 이 날 일기 쓰기</button>`;
@@ -913,7 +915,7 @@
   function diaryLabel(n) { return n.date ? dateLabel(n.date) : whenLabel(n.at); }
   function postTitle(n) {
     const base = (n.title && n.title.trim()) || (n.text || '').split('\n')[0].trim().slice(0, 40) || (n.photos && n.photos.length ? '(사진)' : (n.date ? diaryLabel(n) + ' 일기' : '(제목 없음)'));
-    return (n.mood ? n.mood + ' ' : '') + base;
+    return (n.mood ? moodLabel(n.mood) + ' · ' : '') + base;
   }
   function postItemHtml(n, it) {
     const thumb = n.photos && n.photos.length ? `<img class="post-thumb" src="${n.photos[0]}" alt="">` : '';
@@ -1346,7 +1348,7 @@
     if (meta.memo) html += `<div class="tip-memo">📝 ${esc(meta.memo).replace(/\n/g, '<br>')}</div>`;
     if (evs.length) html += '<div class="tip-sec">' + evs.map(e => `<div class="tip-ev"><span class="ev-dot ev-${e.color}"></span>${esc(e.title || '(제목 없음)')}<span class="muted small"> · ${evRange(e)}</span>${e.memo ? `<div class="muted small tip-ev-memo">${esc(e.memo)}</div>` : ''}</div>`).join('') + '</div>';
     if (todos.length) html += '<div class="tip-sec">' + todos.map(t => `<div class="tip-todo ${t.done ? 'done' : ''}">${t.done ? '✓' : '○'} ${esc(t.text)}</div>`).join('') + '</div>';
-    if (di) html += `<div class="tip-sec muted small">📔 ${di.mood ? di.mood + ' ' : ''}일기 있음</div>`;
+    if (di) html += `<div class="tip-sec muted small">📔 ${di.mood ? '만족도 ' + moodLabel(di.mood) + ' · ' : ''}일기 있음</div>`;
     if (!meta.memo && !evs.length && !todos.length && !di) html += '<div class="muted small">메모·일정 없음 · 눌러서 추가</div>';
     return html;
   }
@@ -2001,7 +2003,7 @@
     return streak;
   }
   function renderMoodPick() {
-    $('#bdMoodWrap').innerHTML = '<span class="muted small">오늘 기분</span>' + MOODS.map(m => `<button type="button" class="mood ${board.draftMood === m ? 'on' : ''}" data-mood="${m}">${m}</button>`).join('');
+    $('#bdMoodWrap').innerHTML = '<span class="muted small">오늘 나에 대한 만족도</span>' + MOODS.map(m => `<button type="button" class="mood score ${scoreCls(m)} ${String(board.draftMood) === m ? 'on' : ''}" data-mood="${m}">${m}</button>`).join('') + `<span class="muted small score-hint">${board.draftMood ? moodLabel(board.draftMood) + ' / 10' : '1(아쉬움) ~ 10(최고)'}</span>`;
   }
   $('#bdMoodWrap').addEventListener('click', e => {
     const b = e.target.closest('.mood'); if (!b) return;
@@ -2013,17 +2015,20 @@
     const t = diaryFor(today);
     const d = new Date();
     $('#diaryTodayLabel').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 ${'일월화수목금토'[d.getDay()]}요일`;
-    $('#diaryTodayState').textContent = t ? (t.mood ? t.mood + ' ' : '') + (t.title || t.text ? '오늘 일기를 썼어요' : '오늘 기분만 남겼어요') : '아직 오늘 일기가 없어요';
+    $('#diaryTodayState').textContent = t ? (t.mood ? '오늘 만족도 ' + moodLabel(t.mood) + (/^\d+$/.test(String(t.mood)) ? ' / 10' : '') + ' · ' : '') + (t.title || t.text ? '일기 썼음' : '점수만 남김') : '아직 오늘 일기가 없어요';
     const st = diaryStreak(), total = state.diary.notes.length;
     $('#diaryStreak').textContent = (st ? `🔥 ${st}일 연속` : '오늘부터 다시 시작') + (total ? ` · 총 ${total}편` : '');
     $('#diaryWrite').textContent = t ? '오늘 일기 이어 쓰기' : '오늘 일기 쓰기';
-    $('#diaryMoods').innerHTML = MOODS.map(m => `<button type="button" class="mood ${t && t.mood === m ? 'on' : ''}" data-mood="${m}">${m}</button>`).join('');
+    $('#diaryMoods').innerHTML = MOODS.map(m => `<button type="button" class="mood score ${scoreCls(m)} ${t && String(t.mood) === m ? 'on' : ''}" data-mood="${m}">${m}</button>`).join('');
+    const avg = days => { const from = new Date(); from.setDate(from.getDate() - (days - 1)); const k = ymd(from); const vals = state.diary.notes.filter(n => n.date >= k && /^\d+$/.test(String(n.mood))).map(n => Number(n.mood)); return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null; };
+    const a7 = avg(7), a30 = avg(30);
+    $('#diaryAvg').textContent = a7 || a30 ? `평균 · 7일 ${a7 || '-'} · 30일 ${a30 || '-'}` : '';
     // 최근 14일
     const strip = [];
     for (let i = 13; i >= 0; i--) {
       const dd = new Date(); dd.setDate(dd.getDate() - i);
       const key = ymd(dd), n = diaryFor(key);
-      strip.push(`<button type="button" class="day-dot2 ${n ? 'has' : ''} ${key === today ? 'today' : ''}" data-date="${key}" title="${dateLabel(key)}">${n ? (n.mood || '●') : dd.getDate()}</button>`);
+      strip.push(`<button type="button" class="day-dot2 ${n ? 'has' : ''} ${key === today ? 'today' : ''}" data-date="${key}" title="${dateLabel(key)}${n && n.mood ? ' · 만족도 ' + moodLabel(n.mood) : ''}">${n ? (n.mood || '●') : dd.getDate()}</button>`);
     }
     $('#diaryStrip').innerHTML = strip.join('');
     const recent = postsOf(state.diary).slice(0, 4);

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260913a">
+<link rel="stylesheet" href="css/style.css?v=20260913b">
 </head>
 <body>
 
@@ -192,7 +192,7 @@
     <div class="sec-tools" hidden><span class="sec-name">다이어리</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
     <div class="block-head">
       <div class="head-row"><h2 data-t="diary.h2">📔 다이어리</h2><a href="#list/diary/diary" class="see-all">전체보기 →</a></div>
-      <p data-t="diary.p">하루 한 줄이라도. 오늘 기분이랑 같이 남겨요.</p>
+      <p data-t="diary.p">하루 한 줄이라도. 오늘 나에 대한 만족도를 점수로 같이 남겨요.</p>
     </div>
     <div class="diary-widget card">
       <div class="diary-today">
@@ -201,7 +201,11 @@
           <strong id="diaryTodayState"></strong>
           <p class="muted small" id="diaryStreak"></p>
         </div>
-        <div class="diary-moods" id="diaryMoods" title="오늘 기분"></div>
+        <div class="diary-score">
+          <span class="muted small">스스로에 대한 만족도</span>
+          <div class="diary-moods" id="diaryMoods" title="오늘 나에 대한 만족도 (1~10)"></div>
+          <span class="muted small" id="diaryAvg"></span>
+        </div>
         <button type="button" class="primary" id="diaryWrite">오늘 일기 쓰기</button>
       </div>
       <div class="diary-strip" id="diaryStrip"></div>
@@ -622,6 +626,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260913a"></script>
+<script src="js/app.js?v=20260913b"></script>
 </body>
 </html>

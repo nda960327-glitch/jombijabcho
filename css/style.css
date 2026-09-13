@@ -901,3 +901,12 @@ body.no-side .layout { grid-template-columns: minmax(0, 1fr); }
 .todo:hover .t-edit { opacity: 1; }
 .todo input.m-inline { flex: 1; min-width: 0; }
 @media (max-width: 600px) { .day-item { display: none; } }
+
+/* ---------- 만족도 점수 ---------- */
+.diary-score { display: flex; flex-direction: column; gap: 4px; }
+.mood.score { width: 32px; height: 32px; font-size: .88rem; font-weight: 700; color: var(--text-dim); }
+.mood.score.low.on { background: var(--pink-soft); border-color: var(--pink); color: #b23a52; box-shadow: 0 0 0 2px var(--pink-soft); }
+.mood.score.mid.on { background: var(--gold-soft); border-color: var(--gold); color: #7a5411; box-shadow: 0 0 0 2px var(--gold-soft); }
+.mood.score.high.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.score-hint { margin-left: 6px; }
+.day-dot2.has { font-size: .9rem; font-weight: 700; }
