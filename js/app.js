@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260908n';
+  const APP_VER = '20260913a';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -1309,15 +1309,13 @@
       const open = items.filter(t => !t.done).length;
       const top = `<span class="day-top"><span class="day-num">${d.getDate()}</span>${meta.sticker ? `<span class="day-sticker">${meta.sticker}</span>` : ''}${meta.memo ? '<span class="day-memo-ic">📝</span>' : ''}</span>`
         + (hol && !narrow ? `<span class="day-hol">${esc(hol)}</span>` : '');
-      const bars = evs.slice(0, narrow ? 3 : 3).map(ev => {
+      const bars = evs.map(ev => {
         const showTitle = !narrow && (sd === ev.start || d.getDay() === 0 || i === 0);
         return `<span class="ev ev-${EV_COLORS.indexOf(ev.color) >= 0 ? ev.color : 'blue'}${sd === ev.start ? ' ev-s' : ''}${sd === ev.end ? ' ev-e' : ''}" title="${esc(ev.title)}">${showTitle ? esc(ev.title) : '&nbsp;'}</span>`;
-      }).join('') + (evs.length > 3 ? `<span class="day-more">일정 +${evs.length - 3}</span>` : '');
-      const room = Math.max(0, 3 - Math.min(evs.length, 3));
+      }).join('');
       const todosHtml = narrow
         ? (items.length ? `<span class="day-dot">${open || '✓'}</span>` : '')
-        : items.slice(0, room).map(t => `<span class="day-item ${t.done ? 'done' : ''}" title="${esc(t.text)}">${esc(t.text)}</span>`).join('')
-          + (items.length > room ? `<span class="day-more">할일 +${items.length - room}</span>` : '');
+        : items.map(t => `<span class="day-item ${t.done ? 'done' : ''}" title="${esc(t.text)}">${esc(t.text)}</span>`).join('');
       btn.innerHTML = top + bars + todosHtml;
       grid.appendChild(btn);
     }
@@ -1396,7 +1394,7 @@
     }
     renderEvColors();
     const todos = state.todos.filter(t => t.date === sd);
-    $('#dmTodos').innerHTML = todos.length ? todos.map(t => `<li class="todo ${t.done ? 'done' : ''}" data-id="${t.id}"><input type="checkbox" ${t.done ? 'checked' : ''}><div class="todo-body"><div class="todo-text">${esc(t.text)}</div></div><button type="button" class="todo-del" title="삭제">×</button></li>`).join('') : '<li class="muted small dm-empty">이 날 할일이 없어요.</li>';
+    $('#dmTodos').innerHTML = todos.length ? todos.map(t => `<li class="todo ${t.done ? 'done' : ''}" data-id="${t.id}"><input type="checkbox" ${t.done ? 'checked' : ''}><div class="todo-body"><div class="todo-text" title="눌러서 고치기">${esc(t.text)}</div></div><button type="button" class="link-btn t-edit" title="고치기">✏️</button><button type="button" class="todo-del" title="삭제">×</button></li>`).join('') : '<li class="muted small dm-empty">이 날 할일이 없어요.</li>';
     const di = state.diary.notes.find(n => n.date === sd);
     $('#dmDiary').innerHTML = di ? `📔 이 날 일기가 있어요 · <button type="button" class="link-btn" id="dmOpenDiary">열기</button>` : `📔 <button type="button" class="link-btn" id="dmWriteDiary">이 날 일기 쓰기</button>`;
   }
@@ -1458,6 +1456,13 @@
   $('#dmTodos').addEventListener('click', e => {
     const li = e.target.closest('li[data-id]'); if (!li) return;
     const t = state.todos.find(x => x.id === li.dataset.id); if (!t) return;
+    if (e.target.closest('.t-edit') || e.target.closest('.todo-text')) {
+      inlineEdit(li, t, v => {
+        if (v === null) state.todos = state.todos.filter(x => x !== t); else t.text = v;
+        save(); renderDay(); renderTodos(); renderCalendar();
+      }, '.todo-text');
+      return;
+    }
     if (e.target.closest('.todo-del')) { if (!t.done && !confirm(`삭제할까요?\n"${t.text}"`)) return; state.todos = state.todos.filter(x => x !== t); }
     else if (e.target.matches('input[type=checkbox]')) { t.done = e.target.checked; t.doneAt = t.done ? Date.now() : null; }
     else return;
@@ -1508,7 +1513,8 @@
       }
       return `<li class="todo ${t.done ? 'done' : ''}" data-id="${t.id}">
         <input type="checkbox" ${t.done ? 'checked' : ''} aria-label="완료">
-        <div class="todo-body"><div class="todo-text">${tag}${esc(text)}</div>${meta}</div>
+        <div class="todo-body"><div class="todo-text" title="눌러서 고치기">${tag}${esc(text)}</div>${meta}</div>
+        <button type="button" class="link-btn t-edit" title="고치기">✏️</button>
         <button class="todo-del" title="삭제">×</button>
       </li>`;
     };
@@ -1555,6 +1561,13 @@
     if (h) { state.showDone = !state.showDone; save(); renderTodos(); return; }
     const li = e.target.closest('.todo'); if (!li) return;
     const t = state.todos.find(x => x.id === li.dataset.id); if (!t) return;
+    if (e.target.closest('.t-edit') || e.target.closest('.todo-text')) {
+      inlineEdit(li, t, v => {
+        if (v === null) state.todos = state.todos.filter(x => x !== t); else t.text = v;
+        save(); renderTodos(); renderCalendar(); if (dayOpen) renderDay();
+      }, '.todo-text');
+      return;
+    }
     if (e.target.closest('.todo-del')) {
       if (!t.done && !confirm(`삭제할까요?\n"${t.text}"`)) return;
       state.todos = state.todos.filter(x => x !== t);
@@ -1830,10 +1843,10 @@
   $('#allPosts').addEventListener('keydown', allPostClick);
 
   /* ---------- 체크리스트 항목 그 자리에서 고치기 ---------- */
-  function inlineEdit(li, item, onDone) {
-    const span = li.querySelector('.month-text'); if (!span || li.querySelector('input.m-inline')) return;
+  function inlineEdit(li, item, onDone, sel) {
+    const span = li.querySelector(sel || '.month-text'); if (!span || li.querySelector('input.m-inline')) return;
     const inp = document.createElement('input');
-    inp.type = 'text'; inp.className = 'm-inline'; inp.value = item.text; inp.maxLength = 100;
+    inp.type = 'text'; inp.className = 'm-inline'; inp.value = item.text; inp.maxLength = 120;
     span.replaceWith(inp); inp.focus(); inp.select();
     let finished = false;
     const finish = (commit) => {

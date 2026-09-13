@@ -891,3 +891,13 @@ body.no-side .layout { grid-template-columns: minmax(0, 1fr); }
 .m-inline:focus { outline: 0; }
 .month-btns .todo-del { opacity: 1; color: var(--text-dim); font-size: 1.05rem; }
 .month-btns .todo-del:hover { color: var(--red); }
+
+/* ---------- 달력: 내용만큼 늘어나기 · 할일 고치기 ---------- */
+.day-item { white-space: normal; overflow: visible; text-overflow: clip; word-break: break-word; line-height: 1.35; }
+.ev { white-space: normal; overflow: visible; text-overflow: clip; word-break: break-word; }
+.cal-grid { align-items: stretch; }
+.todo-text { cursor: text; }
+.t-edit { text-decoration: none !important; font-size: .8rem; opacity: .55; padding: 2px 3px; align-self: flex-start; }
+.todo:hover .t-edit { opacity: 1; }
+.todo input.m-inline { flex: 1; min-width: 0; }
+@media (max-width: 600px) { .day-item { display: none; } }
