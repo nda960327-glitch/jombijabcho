@@ -4,12 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#fbf8f3">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fbf8f3">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#17161a">
+<script>
+/* 첫 그리기 전에 테마 적용 (깜빡임 방지). 저장값: auto | light | dark */
+(function(){try{var t=localStorage.getItem('myhome.theme')||'auto';var r=document.documentElement;
+if(t==='light'||t==='dark')r.setAttribute('data-theme',t);
+var mq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
+function sys(){r.classList.toggle('sys-dark',!!(mq&&mq.matches));}sys();if(mq&&mq.addEventListener)mq.addEventListener('change',sys);}catch(e){}})();
+</script>
 <title>MY HOME · 나의 목표와 자산</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260913b">
+<link rel="stylesheet" href="css/style.css?v=20260917a">
 </head>
 <body>
 
@@ -26,6 +35,7 @@
       <a href="#calendar">달력</a>
       <a href="#me">나</a>
       <button type="button" class="edit-toggle" id="editToggle" title="제목·문구 수정, 위젯 순서 바꾸기">✏️ 꾸미기</button>
+      <button type="button" class="theme-btn" id="themeBtn" title="화면 밝기: 자동 / 밝게 / 어둡게">🌗</button>
       <a href="#sync" class="sync-badge" id="syncBadge" title="동기화 상태">☁️ 미연결</a>
     </nav>
   </div>
@@ -626,6 +636,6 @@
   </div>
 </div>
 
-<script src="js/app.js?v=20260913b"></script>
+<script src="js/app.js?v=20260917a"></script>
 </body>
 </html>

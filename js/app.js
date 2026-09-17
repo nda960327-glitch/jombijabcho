@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260913b';
+  const APP_VER = '20260917a';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -2055,6 +2055,26 @@
     if (!n.mood && !n.title && !n.text && !(n.photos || []).length) state.diary.notes = state.diary.notes.filter(x => x !== n);
     save(); renderDiary();
   });
+
+  /* ---------- 화면 밝기 (자동 / 밝게 / 어둡게) — 기기별 설정 ---------- */
+  const THEME_KEY = 'myhome.theme';
+  const THEMES = [['auto', '🌗', '자동 (폰 설정 따라감)'], ['light', '☀️', '밝게'], ['dark', '🌙', '어둡게']];
+  function applyTheme(t) {
+    const r = document.documentElement;
+    if (t === 'light' || t === 'dark') r.setAttribute('data-theme', t); else r.removeAttribute('data-theme');
+    const cur = THEMES.find(x => x[0] === t) || THEMES[0];
+    $('#themeBtn').textContent = cur[1];
+    $('#themeBtn').title = '화면 밝기: ' + cur[2] + ' (누르면 바뀜)';
+  }
+  $('#themeBtn').addEventListener('click', () => {
+    let t = 'auto'; try { t = localStorage.getItem(THEME_KEY) || 'auto'; } catch (e) {}
+    const i = THEMES.findIndex(x => x[0] === t);
+    const next = THEMES[(i + 1) % THEMES.length][0];
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+    applyTheme(next);
+    setSync('화면 밝기: ' + (THEMES.find(x => x[0] === next) || THEMES[0])[2], pin ? 'ok' : 'none');
+  });
+  (() => { let t = 'auto'; try { t = localStorage.getItem(THEME_KEY) || 'auto'; } catch (e) {} applyTheme(t); })();
 
   /* ---------- 호로록 메모장 ---------- */
   const memoText = $('#memoText');
