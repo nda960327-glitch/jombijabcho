@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260927a';
+  const APP_VER = '20260927b';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.

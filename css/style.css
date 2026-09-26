@@ -1038,3 +1038,9 @@ body.no-side .layout { grid-template-columns: minmax(0, 1fr); }
   .edit-toggle { padding: 5px 9px; font-size: .78rem; }
   .sync-badge { padding: 5px 9px !important; }
 }
+
+/* ---------- 팝업 안 체크박스는 절대 늘어나지 않게 (일정 끝남 체크 포함) ---------- */
+.modal-box.wide input[type="checkbox"], .dm-events .ev-done-cb { width: 16px !important; height: 16px !important; flex: 0 0 16px; padding: 0 !important; margin: 0; border: 0; background: none; }
+.dm-events li { display: flex; align-items: center; gap: 10px; }
+.dm-events li .dm-ev-body { flex: 1; min-width: 0; }
+.dm-events li b { display: block; white-space: normal; word-break: break-word; }
