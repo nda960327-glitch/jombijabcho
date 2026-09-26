@@ -8,7 +8,7 @@
 
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';   // 예전 키(myhome.api)에 남은 옛 주소는 무시한다
-  const APP_VER = '20260917a';
+  const APP_VER = '20260927a';
   const PIN_KEY = 'myhome.pin';
   /**
    * 저장 서버 주소.
@@ -57,7 +57,8 @@
     { emoji: '📱', title: '캐치걸', desc: '앱 상용화 남음.', tag: '캐치걸', status: 'todo' },
   ];
   const STATUS_LABEL = { build: '개발 중', run: '자동 운영', todo: '상용화 대기', pause: '잠시 멈춤', done: '완료' };
-  const SECTIONS = ['year', 'month', 'goals', 'money', 'work', 'calendar', 'diary', 'me'];
+  const SECTIONS = ['today', 'year', 'month', 'goals', 'money', 'work', 'calendar', 'diary', 'stickers', 'me'];
+  const SCORE_HINT = { 1: '거의 못함', 2: '많이 부족', 3: '조금 부족', 4: '보통보다 아래', 5: '보통', 6: '보통보다 위', 7: '잘함', 8: '많이 잘함', 9: '아주 잘함', 10: '최고' };
   const MOODS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];   // 스스로에 대한 만족도 점수
   const scoreCls = v => { const n = Number(v); return !n ? '' : n <= 3 ? 'low' : n <= 6 ? 'mid' : 'high'; };
   const moodLabel = v => /^\d+$/.test(String(v || '')) ? v + '점' : (v || '');
@@ -71,7 +72,7 @@
   /* ---------- 상태 ---------- */
   const defaultState = () => ({
     todos: [], qty: {}, now: {}, weight: null, weightStart: null, langLog: {}, showDone: false, useStocks: false,
-    goals: null, works: null, order: null, texts: {}, memo: '', diary: null, events: [], days: {}, showTodos: true, months: {}, years: {}, panels: {}, treeCounts: true, assets: null, ladder: null
+    goals: null, works: null, order: null, texts: {}, memo: '', diary: null, events: [], days: {}, showTodos: true, months: {}, years: {}, panels: {}, treeCounts: true, assets: null, ladder: null, stickers: []
   });
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   let state = load();
@@ -107,6 +108,8 @@
       if (s.order.indexOf(k) >= 0) return;
       if (k === 'month') { const gi = s.order.indexOf('goals'); s.order.splice(gi >= 0 ? gi : 1, 0, k); }   // 목표 바로 위에
       else if (k === 'year') { const mi = s.order.indexOf('month'); s.order.splice(mi >= 0 ? mi : 1, 0, k); }  // 이번 달 바로 위에
+      else if (k === 'today') s.order.unshift(k);                                                              // 맨 위
+      else if (k === 'stickers') { const di = s.order.indexOf('diary'); s.order.splice(di >= 0 ? di + 1 : s.order.length, 0, k); } // 다이어리 바로 아래
       else s.order.push(k);
     });
     if (!s.texts || typeof s.texts !== 'object') s.texts = {};
@@ -134,6 +137,9 @@
     if (!s.years || typeof s.years !== 'object') s.years = {};
     Object.keys(s.years).forEach(k => { const m = s.years[k]; if (!m || typeof m !== 'object') { delete s.years[k]; return; } if (!Array.isArray(m.items)) m.items = []; m.items.forEach(i => { if (!i.id) i.id = uid(); }); if (typeof m.memo !== 'string') m.memo = ''; });
     if (!s.months || typeof s.months !== 'object') s.months = {};
+    if (!Array.isArray(s.stickers)) s.stickers = [];
+    s.stickers = s.stickers.filter(x => x && (x.text || x.image)).map(x => Object.assign({ id: uid(), color: 'yellow', x: 16, y: 16, w: 200, h: 180, rot: 0, z: 1, at: Date.now() }, x));
+    s.events.forEach(e => { if (typeof e.time !== 'string') e.time = ''; if (typeof e.done !== 'boolean') e.done = false; });
     Object.keys(s.months).forEach(k => { const m = s.months[k]; if (!m || typeof m !== 'object') { delete s.months[k]; return; } if (!Array.isArray(m.items)) m.items = []; m.items.forEach(i => { if (!i.id) i.id = uid(); }); if (typeof m.memo !== 'string') m.memo = ''; });
     if (!s.diary || typeof s.diary !== 'object') s.diary = { id: 'diary', emoji: '📔', title: '다이어리', desc: '', tag: '일기', notes: [], boards: [], hidden: false };
     s.diary.id = 'diary'; if (!Array.isArray(s.diary.notes)) s.diary.notes = []; if (!s.diary.title) s.diary.title = '다이어리'; if (!s.diary.emoji) s.diary.emoji = '📔';
@@ -1065,6 +1071,16 @@
     openPost(board.postId, true);
   }
 
+  /* ---------- 회고 틀 ---------- */
+  $('#edTemplate').addEventListener('click', () => {
+    const ed = $('#bdEditor');
+    const tpl = '<p><b>✅ 오늘 한 일</b></p><p><br></p><p><b>👍 잘한 일 · 😔 아쉬운 일</b></p><p><br></p><p><b>🌅 내일 할 일</b></p><p><br></p>';
+    ed.focus();
+    if (!ed.innerText.trim()) ed.innerHTML = tpl; else ed.insertAdjacentHTML('beforeend', tpl);
+    const first = ed.querySelector('p:nth-of-type(2)');
+    if (first) { const r = document.createRange(); r.setStart(first, 0); r.collapse(true); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+  });
+
   /* ---------- 서식 편집기 ---------- */
   const edBody = $('#bdEditor');
   let selectedImg = null;
@@ -1284,7 +1300,7 @@
     if (Object.keys(d).length) state.days[sd] = d; else delete state.days[sd];
   }
   function eventsOn(sd) { return state.events.filter(e => e.start <= sd && sd <= e.end).sort((x, y) => x.start.localeCompare(y.start) || (x.end.localeCompare(y.end))); }
-  function evRange(e) { return e.start === e.end ? dateLabel(e.start) : `${dateLabel(e.start)} ~ ${dateLabel(e.end)} (${daysBetween(e.start, e.end) + 1}일)`; }
+  function evRange(e) { return (e.start === e.end ? dateLabel(e.start) : `${dateLabel(e.start)} ~ ${dateLabel(e.end)} (${daysBetween(e.start, e.end) + 1}일)`) + (e.time ? ' · ' + e.time : ''); }
   function daysBetween(a1, b1) { const [y1, m1, d1] = a1.split('-').map(Number), [y2, m2, d2] = b1.split('-').map(Number); return Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / 86400000); }
 
   function renderCalendar() {
@@ -1313,7 +1329,7 @@
         + (hol && !narrow ? `<span class="day-hol">${esc(hol)}</span>` : '');
       const bars = evs.map(ev => {
         const showTitle = !narrow && (sd === ev.start || d.getDay() === 0 || i === 0);
-        return `<span class="ev ev-${EV_COLORS.indexOf(ev.color) >= 0 ? ev.color : 'blue'}${sd === ev.start ? ' ev-s' : ''}${sd === ev.end ? ' ev-e' : ''}" title="${esc(ev.title)}">${showTitle ? esc(ev.title) : '&nbsp;'}</span>`;
+        return `<span class="ev ev-${EV_COLORS.indexOf(ev.color) >= 0 ? ev.color : 'blue'}${sd === ev.start ? ' ev-s' : ''}${sd === ev.end ? ' ev-e' : ''}${ev.done ? ' ev-done' : ''}" title="${esc(ev.title)}">${showTitle ? (ev.time && sd === ev.start ? ev.time + ' ' : '') + esc(ev.title) : '&nbsp;'}</span>`;
       }).join('');
       const todosHtml = narrow
         ? (items.length ? `<span class="day-dot">${open || '✓'}</span>` : '')
@@ -1388,9 +1404,9 @@
     $('#dmHls').innerHTML = `<button type="button" class="hl-btn none ${!meta.hl ? 'on' : ''}" data-hl="" title="없음">×</button>` + HL_COLORS.map(c => `<button type="button" class="hl-btn hl-${c} ${meta.hl === c ? 'on' : ''}" data-hl="${c}"></button>`).join('');
     if (document.activeElement !== $('#dmMemo')) $('#dmMemo').value = meta.memo || '';
     const evs = eventsOn(sd);
-    $('#dmEvents').innerHTML = evs.length ? evs.map(e => `<li data-ev="${e.id}"><span class="ev-dot ev-${e.color}"></span><div class="dm-ev-body"><b>${esc(e.title || '(제목 없음)')}</b><div class="muted small">${evRange(e)}${e.memo ? ' · ' + esc(e.memo) : ''}</div></div><button type="button" class="text-btn dm-ev-edit">수정</button><button type="button" class="todo-del" title="삭제">×</button></li>`).join('') : '<li class="muted small dm-empty">이 날 일정이 없어요. 아래에서 추가해요.</li>';
+    $('#dmEvents').innerHTML = evs.length ? evs.map(e => `<li data-ev="${e.id}" class="${e.done ? 'done' : ''}"><input type="checkbox" class="ev-done-cb" ${e.done ? 'checked' : ''} title="끝남"><span class="ev-dot ev-${e.color}"></span><div class="dm-ev-body"><b>${esc(e.title || '(제목 없음)')}</b><div class="muted small">${evRange(e)}${e.memo ? ' · ' + esc(e.memo) : ''}</div></div><button type="button" class="text-btn dm-ev-edit">수정</button><button type="button" class="todo-del" title="삭제">×</button></li>`).join('') : '<li class="muted small dm-empty">이 날 일정이 없어요. 아래에서 추가해요.</li>';
     if (!dayEditing) {
-      $('#dmEvTitle').value = ''; $('#dmEvStart').value = sd; $('#dmEvEnd').value = sd; $('#dmEvMemo').value = '';
+      $('#dmEvTitle').value = ''; $('#dmEvStart').value = sd; $('#dmEvEnd').value = sd; $('#dmEvMemo').value = ''; $('#dmEvTime').value = '';
       $('#dmEvSave').textContent = '일정 추가'; $('#dmEvCancel').hidden = true;
       dmColor = 'blue';
     }
@@ -1424,10 +1440,10 @@
     if (en < st) en = st;
     if (dayEditing) {
       const ev = state.events.find(x => x.id === dayEditing);
-      if (ev) { ev.title = title; ev.start = st; ev.end = en; ev.color = dmColor; ev.memo = $('#dmEvMemo').value.trim(); }
+      if (ev) { ev.title = title; ev.start = st; ev.end = en; ev.color = dmColor; ev.memo = $('#dmEvMemo').value.trim(); ev.time = $('#dmEvTime').value || ''; }
       dayEditing = null;
     } else {
-      state.events.push({ id: uid(), title, start: st, end: en, color: dmColor, memo: $('#dmEvMemo').value.trim() });
+      state.events.push({ id: uid(), title, start: st, end: en, color: dmColor, memo: $('#dmEvMemo').value.trim(), time: $('#dmEvTime').value || '', done: false });
     }
     save(); renderDay(); renderCalendar(); renderPanel();
   });
@@ -1435,6 +1451,7 @@
   $('#dmEvents').addEventListener('click', e => {
     const li = e.target.closest('li[data-ev]'); if (!li) return;
     const ev = state.events.find(x => x.id === li.dataset.ev); if (!ev) return;
+    if (e.target.matches('.ev-done-cb')) { ev.done = e.target.checked; save(); renderDay(); renderCalendar(); renderPanel(); return; }
     if (e.target.closest('.todo-del')) {
       if (!confirm(`"${ev.title}" 일정을 지울까요?`)) return;
       state.events = state.events.filter(x => x !== ev); dayEditing = null;
@@ -1442,7 +1459,7 @@
     }
     if (e.target.closest('.dm-ev-edit')) {
       dayEditing = ev.id;
-      $('#dmEvTitle').value = ev.title; $('#dmEvStart').value = ev.start; $('#dmEvEnd').value = ev.end; $('#dmEvMemo').value = ev.memo || '';
+      $('#dmEvTitle').value = ev.title; $('#dmEvStart').value = ev.start; $('#dmEvEnd').value = ev.end; $('#dmEvMemo').value = ev.memo || ''; $('#dmEvTime').value = ev.time || '';
       dmColor = ev.color; renderEvColors();
       $('#dmEvSave').textContent = '일정 저장'; $('#dmEvCancel').hidden = false;
       $('#dmEvTitle').focus();
@@ -2003,7 +2020,7 @@
     return streak;
   }
   function renderMoodPick() {
-    $('#bdMoodWrap').innerHTML = '<span class="muted small">오늘 나에 대한 만족도</span>' + MOODS.map(m => `<button type="button" class="mood score ${scoreCls(m)} ${String(board.draftMood) === m ? 'on' : ''}" data-mood="${m}">${m}</button>`).join('') + `<span class="muted small score-hint">${board.draftMood ? moodLabel(board.draftMood) + ' / 10' : '1(아쉬움) ~ 10(최고)'}</span>`;
+    $('#bdMoodWrap').innerHTML = '<span class="muted small">오늘 나에 대한 만족도</span>' + MOODS.map(m => `<button type="button" class="mood score ${scoreCls(m)} ${String(board.draftMood) === m ? 'on' : ''}" data-mood="${m}">${m}</button>`).join('') + `<span class="muted small score-hint">${board.draftMood ? moodLabel(board.draftMood) + ' · ' + (SCORE_HINT[Number(board.draftMood)] || '') : '1(거의 못함) ~ 10(최고)'}</span>`;
   }
   $('#bdMoodWrap').addEventListener('click', e => {
     const b = e.target.closest('.mood'); if (!b) return;
@@ -2019,7 +2036,7 @@
     const st = diaryStreak(), total = state.diary.notes.length;
     $('#diaryStreak').textContent = (st ? `🔥 ${st}일 연속` : '오늘부터 다시 시작') + (total ? ` · 총 ${total}편` : '');
     $('#diaryWrite').textContent = t ? '오늘 일기 이어 쓰기' : '오늘 일기 쓰기';
-    $('#diaryMoods').innerHTML = MOODS.map(m => `<button type="button" class="mood score ${scoreCls(m)} ${t && String(t.mood) === m ? 'on' : ''}" data-mood="${m}">${m}</button>`).join('');
+    $('#diaryMoods').innerHTML = MOODS.map(m => `<button type="button" class="mood score ${scoreCls(m)} ${t && String(t.mood) === m ? 'on' : ''}" data-mood="${m}" title="${m}점 · ${SCORE_HINT[Number(m)]}">${m}</button>`).join('');
     const avg = days => { const from = new Date(); from.setDate(from.getDate() - (days - 1)); const k = ymd(from); const vals = state.diary.notes.filter(n => n.date >= k && /^\d+$/.test(String(n.mood))).map(n => Number(n.mood)); return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : null; };
     const a7 = avg(7), a30 = avg(30);
     $('#diaryAvg').textContent = a7 || a30 ? `평균 · 7일 ${a7 || '-'} · 30일 ${a30 || '-'}` : '';
@@ -2075,6 +2092,167 @@
     setSync('화면 밝기: ' + (THEMES.find(x => x[0] === next) || THEMES[0])[2], pin ? 'ok' : 'none');
   });
   (() => { let t = 'auto'; try { t = localStorage.getItem(THEME_KEY) || 'auto'; } catch (e) {} applyTheme(t); })();
+
+  /* ---------- 오늘 스트립 (큰 일기 버튼 + 오늘 숫자) ---------- */
+  function renderTodayStrip() {
+    const today = todayStr();
+    const t = diaryFor(today);
+    const wrote = !!(t && (t.title || t.text || (t.photos || []).length));
+    $('#bigDiaryIcon').textContent = wrote ? '✅' : '✏️';
+    $('#bigDiaryTitle').textContent = wrote ? '오늘 일기 이어 쓰기' : (t && t.mood ? '오늘 일기 쓰기 (점수는 남겼어요)' : '오늘 일기 쓰기');
+    const st = diaryStreak();
+    $('#bigDiarySub').textContent = dateLabel(today) + (wrote ? ' · 이미 썼어요' : ' · 아직 안 썼어요') + (st ? ` · 🔥 ${st}일 연속` : '');
+    $('#bigDiary').classList.toggle('done', wrote);
+    const mk = today.slice(0, 7);
+    const monthDiary = state.diary.notes.filter(n => (n.date || '').startsWith(mk));
+    const scores = monthDiary.map(n => Number(n.mood)).filter(n => n > 0);
+    const avg = scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '-';
+    const openTodos = state.todos.filter(x => !x.done);
+    const lateTodos = openTodos.filter(x => x.date && x.date < today).length;
+    const todayTodos = openTodos.filter(x => x.date === today).length;
+    const nextEv = state.events.filter(e => e.end >= today && !e.done).sort((a, b) => a.start.localeCompare(b.start))[0];
+    const mo = (state.months[mk] || { items: [] }).items, moDone = mo.filter(i => i.done).length;
+    $('#todayStats').innerHTML = [
+      { l: `${Number(mk.slice(5))}월 일기`, v: `${monthDiary.length}일`, f: scores.length ? `만족도 평균 ${avg}` : '점수를 남겨보자' },
+      { l: '오늘 할일', v: `${todayTodos}개`, f: lateTodos ? `지난 일 ${lateTodos}개도 있어요` : (todayTodos ? '오늘 안에' : '남은 일 없음'), cls: lateTodos ? 'warn' : '' },
+      { l: '다음 일정', v: nextEv ? (daysBetween(today, nextEv.start) > 0 ? `D-${daysBetween(today, nextEv.start)}` : '오늘') : '-', f: nextEv ? (nextEv.time ? nextEv.time + ' ' : '') + nextEv.title : '잡힌 일정 없음' },
+      { l: '이번 달 목표', v: mo.length ? `${moDone}/${mo.length}` : '-', f: mo.length ? (moDone === mo.length ? '🎉 다 했어요' : `${mo.length - moDone}개 남음`) : '이번 달 메모에 적어요' },
+    ].map(x => `<div class="tstat ${x.cls || ''}"><span class="tstat-l">${esc(x.l)}</span><strong class="tstat-v">${esc(x.v)}</strong><span class="tstat-f">${esc(x.f)}</span></div>`).join('');
+  }
+  $('#bigDiary').addEventListener('click', () => openDiaryDate(todayStr()));
+
+  /* ---------- 스티커 보드 (포스트잇: 글 · 사진 · 손그림, 끌기 · 크기 · 회전) ---------- */
+  const WB_COLORS = { yellow: '#ffe9a8', pink: '#ffd3d3', sky: '#d3f0ff', green: '#d9f7d1', purple: '#e9dcff', white: '#ffffff' };
+  const PEN_COLORS = ['#222222', '#e5484d', '#0d6efd', '#12a150', '#f5a524', '#8e4ec6'];
+  const PEN_SIZES = [2, 4, 9];
+  const WB_MAX = 40, WB_IMG_SIDE = 480, WB_IMG_CHARS = 90000;
+  let wbColor = 'yellow', pen = { color: PEN_COLORS[0], size: 4, eraser: false, dirty: false, drawing: false };
+  const narrow = () => window.innerWidth <= 700;
+  function wbErr(msg) { const el = $('#wbErr'); el.textContent = msg || ''; el.hidden = !msg; }
+  function renderWbColors() {
+    $('#wbColors').innerHTML = Object.keys(WB_COLORS).map(k => `<button type="button" class="note-dot ${wbColor === k ? 'on' : ''}" data-c="${k}" style="background:${WB_COLORS[k]}" title="쪽지 색"></button>`).join('');
+  }
+  $('#wbColors').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (!b) return; wbColor = b.dataset.c; renderWbColors(); });
+  function renderStickers() {
+    const board = $('#wbBoard');
+    const list = state.stickers.slice().sort((a, b) => (a.z || 0) - (b.z || 0));
+    $('#wbCount').textContent = list.length ? `${list.length}장` : '';
+    board.classList.toggle('grid', narrow());
+    if (!list.length) { board.innerHTML = '<p class="muted small wb-empty">아직 붙은 게 없어요. 위에서 첫 쪽지를 붙여보자.</p>'; board.style.height = ''; return; }
+    board.innerHTML = list.map(n => {
+      const style = narrow() ? `background:${WB_COLORS[n.color] || WB_COLORS.yellow}` : `background:${WB_COLORS[n.color] || WB_COLORS.yellow};left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;transform:rotate(${n.rot || 0}deg);z-index:${n.z || 1}`;
+      return `<div class="wb-note" data-id="${n.id}" style="${style}">
+        <button type="button" class="wb-x" title="떼기">✕</button>
+        ${narrow() ? '' : '<button type="button" class="wb-rot" title="돌리기">↻</button>'}
+        <div class="wb-inner">${n.image ? `<img src="${n.image}" alt="" class="wb-img" draggable="false">` : ''}${n.text ? `<div class="wb-text">${esc(n.text)}</div>` : ''}</div>
+        <div class="wb-by">${whenLabel(n.at).slice(0, 10)}</div>
+        ${narrow() ? '' : '<div class="wb-resize" title="크기 바꾸기"></div>'}
+      </div>`;
+    }).join('');
+    if (!narrow()) board.style.height = Math.max(340, ...list.map(n => n.y + n.h + 24)) + 20 + 'px'; else board.style.height = '';
+  }
+  function addSticker(payload) {
+    if (state.stickers.length >= WB_MAX) { wbErr(`쪽지는 ${WB_MAX}장까지예요. 오래된 걸 떼고 붙여요.`); return false; }
+    const topZ = Math.max(0, ...state.stickers.map(n => n.z || 0)) + 1;
+    const i = state.stickers.length;
+    const bw = Math.max(320, $('#wbBoard').clientWidth || 600);
+    state.stickers.push(Object.assign({ id: uid(), color: wbColor, x: Math.min(bw - 220, 16 + (i % 4) * 60), y: 16 + (i % 5) * 40, w: 200, h: payload.image ? 220 : 180, rot: ((i * 7) % 5) - 2, z: topZ, at: Date.now() }, payload));
+    wbErr(''); save(); renderStickers(); return true;
+  }
+  $('#wbForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const text = $('#wbText').value.trim(); if (!text) { $('#wbText').focus(); return; }
+    if (addSticker({ text })) $('#wbText').value = '';
+  });
+  async function shrinkToDataUrl(file, side, maxChars) {
+    let src;
+    try { src = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch (e) { src = await new Promise((res, rej) => { const img = new Image(); img.onload = () => res(img); img.onerror = rej; img.src = URL.createObjectURL(file); }); }
+    const k = Math.min(1, side / Math.max(src.width, src.height));
+    const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(src.width * k)); c.height = Math.max(1, Math.round(src.height * k));
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(src, 0, 0, c.width, c.height);
+    let out = c.toDataURL('image/jpeg', 0.62);
+    if (out.length > maxChars) out = c.toDataURL('image/jpeg', 0.45);
+    if (out.length > maxChars) out = c.toDataURL('image/jpeg', 0.3);
+    return out;
+  }
+  $('#wbPhoto').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+    wbErr('사진 줄이는 중…');
+    try { const img = await shrinkToDataUrl(f, WB_IMG_SIDE, WB_IMG_CHARS); const text = $('#wbText').value.trim(); if (addSticker({ image: img, text })) $('#wbText').value = ''; }
+    catch (x) { wbErr('사진을 읽지 못했어요.'); }
+  });
+  // 손그림
+  const cv = $('#drawCanvas'), cx = cv.getContext('2d');
+  function penClear() { cx.fillStyle = '#ffffff'; cx.fillRect(0, 0, cv.width, cv.height); pen.dirty = false; }
+  function renderPenTools() {
+    $('#penColors').innerHTML = PEN_COLORS.map(c => `<button type="button" class="pen-dot ${!pen.eraser && pen.color === c ? 'on' : ''}" data-pc="${c}" style="background:${c}" title="펜 색"></button>`).join('');
+    $('#penSizes').innerHTML = PEN_SIZES.map(sz => `<button type="button" class="pen-size ${pen.size === sz ? 'on' : ''}" data-ps="${sz}" title="굵기"><span style="width:${sz + 4}px;height:${sz + 4}px"></span></button>`).join('');
+    $('#penEraser').classList.toggle('on', pen.eraser); $('#penEraser').textContent = pen.eraser ? '지우개 켬' : '지우개';
+  }
+  $('#penColors').addEventListener('click', e => { const b = e.target.closest('[data-pc]'); if (!b) return; pen.color = b.dataset.pc; pen.eraser = false; renderPenTools(); });
+  $('#penSizes').addEventListener('click', e => { const b = e.target.closest('[data-ps]'); if (!b) return; pen.size = Number(b.dataset.ps); renderPenTools(); });
+  $('#penEraser').addEventListener('click', () => { pen.eraser = !pen.eraser; renderPenTools(); });
+  $('#penClear').addEventListener('click', penClear);
+  $('#wbDrawBtn').addEventListener('click', () => { const w = $('#drawWrap'); w.hidden = !w.hidden; if (!w.hidden) { penClear(); renderPenTools(); } });
+  $('#drawCancel').addEventListener('click', () => { $('#drawWrap').hidden = true; });
+  const cpos = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * cv.width, y: (e.clientY - r.top) / r.height * cv.height }; };
+  cv.addEventListener('pointerdown', e => { e.preventDefault(); const p = cpos(e); cx.beginPath(); cx.moveTo(p.x, p.y); pen.drawing = true; try { cv.setPointerCapture(e.pointerId); } catch (x) {} });
+  cv.addEventListener('pointermove', e => { if (!pen.drawing) return; const p = cpos(e); cx.strokeStyle = pen.eraser ? '#ffffff' : pen.color; cx.lineWidth = pen.eraser ? pen.size * 4 : pen.size; cx.lineCap = 'round'; cx.lineJoin = 'round'; cx.lineTo(p.x, p.y); cx.stroke(); pen.dirty = true; });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => cv.addEventListener(ev, () => { pen.drawing = false; }));
+  $('#drawDone').addEventListener('click', () => {
+    if (!pen.dirty) { wbErr('아직 아무것도 안 그렸어요.'); return; }
+    let out = cv.toDataURL('image/jpeg', 0.7); if (out.length > WB_IMG_CHARS) out = cv.toDataURL('image/jpeg', 0.5);
+    const text = $('#wbText').value.trim();
+    if (addSticker({ image: out, text })) { $('#wbText').value = ''; $('#drawWrap').hidden = true; }
+  });
+  // 떼기 · 끌기 · 크기 · 회전
+  $('#wbBoard').addEventListener('click', e => {
+    const x = e.target.closest('.wb-x'); if (!x) return;
+    const note = x.closest('.wb-note'); const n = state.stickers.find(s => s.id === note.dataset.id); if (!n) return;
+    if (!confirm('이 쪽지를 뗄까요?')) return;
+    state.stickers = state.stickers.filter(s => s !== n); save(); renderStickers();
+  });
+  $('#wbBoard').addEventListener('pointerdown', e => {
+    if (narrow()) return;
+    const note = e.target.closest('.wb-note'); if (!note || e.target.closest('.wb-x')) return;
+    const n = state.stickers.find(s => s.id === note.dataset.id); if (!n) return;
+    const mode = e.target.closest('.wb-resize') ? 'resize' : e.target.closest('.wb-rot') ? 'rotate' : 'move';
+    e.preventDefault();
+    const sx = e.clientX, sy = e.clientY, base = { x: n.x, y: n.y, w: n.w, h: n.h, rot: n.rot || 0 };
+    const topZ = Math.max(0, ...state.stickers.map(s => s.z || 0)) + 1;
+    let last = Object.assign({}, base), frame = 0;
+    note.classList.add('dragging'); note.style.zIndex = '999';
+    try { note.setPointerCapture(e.pointerId); } catch (x) {}
+    const paint = () => { frame = 0; note.style.left = last.x + 'px'; note.style.top = last.y + 'px'; note.style.width = last.w + 'px'; note.style.height = last.h + 'px'; note.style.transform = 'rotate(' + last.rot + 'deg)'; };
+    const onMove = ev => {
+      const dx = ev.clientX - sx, dy = ev.clientY - sy;
+      if (mode === 'move') last = Object.assign({}, base, { x: Math.max(0, base.x + dx), y: Math.max(0, base.y + dy) });
+      else if (mode === 'resize') last = Object.assign({}, base, { w: Math.min(640, Math.max(120, base.w + dx)), h: Math.min(640, Math.max(110, base.h + dy)) });
+      else { const r = note.getBoundingClientRect(); const deg = Math.atan2(ev.clientY - (r.top + r.height / 2), ev.clientX - (r.left + r.width / 2)) * 180 / Math.PI + 90; last = Object.assign({}, base, { rot: Math.max(-45, Math.min(45, Math.round(deg))) }); }
+      if (!frame) frame = requestAnimationFrame(paint);
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onUp);
+      if (frame) cancelAnimationFrame(frame); paint();
+      note.classList.remove('dragging'); note.style.zIndex = String(topZ);
+      const same = last.x === base.x && last.y === base.y && last.w === base.w && last.h === base.h && last.rot === base.rot;
+      Object.assign(n, last, { z: topZ });
+      if (!same) { save(); renderStickers(); }
+    };
+    window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onUp);
+  });
+  renderWbColors();
+  window.addEventListener('resize', (() => { let t; return () => { clearTimeout(t); t = setTimeout(renderStickers, 200); }; })());
+
+  /* ---------- 폰 홈 화면에 설치 ---------- */
+  let installEvt = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+  $('#installBtn').addEventListener('click', async () => {
+    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) { alert('이미 앱으로 설치돼 있어요 📱'); return; }
+    if (installEvt) { installEvt.prompt(); try { const r = await installEvt.userChoice; if (r.outcome === 'accepted') installEvt = null; } catch (e) {} return; }
+    alert('📱 홈 화면에 앱처럼 추가하는 방법\n\n🍎 아이폰(Safari): 아래 공유 버튼 [⍐] → "홈 화면에 추가"\n\n🤖 안드로이드(크롬·삼성 인터넷): 메뉴 [⋮] → "홈 화면에 추가" 또는 "앱 설치"');
+  });
 
   /* ---------- 호로록 메모장 ---------- */
   const memoText = $('#memoText');
@@ -2187,7 +2365,7 @@
       langLog: remote.langLog || {},
       useStocks: !!remote.useStocks,
       showDone: state.showDone,
-      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), diary: keep('diary'), events: keep('events'), days: keep('days'), showTodos: remote.showTodos === undefined ? state.showTodos : !!remote.showTodos, panels: keep('panels'), assets: keep('assets'), ladder: keep('ladder'), treeCounts: remote.treeCounts === undefined ? state.treeCounts : !!remote.treeCounts, months: keep('months'), years: keep('years')
+      goals: keep('goals'), works: keep('works'), order: keep('order'), texts: keep('texts'), memo: keep('memo'), diary: keep('diary'), events: keep('events'), days: keep('days'), showTodos: remote.showTodos === undefined ? state.showTodos : !!remote.showTodos, panels: keep('panels'), assets: keep('assets'), ladder: keep('ladder'), stickers: keep('stickers'), treeCounts: remote.treeCounts === undefined ? state.treeCounts : !!remote.treeCounts, months: keep('months'), years: keep('years')
     }));
     saveLocal();
     return true;
@@ -2384,7 +2562,7 @@
   /* ---------- 시작 ---------- */
   function renderAll() {
     applyTexts(); applyOrder(); applySide();
-    renderHeader(); renderAssets(); renderWork(); renderCalendar(); renderTodos(); renderWeight(); renderLang(); renderMemo(); renderDiary(); renderMonth(); renderYear();
+    renderHeader(); renderAssets(); renderWork(); renderCalendar(); renderTodos(); renderWeight(); renderLang(); renderMemo(); renderDiary(); renderMonth(); renderYear(); renderTodayStrip(); renderStickers();
     if (dayOpen) renderDay();
     if (document.body.classList.contains('on-board')) {
       if (board.view === 'post' && board.postId) renderPostPage(board.postId);

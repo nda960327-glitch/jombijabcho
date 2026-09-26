@@ -948,3 +948,93 @@ body.no-side .layout { grid-template-columns: minmax(0, 1fr); }
 .mood.score.high.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .score-hint { margin-left: 6px; }
 .day-dot2.has { font-size: .9rem; font-weight: 700; }
+
+/* ---------- 오늘 스트립 ---------- */
+.biglog { display: flex; align-items: center; gap: 16px; width: 100%; text-align: left; padding: 18px 22px; border-radius: 18px; border: 0; cursor: pointer; font: inherit; color: var(--panel);
+  background: linear-gradient(135deg, var(--accent) 0%, #2f8a5c 100%); box-shadow: 0 10px 28px rgba(63,159,111,.28); transition: transform .15s, box-shadow .15s; }
+.biglog:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(63,159,111,.35); }
+.biglog.done { background: linear-gradient(135deg, var(--gold) 0%, #b8862a 100%); box-shadow: 0 10px 28px rgba(217,164,65,.28); }
+.biglog-icon { font-size: 30px; line-height: 1; }
+.biglog-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.biglog-text strong { font-size: 1.15rem; font-weight: 900; }
+.biglog-text small { font-size: .82rem; opacity: .9; margin-top: 2px; }
+.biglog-go { font-size: 24px; font-weight: 700; opacity: .8; }
+.today-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+.tstat { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 1px; box-shadow: var(--shadow); }
+.tstat-l { font-size: .74rem; color: var(--text-dim); }
+.tstat-v { font-size: 1.25rem; font-weight: 900; }
+.tstat-f { font-size: .74rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tstat.warn .tstat-f { color: var(--red); }
+
+/* ---------- 스티커 보드 ---------- */
+.wb-form textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: 10px; padding: 9px 12px; background: var(--panel-soft); font: inherit; font-size: .95rem; line-height: 1.5; resize: vertical; }
+.wb-form textarea:focus { outline: 0; border-color: var(--accent); background: var(--panel); }
+.wb-form-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.wb-form-row .spacer { flex: 1; }
+.wb-colors { display: inline-flex; gap: 5px; }
+.note-dot, .pen-dot { width: 22px; height: 22px; border-radius: 999px; border: 2px solid var(--panel); box-shadow: 0 0 0 1px var(--line-strong); cursor: pointer; padding: 0; }
+.note-dot.on, .pen-dot.on { box-shadow: 0 0 0 2px var(--accent); transform: scale(1.12); }
+.draw-wrap { margin-top: 12px; padding: 12px; border: 1px dashed var(--line-strong); border-radius: 12px; background: var(--panel-soft); }
+.draw-tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pen-colors, .pen-sizes { display: inline-flex; gap: 5px; align-items: center; }
+.pen-size { width: 26px; height: 26px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--panel); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.pen-size.on { border-color: var(--accent); }
+.pen-size span { display: block; border-radius: 50%; background: var(--text); }
+#penEraser.on { background: var(--gold-soft); border-color: var(--gold); color: var(--gold-text); }
+.draw-canvas { display: block; width: 100%; max-width: 800px; aspect-ratio: 5 / 3; margin: 10px 0 0; background: #fff; border: 1px solid var(--line-strong); border-radius: 10px; touch-action: none; cursor: crosshair; }
+.wb-board { position: relative; margin-top: 14px; min-height: 120px; border-radius: 14px; background-color: var(--chip);
+  background-image: radial-gradient(var(--line-strong) 1px, transparent 1px); background-size: 18px 18px; overflow: hidden; touch-action: none; }
+.wb-board.grid { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; touch-action: auto; }
+.wb-empty { padding: 30px 12px; text-align: center; }
+.wb-note { position: absolute; display: flex; flex-direction: column; padding: 10px 12px 8px; border-radius: 4px; color: #2b2723; box-shadow: 0 6px 16px rgba(0,0,0,.14); user-select: none; cursor: grab; will-change: left, top, width, height, transform; }
+.wb-board.grid .wb-note { position: static; width: calc(50% - 5px); min-height: 120px; transform: none !important; cursor: default; }
+.wb-note.dragging { cursor: grabbing; box-shadow: 0 14px 34px rgba(0,0,0,.3); }
+.wb-note * { pointer-events: none; }
+.wb-note .wb-x, .wb-note .wb-rot, .wb-note .wb-resize { pointer-events: auto; }
+.wb-inner { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
+.wb-img { width: 100%; max-height: 100%; object-fit: contain; border-radius: 3px; background: #fff; }
+.wb-text { white-space: pre-wrap; font-size: .9rem; line-height: 1.45; word-break: break-word; font-family: 'Gaegu', 'Nanum Pen Script', var(--font); font-size: 1rem; }
+.wb-by { font-size: .66rem; color: rgba(43,39,35,.55); margin-top: 4px; }
+.wb-x, .wb-rot { position: absolute; top: 4px; width: 22px; height: 22px; border-radius: 999px; border: 0; background: rgba(0,0,0,.12); color: #2b2723; font-size: .7rem; cursor: pointer; line-height: 1; }
+.wb-x { right: 4px; } .wb-rot { left: 4px; cursor: grab; }
+.wb-x:hover, .wb-rot:hover { background: rgba(0,0,0,.24); }
+.wb-resize { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; cursor: nwse-resize; background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,.25) 50%); border-bottom-right-radius: 4px; }
+
+/* ---------- 일정 시간 · 완료 ---------- */
+.ev.ev-done { opacity: .5; text-decoration: line-through; }
+.dm-events li.done b { text-decoration: line-through; color: var(--text-dim); }
+.ev-done-cb { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+.ed-tpl { margin-left: auto; }
+
+/* ---------- 폰 UX ---------- */
+.top { padding-top: env(safe-area-inset-top); }
+.memo-fab { bottom: calc(20px + env(safe-area-inset-bottom)); }
+.memo-panel { bottom: calc(86px + env(safe-area-inset-bottom)); }
+@media (max-width: 1000px) { .today-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) {
+  /* iOS는 16px 미만 입력칸에 커서를 두면 화면을 확대해 버린다 */
+  input, select, textarea, .ed-body, .m-inline { font-size: 16px !important; }
+  .top-inner { padding: 10px 14px; gap: 8px; }
+  .top h1 { font-size: 1.05rem; }
+  .top-nav a { padding: 5px 9px; font-size: .8rem; }
+  .theme-btn, .edit-toggle { height: 32px; }
+  .biglog { padding: 14px 16px; gap: 12px; border-radius: 16px; }
+  .biglog-text strong { font-size: 1rem; }
+  .tstat-v { font-size: 1.1rem; }
+  .wb-board.grid .wb-note { width: 100%; }
+  .draw-canvas { aspect-ratio: 4 / 3; }
+  .memo-fab { bottom: calc(14px + env(safe-area-inset-bottom)); }
+  .memo-panel { bottom: calc(74px + env(safe-area-inset-bottom)); }
+}
+
+/* ---------- 폰: 헤더 한 줄 · 오른쪽 패널은 본문 뒤로 ---------- */
+@media (max-width: 1000px) {
+  .side { order: 1; }                    /* 폰·태블릿에서는 오늘 패널을 본문 아래로 (날짜는 달력에서 눌러 여는 창으로) */
+}
+@media (max-width: 600px) {
+  .top-nav > a:not(.sync-badge) { display: none; }   /* 폰에서는 스크롤이 더 빠르다 · 버튼만 남김 */
+  .top-nav { gap: 5px; }
+  .top-left .eyebrow { font-size: .7rem; }
+  .edit-toggle { padding: 5px 9px; font-size: .78rem; }
+  .sync-badge { padding: 5px 9px !important; }
+}

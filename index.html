@@ -2,7 +2,13 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MY HOME">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fbf8f3">
@@ -18,7 +24,7 @@ function sys(){r.classList.toggle('sys-dark',!!(mq&&mq.matches));}sys();if(mq&&m
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260917a">
+<link rel="stylesheet" href="css/style.css?v=20260927a">
 </head>
 <body>
 
@@ -36,6 +42,7 @@ function sys(){r.classList.toggle('sys-dark',!!(mq&&mq.matches));}sys();if(mq&&m
       <a href="#me">나</a>
       <button type="button" class="edit-toggle" id="editToggle" title="제목·문구 수정, 위젯 순서 바꾸기">✏️ 꾸미기</button>
       <button type="button" class="theme-btn" id="themeBtn" title="화면 밝기: 자동 / 밝게 / 어둡게">🌗</button>
+      <button type="button" class="theme-btn" id="installBtn" title="폰 홈 화면에 앱처럼 설치">⬇</button>
       <a href="#sync" class="sync-badge" id="syncBadge" title="동기화 상태">☁️ 미연결</a>
     </nav>
   </div>
@@ -49,6 +56,17 @@ function sys(){r.classList.toggle('sys-dark',!!(mq&&mq.matches));}sys();if(mq&&m
 
 <div class="layout">
 <main class="main" id="main">
+
+  <!-- ===== 오늘 ===== -->
+  <section id="today" class="block" data-sec="today">
+    <div class="sec-tools" hidden><span class="sec-name">오늘</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
+    <button type="button" class="biglog" id="bigDiary">
+      <span class="biglog-icon" id="bigDiaryIcon">✏️</span>
+      <span class="biglog-text"><strong id="bigDiaryTitle">오늘 일기 쓰기</strong><small id="bigDiarySub"></small></span>
+      <span class="biglog-go">→</span>
+    </button>
+    <div class="today-stats" id="todayStats"></div>
+  </section>
 
   <!-- ===== 올해 목표 ===== -->
   <section id="year" class="block" data-sec="year">
@@ -220,6 +238,46 @@ function sys(){r.classList.toggle('sys-dark',!!(mq&&mq.matches));}sys();if(mq&&m
       </div>
       <div class="diary-strip" id="diaryStrip"></div>
       <ul class="post-list compact" id="diaryRecent"></ul>
+    </div>
+  </section>
+
+  <!-- ===== 스티커 보드 ===== -->
+  <section id="stickers" class="block" data-sec="stickers">
+    <div class="sec-tools" hidden><span class="sec-name">스티커 보드</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
+    <div class="block-head">
+      <div class="head-row"><h2 data-t="stickers.h2">📌 스티커 보드</h2><span class="muted small" id="wbCount"></span></div>
+      <p data-t="stickers.p">포스트잇처럼 붙여요. 글·사진·손그림. 끌어서 옮기고, 모서리로 크기, ↻로 돌려요.</p>
+    </div>
+    <div class="card wb-card">
+      <form class="wb-form" id="wbForm">
+        <textarea id="wbText" rows="2" placeholder="아무 말이나 적어서 붙이세요" maxlength="500"></textarea>
+        <div class="wb-form-row">
+          <span class="muted small">색</span>
+          <span class="wb-colors" id="wbColors"></span>
+          <span class="spacer"></span>
+          <button type="button" class="text-btn" id="wbDrawBtn">✏️ 그림</button>
+          <label class="text-btn file-btn">📷 사진<input type="file" id="wbPhoto" accept="image/*" hidden></label>
+          <button type="submit" class="primary" id="wbAdd">붙이기</button>
+        </div>
+      </form>
+      <div class="draw-wrap" id="drawWrap" hidden>
+        <div class="draw-tools">
+          <span class="pen-colors" id="penColors"></span>
+          <span class="ed-sep"></span>
+          <span class="pen-sizes" id="penSizes"></span>
+          <span class="ed-sep"></span>
+          <button type="button" class="text-btn" id="penEraser">지우개</button>
+          <button type="button" class="text-btn" id="penClear">전부 지우기</button>
+        </div>
+        <canvas id="drawCanvas" width="800" height="480" class="draw-canvas"></canvas>
+        <div class="wb-form-row">
+          <button type="button" class="primary" id="drawDone">보드에 붙이기</button>
+          <button type="button" class="text-btn" id="drawCancel">취소</button>
+          <span class="muted small">손가락이나 마우스로 그리세요. 위 칸에 글을 적어두면 그림과 같이 붙어요.</span>
+        </div>
+      </div>
+      <p class="muted small" id="wbErr" hidden></p>
+      <div class="wb-board" id="wbBoard"></div>
     </div>
   </section>
 
@@ -494,6 +552,7 @@ function sys(){r.classList.toggle('sys-dark',!!(mq&&mq.matches));}sys();if(mq&&m
           </span>
           <label class="ed-photo" title="사진 넣기 (커서 자리에 들어가요)">📷 사진<input type="file" id="bdPhoto" accept="image/*" multiple hidden></label>
           <button type="button" data-cmd="removeFormat" title="서식 지우기">지우개</button>
+          <button type="button" id="edTemplate" class="ed-tpl" title="오늘 한 일 / 잘한 일·아쉬운 일 / 내일 할 일 틀 넣기">📋 회고 틀</button>
         </div>
 
         <div class="img-tools" id="imgTools" hidden>
@@ -592,7 +651,7 @@ function sys(){r.classList.toggle('sys-dark',!!(mq&&mq.matches));}sys();if(mq&&m
     <ul class="dm-events" id="dmEvents"></ul>
     <form class="dm-event-form" id="dmEventForm">
       <input id="dmEvTitle" placeholder="일정 제목 (예: 제주 여행, 치과, 친구 결혼식)" maxlength="60" autocomplete="off">
-      <div class="dm-dates"><input type="date" id="dmEvStart" required><span>부터</span><input type="date" id="dmEvEnd" required><span>까지</span></div>
+      <div class="dm-dates"><input type="date" id="dmEvStart" required><span>부터</span><input type="date" id="dmEvEnd" required><span>까지</span><input type="time" id="dmEvTime" title="시간 (선택)"><span class="muted small">시간(선택)</span></div>
       <div class="dm-row"><span class="dm-label">색</span><div class="dm-colors" id="dmEvColors"></div></div>
       <input id="dmEvMemo" placeholder="일정 메모 (선택) 예: 숙소 ○○, 준비물" maxlength="200" autocomplete="off">
       <div class="editor-btns"><button type="button" class="text-btn" id="dmEvCancel" hidden>취소</button><button type="submit" class="primary" id="dmEvSave">일정 추가</button></div>
@@ -636,6 +695,6 @@ function sys(){r.classList.toggle('sys-dark',!!(mq&&mq.matches));}sys();if(mq&&m
   </div>
 </div>
 
-<script src="js/app.js?v=20260917a"></script>
+<script src="js/app.js?v=20260927a"></script>
 </body>
 </html>
