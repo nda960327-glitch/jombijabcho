@@ -1,12 +1,12 @@
 {
-  "name": "MY HOME · 나의 목표와 자산",
+  "name": "THE WEEKLY Times · MY HOME",
   "short_name": "MY HOME",
-  "description": "나의 목표 · 자산 · 달력 · 다이어리",
+  "description": "나의 주간 플래너 — 일정 · 할 일 · 메모",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fbf8f3",
-  "theme_color": "#fbf8f3",
+  "background_color": "#f7f3ec",
+  "theme_color": "#f7f3ec",
   "lang": "ko",
   "icons": [
     {

@@ -11,690 +11,99 @@
 <meta name="apple-mobile-web-app-title" content="MY HOME">
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fbf8f3">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#17161a">
-<script>
-/* 첫 그리기 전에 테마 적용 (깜빡임 방지). 저장값: auto | light | dark */
-(function(){try{var t=localStorage.getItem('myhome.theme')||'auto';var r=document.documentElement;
-if(t==='light'||t==='dark')r.setAttribute('data-theme',t);
-var mq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');
-function sys(){r.classList.toggle('sys-dark',!!(mq&&mq.matches));}sys();if(mq&&mq.addEventListener)mq.addEventListener('change',sys);}catch(e){}})();
-</script>
-<title>MY HOME · 나의 목표와 자산</title>
+<meta name="theme-color" content="#f7f3ec">
+<title>THE WEEKLY Times · MY HOME</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Myeongjo:wght@400;700&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&family=Do+Hyeon&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20260927b">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=20261123a">
 </head>
 <body>
 
-<header class="top">
-  <div class="top-inner">
-    <div class="top-left" id="topHome" title="대시보드로">
-      <p class="eyebrow" id="todayLabel">오늘</p>
-      <h1 id="greeting">안녕, 오늘도 한 걸음</h1>
-    </div>
-    <nav class="top-nav">
-      <a href="#goals">목표</a>
-      <a href="#money">자산</a>
-      <a href="#work">일</a>
-      <a href="#calendar">달력</a>
-      <a href="#me">나</a>
-      <button type="button" class="edit-toggle" id="editToggle" title="제목·문구 수정, 위젯 순서 바꾸기">✏️ 꾸미기</button>
-      <button type="button" class="theme-btn" id="themeBtn" title="화면 밝기: 자동 / 밝게 / 어둡게">🌗</button>
-      <button type="button" class="theme-btn" id="installBtn" title="폰 홈 화면에 앱처럼 설치">⬇</button>
-      <a href="#sync" class="sync-badge" id="syncBadge" title="동기화 상태">☁️ 미연결</a>
-    </nav>
+<div class="wrap"><div class="ops" id="ops">
+<div id="ops-main"><div class="paper">
+  <div class="mast"><div><div class="kick">MY HOME · 나의 주간 플래너</div><h1>THE WEEKLY <i>Times</i></h1></div><div class="rt" id="ops-rt"></div></div>
+  <div class="rule"></div>
+  <div class="bar">
+    <button type="button" class="ib" data-a="prev" aria-label="이전">◀</button><button type="button" class="ib" data-a="next" aria-label="다음">▶</button>
+    <button type="button" class="ib" data-a="today">오늘</button>
+    <span class="seg"><button type="button" class="ib on" data-v="week">주간</button><button type="button" class="ib" data-v="month">월간</button></span>
+    <span class="sp"></span>
+    <input class="in srch" id="ops-q" type="search" placeholder="검색 (제목·메모·담당자)" aria-label="검색">
+    <select class="in" id="ops-owner" aria-label="담당자"><option value="">담당자 전체</option></select>
+    <button type="button" class="ib dk" data-a="add">+ 추가</button>
   </div>
-</header>
-
-<div class="edit-bar" id="editBar" hidden>
-  <span>✏️ <b>꾸미기 모드</b> · 점선 글씨를 눌러 바로 고칠 수 있어요 · 섹션은 ▲▼로, 카드는 끌어서 순서를 바꿔요</span>
-  <label class="switch edit-switch"><input type="checkbox" id="showTodosToggle"><span>📋 오른쪽 패널 보이기</span></label>
-  <button type="button" class="primary" id="editDone">완료</button>
+  <div class="bar2"><span id="ops-legend"></span><span>○ 할 일 · ◐ 진행 중 · ● 완료</span>
+    <span class="tools"><button type="button" class="tl" data-a="people">사람·형광펜 색</button><button type="button" class="tl" data-a="done">지금까지 한 일</button><button type="button" class="tl" data-a="mail">주간 마감 보고</button><button type="button" class="tl" data-a="carry">못 한 일 이번 주로</button><button type="button" class="tl" data-a="print">인쇄</button><button type="button" class="tl sync-badge none" data-a="sync" id="syncBadge">🔒 동기화 잠김</button></span></div>
+  <div id="ops-view"></div>
 </div>
-
-<div class="layout">
-<main class="main" id="main">
-
-  <!-- ===== 오늘 ===== -->
-  <section id="today" class="block" data-sec="today">
-    <div class="sec-tools" hidden><span class="sec-name">오늘</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <button type="button" class="biglog" id="bigDiary">
-      <span class="biglog-icon" id="bigDiaryIcon">✏️</span>
-      <span class="biglog-text"><strong id="bigDiaryTitle">오늘 일기 쓰기</strong><small id="bigDiarySub"></small></span>
-      <span class="biglog-go">→</span>
-    </button>
-    <div class="today-stats" id="todayStats"></div>
-  </section>
-
-  <!-- ===== 올해 목표 ===== -->
-  <section id="year" class="block" data-sec="year">
-    <div class="sec-tools" hidden><span class="sec-name">올해 목표</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <div class="block-head">
-      <h2 data-t="year.h2">🎯 올해 목표</h2>
-      <p data-t="year.p">1년 동안 꼭 이루고 싶은 것. 달마다 쪼개서 이번 달 메모로 내려요.</p>
-    </div>
-    <div class="month-widget year-widget card">
-      <div class="month-head">
-        <button type="button" class="icon-btn" id="yearPrev" aria-label="이전 해">‹</button>
-        <strong id="yearTitle"></strong>
-        <button type="button" class="icon-btn" id="yearNext" aria-label="다음 해">›</button>
-        <button type="button" class="text-btn" id="yearToday">올해</button>
-        <span class="month-progress-text" id="yearProgressText"></span>
-      </div>
-      <div class="bar"><div class="bar-fill gold" id="yearBar"></div></div>
-      <p class="muted small" id="yearDays"></p>
-      <form class="month-add" id="yearAdd"><input id="yearText" placeholder="올해 목표 추가 (예: 전세 잔금 마련, 44kg, 일본어 N3, 캐스퍼 계약)" maxlength="100" autocomplete="off"><button type="submit" class="primary">추가</button></form>
-      <ul class="check-list month-list" id="yearList"></ul>
-      <div class="month-foot">
-        <button type="button" class="text-btn" id="yearCarry" hidden>지난해에서 안 끝난 것 가져오기</button>
-      </div>
-      <label class="im-field month-memo">올해 다짐 <span class="muted small">(자유롭게 · 자동 저장)</span>
-        <textarea id="yearMemo" rows="3" placeholder="올해를 한 문장으로. 지키고 싶은 원칙, 올해의 단어…" maxlength="1000"></textarea>
-      </label>
-    </div>
-  </section>
-
-  <!-- ===== 이번 달 메모 ===== -->
-  <section id="month" class="block" data-sec="month">
-    <div class="sec-tools" hidden><span class="sec-name">이번 달 메모</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <div class="block-head">
-      <h2 data-t="month.h2">🗓 이번 달 메모</h2>
-      <p data-t="month.p">이번 달에 꼭 할 것들. 체크하면서 채워가요.</p>
-    </div>
-    <div class="month-widget card">
-      <div class="month-head">
-        <button type="button" class="icon-btn" id="monthPrev" aria-label="이전 달">‹</button>
-        <strong id="monthTitle"></strong>
-        <button type="button" class="icon-btn" id="monthNext" aria-label="다음 달">›</button>
-        <button type="button" class="text-btn" id="monthToday">이번 달</button>
-        <span class="month-progress-text" id="monthProgressText"></span>
-      </div>
-      <div class="bar"><div class="bar-fill" id="monthBar"></div></div>
-      <form class="month-add" id="monthAdd"><input id="monthText" placeholder="이번 달 목표 추가 (예: 책 2권, 3kg 감량, 부모님 뵙기)" maxlength="100" autocomplete="off"><button type="submit" class="primary">추가</button></form>
-      <ul class="check-list month-list" id="monthList"></ul>
-      <div class="month-foot">
-        <button type="button" class="text-btn" id="monthCarry" hidden>지난 달에서 안 끝난 것 가져오기</button>
-      </div>
-      <label class="im-field month-memo">이번 달 메모 <span class="muted small">(자유롭게 · 자동 저장)</span>
-        <textarea id="monthMemo" rows="3" placeholder="이번 달 마음가짐, 예산, 챙길 것…" maxlength="1000"></textarea>
-      </label>
-    </div>
-  </section>
-
-  <!-- ===== 목표 ===== -->
-  <section id="goals" class="block" data-sec="goals">
-    <div class="sec-tools" hidden><span class="sec-name">꿈과 목표</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <div class="block-head">
-      <div class="head-row"><h2 data-t="goals.h2">🌱 꿈과 목표</h2><a href="#boards/goal" class="see-all">전체보기 →</a></div>
-      <p data-t="goals.p">내가 가고 싶은 곳. 카드를 누르면 자세히 적을 수 있어요.</p>
-    </div>
-    <div class="goal-grid" id="goalGrid"></div>
-  </section>
-
-  <!-- ===== 자산 ===== -->
-  <section id="money" class="block" data-sec="money">
-    <div class="sec-tools" hidden><span class="sec-name">자산 관리</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <div class="block-head">
-      <div class="head-row money-head">
-        <h2 data-t="money.h2">💰 자산 관리</h2>
-        <span class="money-total" id="moneyTotal"></span>
-        <button type="button" class="see-all" id="assetEditToggle">✏️ 자산 편집</button>
-      </div>
-      <p data-t="money.p">주식은 보유 수량만 적으면 현재가를 자동으로 가져와 평가금액을 계산해요. 현금·토지·가게·보증금은 평가금액을 직접 적어요. 항목 자체를 고치려면 자산 편집.</p>
-    </div>
-
-    <div class="table-wrap">
-      <table class="asset-table">
-        <thead>
-          <tr><th>항목</th><th>어디에</th><th class="num">투자원금</th><th class="num">보유수량</th><th class="num">현재가</th><th class="num">평가금액</th><th class="num">손익</th></tr>
-        </thead>
-        <tbody id="assetBody"></tbody>
-        <tfoot>
-          <tr><th colspan="2">합계</th><th class="num" id="assetTotalCost"></th><th></th><th></th><th class="num" id="assetTotalNow"></th><th class="num" id="assetTotalPnl"></th></tr>
-        </tfoot>
-      </table>
-    </div>
-    <div class="asset-edit-bar" id="assetEditBar" hidden>
-      <button type="button" class="primary" id="assetAdd">＋ 자산 추가</button>
-      <span class="muted small">이름·어디에·투자원금·종류를 바로 고쳐요. 주식은 야후 심볼(코스닥 .KQ / 코스피 .KS, 예: 005930.KS)을 넣으면 현재가를 가져와요. ▲▼로 순서, ×로 삭제.</span>
-    </div>
-    <p class="quote-note muted small" id="quoteNote">시세를 불러오려면 아래 ☁️ 동기화를 먼저 연결해 주세요.</p>
-
-    <div class="ladder card">
-      <div class="ladder-head head-row">
-        <div>
-          <h3 data-t="ladder.h3">🥊 도장깨기</h3>
-          <p class="muted small" data-t="ladder.p">모아야 할 돈을 하나씩. 모은 돈을 적으면 달성도가 채워져요.</p>
-        </div>
-        <button type="button" class="primary" id="ladderAdd">＋ 목표 추가</button>
-      </div>
-      <ol class="ladder-list" id="ladderList"></ol>
-      <p class="ladder-total" id="ladderTotal"></p>
-    </div>
-
-  </section>
-
-  <!-- ===== 일 ===== -->
-  <section id="work" class="block" data-sec="work">
-    <div class="sec-tools" hidden><span class="sec-name">하는 일</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <div class="block-head">
-      <div class="head-row"><h2 data-t="work.h2">🛠 하는 일</h2><a href="#boards/work" class="see-all">전체보기 →</a></div>
-      <p data-t="work.p">지금 굴러가는 것들. 카드를 누르면 상태와 기록을 적을 수 있어요.</p>
-    </div>
-    <div class="work-grid" id="workGrid"></div>
-  </section>
-
-  <!-- ===== 달력 ===== -->
-  <section id="calendar" class="block" data-sec="calendar">
-    <div class="sec-tools" hidden><span class="sec-name">달력</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <div class="block-head">
-      <h2 data-t="cal.h2">📅 달력</h2>
-      <p data-t="cal.p">날짜를 누르면 일정·메모·형광펜·스티커를 남길 수 있고, 마우스만 올려도 그 날 내용이 보여요.</p>
-    </div>
-    <div class="cal">
-      <div class="cal-head">
-        <button class="icon-btn" id="calPrev" aria-label="이전 달">‹</button>
-        <strong id="calTitle"></strong>
-        <button class="icon-btn" id="calNext" aria-label="다음 달">›</button>
-        <button class="text-btn" id="calToday">오늘</button>
-      </div>
-      <div class="cal-week">
-        <span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span>
-      </div>
-      <div class="cal-grid" id="calGrid"></div>
-      <div class="cal-legend muted small">
-        <span><i class="lg lg-ev"></i> 일정 (며칠짜리는 띠로 이어져요)</span>
-        <span><i class="lg lg-todo"></i> 할일</span>
-        <span>📝 메모</span>
-        <span><i class="lg lg-hl"></i> 형광펜</span>
-        <span class="lg-hol">빨간 글씨 공휴일</span>
-      </div>
-    </div>
-    <div class="cal-upcoming" id="calUpcoming"></div>
-  </section>
-
-  <!-- ===== 다이어리 ===== -->
-  <section id="diary" class="block" data-sec="diary">
-    <div class="sec-tools" hidden><span class="sec-name">다이어리</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <div class="block-head">
-      <div class="head-row"><h2 data-t="diary.h2">📔 다이어리</h2><a href="#list/diary/diary" class="see-all">전체보기 →</a></div>
-      <p data-t="diary.p">하루 한 줄이라도. 오늘 나에 대한 만족도를 점수로 같이 남겨요.</p>
-    </div>
-    <div class="diary-widget card">
-      <div class="diary-today">
-        <div class="diary-today-text">
-          <p class="eyebrow" id="diaryTodayLabel"></p>
-          <strong id="diaryTodayState"></strong>
-          <p class="muted small" id="diaryStreak"></p>
-        </div>
-        <div class="diary-score">
-          <span class="muted small">스스로에 대한 만족도</span>
-          <div class="diary-moods" id="diaryMoods" title="오늘 나에 대한 만족도 (1~10)"></div>
-          <span class="muted small" id="diaryAvg"></span>
-        </div>
-        <button type="button" class="primary" id="diaryWrite">오늘 일기 쓰기</button>
-      </div>
-      <div class="diary-strip" id="diaryStrip"></div>
-      <ul class="post-list compact" id="diaryRecent"></ul>
-    </div>
-  </section>
-
-  <!-- ===== 스티커 보드 ===== -->
-  <section id="stickers" class="block" data-sec="stickers">
-    <div class="sec-tools" hidden><span class="sec-name">스티커 보드</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <div class="block-head">
-      <div class="head-row"><h2 data-t="stickers.h2">📌 스티커 보드</h2><span class="muted small" id="wbCount"></span></div>
-      <p data-t="stickers.p">포스트잇처럼 붙여요. 글·사진·손그림. 끌어서 옮기고, 모서리로 크기, ↻로 돌려요.</p>
-    </div>
-    <div class="card wb-card">
-      <form class="wb-form" id="wbForm">
-        <textarea id="wbText" rows="2" placeholder="아무 말이나 적어서 붙이세요" maxlength="500"></textarea>
-        <div class="wb-form-row">
-          <span class="muted small">색</span>
-          <span class="wb-colors" id="wbColors"></span>
-          <span class="spacer"></span>
-          <button type="button" class="text-btn" id="wbDrawBtn">✏️ 그림</button>
-          <label class="text-btn file-btn">📷 사진<input type="file" id="wbPhoto" accept="image/*" hidden></label>
-          <button type="submit" class="primary" id="wbAdd">붙이기</button>
-        </div>
-      </form>
-      <div class="draw-wrap" id="drawWrap" hidden>
-        <div class="draw-tools">
-          <span class="pen-colors" id="penColors"></span>
-          <span class="ed-sep"></span>
-          <span class="pen-sizes" id="penSizes"></span>
-          <span class="ed-sep"></span>
-          <button type="button" class="text-btn" id="penEraser">지우개</button>
-          <button type="button" class="text-btn" id="penClear">전부 지우기</button>
-        </div>
-        <canvas id="drawCanvas" width="800" height="480" class="draw-canvas"></canvas>
-        <div class="wb-form-row">
-          <button type="button" class="primary" id="drawDone">보드에 붙이기</button>
-          <button type="button" class="text-btn" id="drawCancel">취소</button>
-          <span class="muted small">손가락이나 마우스로 그리세요. 위 칸에 글을 적어두면 그림과 같이 붙어요.</span>
-        </div>
-      </div>
-      <p class="muted small" id="wbErr" hidden></p>
-      <div class="wb-board" id="wbBoard"></div>
-    </div>
-  </section>
-
-  <!-- ===== 나 ===== -->
-  <section id="me" class="block" data-sec="me">
-    <div class="sec-tools" hidden><span class="sec-name">나</span><button type="button" class="icon-btn sec-up" title="위로">▲</button><button type="button" class="icon-btn sec-down" title="아래로">▼</button></div>
-    <div class="block-head">
-      <h2 data-t="me.h2">🙂 나</h2>
-      <p data-t="me.p">몸, 말, 취미, 그리고 소중한 것.</p>
-    </div>
-    <div class="me-grid">
-      <div class="card">
-        <h3 data-t="diet.h3">⚖️ 다이어트 → 44kg</h3>
-        <label class="field">
-          <span>현재 체중 (kg)</span>
-          <input type="number" step="0.1" min="30" max="150" id="weightInput" placeholder="예: 52.3">
-        </label>
-        <div class="bar"><div class="bar-fill pink" id="weightBar"></div></div>
-        <p class="bar-note" id="weightNote">현재 체중을 적으면 남은 kg가 보여요.</p>
-      </div>
-
-      <div class="card">
-        <h3 data-t="lang.h3">🗣 언어</h3>
-        <ul class="check-list" id="langList"></ul>
-        <p class="muted small" data-t="lang.p">오늘 공부한 언어에 체크 · 매일 자정 리셋 · 연속일이 쌓여요</p>
-      </div>
-
-      <div class="card">
-        <h3 data-t="hobby.h3">🎸 취미</h3>
-        <ul class="tag-list">
-          <li data-t="hobby.1">🥁 드럼 배우기</li>
-          <li data-t="hobby.2">🎸 기타 배우기</li>
-          <li data-t="hobby.3">💬 언어로 할 수 있는 무언가</li>
-        </ul>
-      </div>
-
-      <div class="card warm">
-        <h3 data-t="love.h3">💛 소중한 것</h3>
-        <p data-t="love.1">가족.</p>
-        <p data-t="love.2">소중한 사람들과 추억을 남기고, 함께 여행하는 것.</p>
-        <p class="muted small" data-t="love.3">아이는 낳고 싶지만, 결혼은 생각 없음.</p>
-      </div>
-    </div>
-  </section>
-
-  <section id="sync" class="block" data-fixed>
-    <div class="card sync-card">
-      <h3>☁️ 동기화</h3>
-      <p class="muted small">내용은 구글 계정에 저장돼서 폰과 컴퓨터에서 똑같이 보입니다. 주식 현재가도 여기서 가져와요. 기기마다 <b>PIN만 한 번</b> 넣으면 그다음부터는 바로 열립니다.</p>
-      <div class="sync-row">
-        <input type="password" id="pinInput" placeholder="PIN" inputmode="numeric" autocomplete="current-password" maxlength="32">
-        <button class="primary" id="pinSave">잠금 풀기</button>
-        <button class="text-btn" id="apiSync">지금 동기화</button>
-        <button class="text-btn" id="pinForget" hidden>이 기기에서 잠그기</button>
-      </div>
-      <p class="sync-state" id="syncState">아직 연결되지 않음 · 지금은 이 브라우저에만 저장됩니다.</p>
-      <details class="sync-help">
-        <summary>PIN을 정하거나 바꾸려면</summary>
-        <ol>
-          <li><a href="https://script.google.com/home" target="_blank" rel="noopener">script.google.com</a>에서 내 프로젝트를 열어요.</li>
-          <li>맨 위 <code>var PIN = '';</code> 줄에 나만 아는 숫자를 넣어요. 예: <code>var PIN = '482913';</code></li>
-          <li>저장한 뒤 [배포] → [배포 관리] → ✏️ → 버전 <b>새 버전</b> → [배포].</li>
-          <li>여기로 돌아와 그 PIN을 넣고 [잠금 풀기]를 눌러요.</li>
-        </ol>
-        <p class="muted small">주소는 코드에 들어 있지만 PIN은 들어 있지 않아요. PIN을 모르면 누구도 내용을 읽거나 지울 수 없습니다. 반드시 <b>새 버전</b>으로 배포하세요. [새 배포]를 누르면 주소가 바뀝니다.</p>
-        <p class="muted small">데이터는 기존 구글시트의 <code>MY_할일</code>, <code>MY_자산</code>, <code>MY_설정</code> 탭에 쌓여요. 원래 있던 탭은 건드리지 않습니다.</p>
-      </details>
-      <details class="sync-help">
-        <summary>주소가 바뀌었다면</summary>
-        <div class="sync-row">
-          <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" spellcheck="false">
-          <button class="text-btn" id="apiSave">주소 바꾸기</button>
-        </div>
-        <p class="muted small">비워두고 저장하면 기본 주소로 돌아갑니다.</p>
-      </details>
-    </div>
-  </section>
-
-  <footer class="foot" data-fixed>
-    <button class="text-btn" id="exportBtn">데이터 내보내기</button>
-    <label class="text-btn file-btn">데이터 불러오기<input type="file" id="importFile" accept="application/json" hidden></label>
-    <button class="text-btn" id="resetTexts">문구·순서 원래대로</button>
-    <span class="muted small">연결 전에는 이 브라우저에만 저장돼요.</span>
-  </footer>
-</main>
-
-<!-- ===== 할일 사이드바 ===== -->
-<aside class="side" id="side">
-  <div class="side-day">
-    <button type="button" class="icon-btn" id="sideDayPrev" aria-label="어제">‹</button>
-    <div class="side-day-text">
-      <p class="eyebrow" id="sideDayLabel">오늘</p>
-      <strong id="sideDayTitle"></strong>
-    </div>
-    <button type="button" class="icon-btn" id="sideDayNext" aria-label="내일">›</button>
-    <button type="button" class="text-btn" id="sideDayToday">오늘</button>
-  </div>
-
-  <div class="panels" id="sidePanels">
-    <section class="panel" data-panel="events">
-      <button type="button" class="panel-h"><span class="tw">▾</span><span class="panel-t">📅 일정</span><span class="panel-n" id="pnEventsN"></span></button>
-      <div class="panel-b" id="pnEvents"></div>
-    </section>
-
-    <section class="panel" data-panel="memo">
-      <button type="button" class="panel-h"><span class="tw">▾</span><span class="panel-t">📝 이 날 메모</span><span class="panel-n" id="pnMemoN"></span></button>
-      <div class="panel-b">
-        <textarea id="pnMemoText" rows="3" placeholder="이 날 기억할 것. 적는 대로 저장돼요." maxlength="500"></textarea>
-        <div class="pn-marks">
-          <div class="dm-stickers" id="pnStickers"></div>
-          <div class="dm-hls" id="pnHls"></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel" data-panel="todos">
-      <button type="button" class="panel-h"><span class="tw">▾</span><span class="panel-t">✅ 할일</span><span class="panel-n" id="sideCount"></span></button>
-      <div class="panel-b">
-        <form class="todo-form" id="todoForm">
-          <input type="text" id="todoText" placeholder="할일을 적고 Enter" autocomplete="off" maxlength="120">
-          <div class="todo-form-row">
-            <input type="date" id="todoDate">
-            <button type="button" class="text-btn" id="todoDateClear">날짜 없이</button>
-            <button type="submit" class="primary">추가</button>
-          </div>
-        </form>
-        <div class="todo-groups" id="todoGroups"></div>
-      </div>
-    </section>
-
-    <section class="panel" data-panel="diary">
-      <button type="button" class="panel-h"><span class="tw">▾</span><span class="panel-t">📔 이 날 일기</span><span class="panel-n" id="pnDiaryN"></span></button>
-      <div class="panel-b" id="pnDiary"></div>
-    </section>
-
-    <section class="panel" data-panel="upcoming">
-      <button type="button" class="panel-h"><span class="tw">▾</span><span class="panel-t">🗓 다가오는 일정</span><span class="panel-n" id="pnUpN"></span></button>
-      <div class="panel-b" id="pnUpcoming"></div>
-    </section>
-  </div>
-</aside>
+<p class="foot"><a href="#" data-a="sync">☁️ 동기화 · 내보내기</a> · 끌어서 다른 날로 옮길 수 있어요(반복 일정 빼고).</p>
 </div>
+<div class="dlg" id="dlg-item" hidden><form class="box" id="f" autocomplete="off">
+  <h3 id="f-h">추가</h3>
+  <span class="seg" id="f-kind"><button type="button" class="ib on" data-k="event">일정</button><button type="button" class="ib" data-k="task">할 일</button><button type="button" class="ib" data-k="memo">메모</button><button type="button" class="ib" data-k="wmemo">주간 메모</button></span>
+  <label for="f-title" id="f-tl">제목</label><input type="text" id="f-title" maxlength="200">
+  <div class="pv" id="f-tpv"></div>
+  <label for="f-memo" id="f-ml">메모</label><textarea id="f-memo" maxlength="3000"></textarea>
+  <div class="pv" id="f-mpv"></div>
+  <div class="hlbar" id="f-hl"></div>
+  <div class="tr"><div><label for="f-day" id="f-dl">날짜</label><input type="date" id="f-day"></div><div id="f-ow"><label for="f-owner">담당자</label><select id="f-owner"></select></div></div>
+  <div id="f-ev"><label>시간 <span style="font-weight:400;color:#7a7268">(비우면 하루 종일)</span></label><div class="tr"><input type="time" id="f-start" step="300" aria-label="시작 시간"><span>~</span><input type="time" id="f-end" step="300" aria-label="끝 시간"></div>
+    <div class="tr"><div><label for="f-rep">반복</label><select id="f-rep"><option value="">반복 없음</option><option value="weekly">매주</option><option value="monthly">매월</option></select></div><div id="f-untilw"><label for="f-until">반복 끝 (선택)</label><input type="date" id="f-until"></div></div></div>
+  <div id="f-tk"><label>상태</label><span class="seg" id="f-st"><button type="button" class="ib on" data-s="todo">○ 할 일</button><button type="button" class="ib" data-s="doing">◐ 진행 중</button><button type="button" class="ib" data-s="done">● 완료</button></span></div>
+  <p class="meta" id="f-meta"></p>
+  <p class="ops-err" id="f-err" hidden></p>
+  <div class="dacts"><button type="button" class="ib del" id="f-endr" hidden>반복 끝내기</button><button type="button" class="ib del" id="f-del1" hidden>이 날만 삭제</button><button type="button" class="ib del" id="f-del" hidden>삭제</button><span class="sp"></span><button type="button" class="ib" data-close>취소</button><button type="submit" class="ib dk" id="f-save">저장</button></div>
+</form></div>
+<div class="dlg" id="dlg-ppl" hidden><div class="box">
+  <h3>사람 · 형광펜 색</h3>
+  <p class="m" style="font-size:.82rem;margin:0 0 .8rem">담당자로 고를 사람과 그 사람의 형광펜 색이에요. 글자를 골라 이름 단추를 누르면 그 색으로 칠해져요.</p>
+  <div class="ppl" id="ppl"></div>
+  <button type="button" class="ib" id="ppl-add">+ 사람 추가</button>
+  <div class="dacts"><span class="sp"></span><button type="button" class="ib" data-close>취소</button><button type="button" class="ib dk" id="ppl-save">저장</button></div>
+</div></div>
+<div class="dlg" id="dlg-mail" hidden><div class="box wide">
+  <h3>주간 마감 보고</h3>
+  <p class="m" style="font-size:.82rem;margin:0 0 .6rem" id="mail-info"></p>
+  <div class="tr" style="margin-bottom:.6rem"><select id="mail-week" class="in"></select></div>
+  <iframe class="mailfr" id="mail-fr" title="주간 마감 보고" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>
+  <div class="dacts"><span class="sp"></span><button type="button" class="ib dk" data-close>닫기</button></div>
+</div></div>
+<div class="dlg" id="dlg-sync" hidden><div class="box">
+  <h3>☁️ 동기화</h3>
+  <p class="m" style="font-size:.82rem;margin:0 0 .8rem">내용은 구글 시트에 저장돼서 폰과 컴퓨터에서 똑같이 보여요. 기기마다 <b>PIN만 한 번</b> 넣으면 다음부터는 바로 열려요.</p>
+  <div class="tr"><input type="password" id="pinInput" class="in" placeholder="PIN" inputmode="numeric" autocomplete="current-password" maxlength="32" aria-label="PIN"><button type="button" class="ib dk" id="pinSave" style="flex:0 0 auto">잠금 풀기</button></div>
+  <p class="ops-err" id="syncErr" hidden></p>
+  <p class="sync-state" id="syncState"></p>
+  <div class="dacts" style="margin-top:.6rem"><button type="button" class="ib" id="apiSync">지금 동기화</button><button type="button" class="ib del" id="pinForget" hidden>이 기기에서 잠그기</button></div>
+  <details>
+    <summary>PIN을 정하거나 바꾸려면</summary>
+    <ol>
+      <li><a href="https://script.google.com/home" target="_blank" rel="noopener">script.google.com</a>에서 내 프로젝트를 열어요.</li>
+      <li>맨 위 <code>var PIN = '';</code> 줄에 나만 아는 숫자를 넣어요.</li>
+      <li>저장한 뒤 [배포] → [배포 관리] → ✏️ → 버전 <b>새 버전</b> → [배포].</li>
+    </ol>
+    <p class="m" style="font-size:.78rem">데이터는 구글 시트 <code>MY_설정</code> 탭에 쌓여요. 예전 대시보드 내용(할일·자산·목표·다이어리)도 지우지 않고 그대로 들고 있어요.</p>
+  </details>
+  <details>
+    <summary>주소가 바뀌었다면</summary>
+    <div class="tr" style="margin-top:.5rem"><input type="url" id="apiUrl" class="in" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" spellcheck="false" aria-label="저장 서버 주소"><button type="button" class="ib" id="apiSave" style="flex:0 0 auto">주소 바꾸기</button></div>
+    <p class="m" style="font-size:.78rem">비워두고 누르면 기본 주소로 돌아가요.</p>
+  </details>
+  <details>
+    <summary>내보내기 · 불러오기</summary>
+    <div class="dacts" style="margin-top:.5rem"><button type="button" class="ib" id="exportBtn">파일로 내보내기</button><label class="ib file">파일 불러오기<input type="file" id="importFile" accept="application/json" hidden></label></div>
+  </details>
+  <div class="dacts"><button type="button" class="ib del" id="syncReset">이 기기 초기화</button><span class="sp"></span><button type="button" class="ib dk" data-close>닫기</button></div>
+  <p class="meta" id="syncVer"></p>
+</div></div>
+</div></div>
 
-<!-- ===== 기록 페이지 (글 보기 / 글쓰기) ===== -->
-<section class="board-page" id="boardPage" hidden>
-  <div class="board-page-inner">
-    <div class="board-top">
-      <button type="button" class="text-btn" id="bdBackList">← 목록으로</button>
-      <button type="button" class="board-card" id="bdCardLogo" title="카테고리 화면으로">
-        <span class="board-card-emoji" id="bdCardEmoji"></span>
-        <div class="board-card-text">
-          <p class="eyebrow" id="bdCardKind">기록</p>
-          <h1 id="bdCardTitle"></h1>
-        </div>
-      </button>
-      <span class="spacer"></span>
-      <button type="button" class="text-btn" id="bdEdit" hidden>수정</button>
-      <button type="button" class="text-btn danger" id="bdDelete" hidden>삭제</button>
-      <button type="button" class="primary" id="bdNew" hidden>＋ 새 글</button>
-    </div>
+<div id="toast" role="status" aria-live="polite"></div>
 
-    <!-- 게시판 전체보기 -->
-    <div class="bd-view" id="bdViewHub" hidden>
-      <div class="hub-tools">
-        <div class="hub-tabs" id="hubKinds"></div>
-        <form class="hub-search" id="hubSearch"><input id="hubQ" placeholder="글 찾기 (제목·내용)" maxlength="60"><button type="submit" class="primary">찾기</button></form>
-        <button type="button" class="text-btn" id="hubAllPosts">📚 전체 글 보기</button>
-      </div>
-      <div class="hub-body">
-        <ul class="hub-list" id="hubList"></ul>
-        <aside class="hub-tree card">
-          <div class="tree-head">
-            <b>📂 카테고리</b>
-            <span class="tree-head-btns">
-              <button type="button" class="link-btn" id="treeExpandAll" title="모두 펼치기">모두 펼치기</button>
-              <button type="button" class="link-btn" id="treeCollapseAll" title="모두 접기">모두 접기</button>
-              <button type="button" class="text-btn" id="hubManage">⚙️ 카테고리 관리</button>
-            </span>
-          </div>
-          <div class="tree-opts" id="treeOpts" hidden>
-            <label class="switch"><input type="checkbox" id="treeCounts"><span>글 개수 표시</span></label>
-            <span class="muted small">▾▸ 상태는 저장돼요 (펼쳐놓기 / 접어놓기)</span>
-          </div>
-          <ul class="tree" id="hubTree"></ul>
-          <p class="muted small tree-help" id="treeHelp">▾▸로 펼치고 접어요. 접은 상태는 저장돼요.</p>
-        </aside>
-      </div>
-    </div>
-
-    <!-- 전체 글 / 검색 결과 -->
-    <div class="bd-view" id="bdViewAll" hidden>
-      <form class="hub-search wide" id="allSearch"><input id="allQ" placeholder="글 찾기 (제목·내용)" maxlength="60"><button type="submit" class="primary">찾기</button><button type="button" class="text-btn" id="allClear">전체 글</button></form>
-      <p class="muted small" id="allInfo"></p>
-      <ul class="post-list page" id="allPosts"></ul>
-    </div>
-
-    <!-- 글 목록 -->
-    <div class="bd-view" id="bdViewList" hidden>
-      <div class="hub-groups" id="listBoards"></div>
-      <div class="hub-group-editor card" id="listBoardEditor" hidden>
-        <p class="eyebrow">세부 게시판 관리</p>
-        <ul id="listBoardList" class="group-list"></ul>
-        <form class="group-add" id="listBoardAdd"><input id="listBoardName" placeholder="새 세부 게시판 이름 (예: 개발일지, 아이디어, 회의록)" maxlength="20"><button type="submit" class="primary">＋ 세부 게시판 추가</button></form>
-        <p class="muted small">세부 게시판을 지우면 그 안의 글은 "미분류"로 남아요. 글은 사라지지 않습니다.</p>
-      </div>
-      <ul class="post-list page" id="bdPosts"></ul>
-    </div>
-
-    <!-- 글 보기 -->
-    <div class="bd-view" id="bdViewPost" hidden>
-      <article class="post page">
-        <h2 class="post-title" id="bdPostTitle"></h2>
-        <p class="muted small" id="bdPostMeta"></p>
-        <div class="post-photos" id="bdPostPhotos"></div>
-        <div class="post-body" id="bdPostBody"></div>
-      </article>
-      <div class="post-nav">
-        <button type="button" class="text-btn" id="bdPrev">‹ 이전 글</button>
-        <button type="button" class="text-btn" id="bdNext">다음 글 ›</button>
-      </div>
-    </div>
-
-    <!-- 글쓰기 / 수정 -->
-    <div class="bd-view" id="bdViewEdit" hidden>
-      <div class="editor card">
-        <div class="ed-top">
-          <p class="eyebrow" id="bdEditTitle">새 글</p>
-          <label class="ed-board">세부 게시판 <select id="bdBoard"><option value="">미분류</option></select></label>
-          <label class="ed-board" id="bdDateWrap" hidden>날짜 <input type="date" id="bdDate"></label>
-        </div>
-        <div class="diary-moods pick" id="bdMoodWrap" hidden></div>
-        <input id="bdTitle" class="post-title-input" placeholder="제목 (비워도 돼요)" maxlength="80">
-
-        <div class="ed-toolbar" id="edToolbar">
-          <select id="edFont" title="글씨체">
-            <option value="">기본 글씨체</option>
-            <option value="Nanum Myeongjo">나눔명조</option>
-            <option value="Nanum Pen Script">나눔 손글씨</option>
-            <option value="Gaegu">개구 (귀여운)</option>
-            <option value="Do Hyeon">도현 (굵은)</option>
-          </select>
-          <select id="edSize" title="글씨 크기">
-            <option value="">크기</option>
-            <option value="1">아주 작게</option>
-            <option value="2">작게</option>
-            <option value="3">보통</option>
-            <option value="4">조금 크게</option>
-            <option value="5">크게</option>
-            <option value="6">아주 크게</option>
-            <option value="7">제목처럼</option>
-          </select>
-          <span class="ed-group">
-            <button type="button" data-cmd="bold" title="굵게"><b>B</b></button>
-            <button type="button" data-cmd="italic" title="기울임"><i>I</i></button>
-            <button type="button" data-cmd="underline" title="밑줄"><u>U</u></button>
-            <button type="button" data-cmd="strikeThrough" title="취소선"><s>S</s></button>
-          </span>
-          <span class="ed-group ed-colors" title="글씨 색">
-            <button type="button" data-color="#2b2723" style="background:#2b2723"></button>
-            <button type="button" data-color="#d9534f" style="background:#d9534f"></button>
-            <button type="button" data-color="#3f9f6f" style="background:#3f9f6f"></button>
-            <button type="button" data-color="#4f86c6" style="background:#4f86c6"></button>
-            <button type="button" data-color="#d9a441" style="background:#d9a441"></button>
-            <button type="button" data-color="#e8798f" style="background:#e8798f"></button>
-            <button type="button" data-color="#8a8078" style="background:#8a8078"></button>
-          </span>
-          <span class="ed-group">
-            <button type="button" data-cmd="justifyLeft" title="왼쪽 정렬">⇤</button>
-            <button type="button" data-cmd="justifyCenter" title="가운데 정렬">≡</button>
-            <button type="button" data-cmd="justifyRight" title="오른쪽 정렬">⇥</button>
-            <button type="button" data-cmd="insertUnorderedList" title="점 목록">•</button>
-          </span>
-          <label class="ed-photo" title="사진 넣기 (커서 자리에 들어가요)">📷 사진<input type="file" id="bdPhoto" accept="image/*" multiple hidden></label>
-          <button type="button" data-cmd="removeFormat" title="서식 지우기">지우개</button>
-          <button type="button" id="edTemplate" class="ed-tpl" title="오늘 한 일 / 잘한 일·아쉬운 일 / 내일 할 일 틀 넣기">📋 회고 틀</button>
-        </div>
-
-        <div class="img-tools" id="imgTools" hidden>
-          <span class="muted small">사진:</span>
-          <button type="button" data-img="size-s">작게</button>
-          <button type="button" data-img="size-m">보통</button>
-          <span class="ed-sep"></span>
-          <button type="button" data-img="pos-left">왼쪽</button>
-          <button type="button" data-img="pos-center">가운데</button>
-          <button type="button" data-img="pos-right">오른쪽</button>
-          <button type="button" data-img="pos-float">글 옆에</button>
-          <span class="ed-sep"></span>
-          <button type="button" data-img="remove" class="danger">빼기</button>
-        </div>
-
-        <div class="ed-body" id="bdEditor" contenteditable="true" data-placeholder="생각, 진행 상황, 뭐든 적어요. 사진은 📷 버튼으로 커서 자리에 들어가고, 사진을 누르면 크기·위치를 바꿀 수 있어요. Ctrl+Enter로 저장"></div>
-
-        <p class="muted small" id="bdEditNote"></p>
-        <div class="editor-btns">
-          <button type="button" class="text-btn" id="bdCancel">취소</button>
-          <button type="button" class="primary" id="bdSave">저장</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== 카드 상세 팝업 ===== -->
-<div class="modal" id="itemModal" hidden>
-  <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="imTitle">
-
-    <!-- 1) 카드 정보 -->
-    <div class="im-view" id="imViewCard">
-      <div class="im-head">
-        <input id="imEmoji" class="im-emoji" maxlength="4" placeholder="🙂" title="이모지">
-        <input id="imTitle" class="im-title" placeholder="제목" maxlength="60">
-        <button type="button" class="icon-btn" id="imClose" aria-label="닫기">×</button>
-      </div>
-      <textarea id="imDesc" rows="2" placeholder="한 줄 설명" maxlength="200"></textarea>
-      <div class="im-row">
-        <label class="im-field">할일 태그<input id="imTag" placeholder="예: 집" maxlength="20"></label>
-        <label class="im-field" id="imBarWrap">진행 표시
-          <select id="imBar"></select>
-        </label>
-        <label class="im-field im-check">홈 화면
-          <span class="switch"><input type="checkbox" id="imShow" checked><span>홈에 표시</span></span>
-        </label>
-        <label class="im-field" id="imStatusWrap" hidden>상태
-          <select id="imStatus">
-            <option value="build">개발 중</option>
-            <option value="run">자동 운영</option>
-            <option value="todo">상용화 대기</option>
-            <option value="pause">잠시 멈춤</option>
-            <option value="done">완료</option>
-          </select>
-        </label>
-      </div>
-      <div class="im-row im-actions">
-        <button type="button" class="text-btn" id="imTodo">+ 할일</button>
-        <button type="button" class="text-btn" id="imLeft">◀ 앞으로</button>
-        <button type="button" class="text-btn" id="imRight">뒤로 ▶</button>
-        <span class="spacer"></span>
-        <button type="button" class="text-btn danger" id="imDelete">삭제</button>
-      </div>
-
-      <div class="board-teaser">
-        <div class="board-teaser-head">
-          <h4>📝 기록 게시판 <span class="muted small" id="imNoteCount"></span></h4>
-          <div class="board-teaser-btns">
-            <button type="button" class="text-btn" id="imOpenBoard">글 목록 보기</button>
-            <button type="button" class="primary" id="imNewPost">새 글 쓰기</button>
-          </div>
-        </div>
-        <ul class="post-list compact" id="imRecent"></ul>
-      </div>
-      <p class="muted small im-saved" id="imSaved"></p>
-    </div>
-
-  </div>
-</div>
-
-<!-- ===== 날짜 상세 팝업 ===== -->
-<div class="modal" id="dayModal" hidden>
-  <div class="modal-box wide" role="dialog" aria-modal="true" aria-labelledby="dmTitle">
-    <div class="im-head">
-      <div class="dm-head-text"><h2 class="dm-title" id="dmTitle"></h2><p class="muted small" id="dmSub"></p></div>
-      <button type="button" class="icon-btn" id="dmClose" aria-label="닫기">×</button>
-    </div>
-    <div class="dm-row"><span class="dm-label">스티커</span><div class="dm-stickers" id="dmStickers"></div></div>
-    <div class="dm-row"><span class="dm-label">형광펜</span><div class="dm-hls" id="dmHls"></div></div>
-    <label class="im-field dm-memo">메모 <span class="muted small">(마우스만 올려도 달력에서 보여요 · 자동 저장)</span>
-      <textarea id="dmMemo" rows="3" placeholder="이 날에 대한 메모. 예: 엄마 생신, 병원 예약 3시, 월세 내는 날" maxlength="500"></textarea>
-    </label>
-
-    <h4 class="dm-h">📅 일정</h4>
-    <ul class="dm-events" id="dmEvents"></ul>
-    <form class="dm-event-form" id="dmEventForm">
-      <input id="dmEvTitle" placeholder="일정 제목 (예: 제주 여행, 치과, 친구 결혼식)" maxlength="60" autocomplete="off">
-      <div class="dm-dates"><input type="date" id="dmEvStart" required><span>부터</span><input type="date" id="dmEvEnd" required><span>까지</span><input type="time" id="dmEvTime" title="시간 (선택)"><span class="muted small">시간(선택)</span></div>
-      <div class="dm-row"><span class="dm-label">색</span><div class="dm-colors" id="dmEvColors"></div></div>
-      <input id="dmEvMemo" placeholder="일정 메모 (선택) 예: 숙소 ○○, 준비물" maxlength="200" autocomplete="off">
-      <div class="editor-btns"><button type="button" class="text-btn" id="dmEvCancel" hidden>취소</button><button type="submit" class="primary" id="dmEvSave">일정 추가</button></div>
-    </form>
-
-    <h4 class="dm-h">✅ 할일</h4>
-    <ul class="dm-todos" id="dmTodos"></ul>
-    <form class="dm-todo-form" id="dmTodoForm"><input id="dmTodoText" placeholder="이 날 할일 추가" maxlength="120" autocomplete="off"><button type="submit" class="primary">추가</button></form>
-    <p class="muted small dm-diary" id="dmDiary"></p>
-  </div>
-</div>
-<div class="cal-tip" id="calTip" hidden></div>
-
-<!-- ===== 호로록 메모장 ===== -->
-<button type="button" class="memo-fab" id="memoFab" title="메모장 (아무거나 호로록)">📝</button>
-<div class="memo-panel" id="memoPanel" hidden>
-  <div class="memo-head">
-    <b>📝 메모장</b>
-    <span class="muted small" id="memoState">적는 대로 저장돼요</span>
-    <button type="button" class="icon-btn" id="memoClose" aria-label="닫기">×</button>
-  </div>
-  <textarea id="memoText" placeholder="아무거나 호로록. 생각난 것, 전화번호, 사야 할 것…&#10;자동으로 저장되고 폰에서도 똑같이 보여요." spellcheck="false"></textarea>
-  <div class="memo-foot">
-    <button type="button" class="text-btn" id="memoToTodo" title="첫 줄을 할일로 보내기">첫 줄 → 할일</button>
-    <button type="button" class="text-btn danger" id="memoClear">비우기</button>
-  </div>
-</div>
-
-<!-- ===== PIN 팝업 ===== -->
-<div class="modal" id="pinModal" hidden>
-  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="pinModalTitle">
-    <h2 id="pinModalTitle">🔒 PIN을 넣어주세요</h2>
-    <p class="muted small">이 기기에서 한 번만 넣으면 다음부터는 바로 열려요.</p>
-    <input type="password" id="pinModalInput" inputmode="numeric" autocomplete="current-password" maxlength="32" placeholder="● ● ● ● ● ●">
-    <p class="modal-err" id="pinModalErr" hidden></p>
-    <div class="modal-btns">
-      <button type="button" class="text-btn" id="pinModalLater">나중에</button>
-      <button type="button" class="primary" id="pinModalOk">잠금 풀기</button>
-    </div>
-    <p class="muted small modal-ver"><span id="pinModalVer"></span> · <button type="button" class="link-btn" id="pinModalReset">이 기기 초기화</button></p>
-  </div>
-</div>
-
-<script src="js/app.js?v=20260927b"></script>
+<script src="js/app.js?v=20261123a"></script>
+<script src="js/planner.js?v=20261123a"></script>
 </body>
 </html>
