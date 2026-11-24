@@ -19,7 +19,7 @@
 - 확인(내장 브라우저, 로컬·PIN 없음, 가짜 사람 5명): 오늘 챙기기 각 칸 · 발의 방문 기록 → 연락할 때에서 빠지고 끝인상 약속 생김 · 근황·힘든 때 고치기 · 비밀 가림/보기 · 문구 7종·존댓말 · 새 사람(일·거래 고르면 주기 2달) · 묶음 거르기 · 기록·원칙 · 플래너로 넣기(플래너 화면에 뜸) · 폰 375px 가로 넘침 없음. 시험 데이터는 지움. **실제 시트(PIN)로는 안 해 봄.**
 - ⚠ 이 컴퓨터의 `C:\Users\SAMSUNG\OneDrive\scratch\myhome` 은 9/27 판 + git 이 깨져 있음(mmap failed, OneDrive 클라우드 전용 파일). `E:\OneDrive\scratch\myhome` 도 옛 판(.git 없음). 이번 작업은 GitHub 에서 새로 받은 임시 폴더에서 함. 다음엔 OneDrive 밖에 `git clone https://github.com/nda960327-glitch/jombijabcho.git` 해서 쓰는 게 안전.
 
-**배포 상태** — 커밋만(아래 해시). main 에 푸시하면 GitHub Pages(project27.kr)에 바로 반영.
+**배포 상태** — 2382d7d 를 main 에 푸시 = GitHub Pages(project27.kr) 배포(사용자 "project27.kr 에서 안 보여" → 올림).
 
 **다음·주의**
 - 폰 홈 화면 앱 등 다른 기기는 새로고침해야 새 판(v20261124a)이 뜸.
