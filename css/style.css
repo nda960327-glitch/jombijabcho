@@ -155,3 +155,91 @@ mark{padding:0 .12em;border-radius:2px;color:inherit}
 .dlg details summary{cursor:pointer;color:#3a352f}
 .dlg details ol{padding-left:1.2rem;margin:.5rem 0}.dlg code{background:#f1ede5;padding:0 .25rem}
 .dlg .file{display:inline-flex;align-items:center}
+
+/* ---------- 사람 관리 (THE PEOPLE Times · js/crm.js) ---------- */
+.crm-go{align-self:center;margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--ink);padding:.45rem .8rem;font-size:.86rem;cursor:pointer;line-height:1.2;white-space:nowrap}
+.crm-go:hover{background:#f3efe7}
+.crm-go b{display:inline-block;min-width:1.25rem;margin-left:.35rem;padding:0 .3rem;background:#b3261e;color:#fff;border-radius:999px;font-size:.72rem;line-height:1.25rem;text-align:center}
+.crm-go~.rt{margin-left:1rem}
+.crm-mode .bar:not(.crm-bar),.crm-mode .bar2:not(.crm-f),.crm-mode #ops-view,.crm-mode #ops-rt,.crm-mode .foot{display:none!important}
+.crm-mode .crm-go{background:var(--ink);color:#fff}
+.crm-bar{margin-bottom:.9rem}
+.crm-f{margin-top:0}
+.crm-rule{border:1px solid var(--line);background:#fff8d6;padding:.6rem .85rem;font-size:.9rem;line-height:1.6;margin-bottom:.9rem}
+.crm-rule small{display:block;font-size:.66rem;letter-spacing:.2em;color:var(--sub)}
+.crm-rule b{font-family:var(--serif);font-weight:400;font-size:1.05rem}
+.ops .lk{border:0;background:none;padding:0 .2rem;color:#3a352f;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:.78rem}
+.ops .lk.x{text-decoration:none;color:#9a9288;font-size:1rem;margin-left:auto}
+.crm-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-left:1px solid var(--line);border-top:1px solid var(--line);margin-bottom:1rem}
+.tl2{border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;padding:.6rem .5rem;text-align:center;min-width:0}
+.tl2 b{display:block;font-family:var(--serif);font-weight:400;font-size:2rem;line-height:1.05}.tl2 b small{font-size:1rem;color:var(--sub)}
+.tl2 span{display:block;font-size:.74rem;color:#3a352f}.tl2>small{font-size:.64rem;color:var(--sub);letter-spacing:.06em}
+.crm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border-left:1px solid var(--line);border-top:1px solid var(--line)}
+.crm-sec{border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;padding:.7rem .85rem;min-width:0}
+.crm-sec h3{margin:0 0 .45rem;font-family:var(--serif);font-weight:400;font-size:1.05rem;display:flex;align-items:baseline;gap:.4rem;white-space:nowrap}
+.crm-sec h3 i{color:var(--sub);font-size:.85rem}.crm-sec h3 small{font-family:inherit;font-size:.62rem;letter-spacing:.14em;color:var(--sub)}.crm-sec h3 b{font-size:1.4rem;margin-left:auto}
+.crm-sec ul{list-style:none;margin:0;padding:0;font-size:.85rem;max-height:22rem;overflow:auto}
+.crm-sec li{display:flex;flex-wrap:wrap;align-items:center;gap:.15rem .35rem;padding:.4rem 0;border-bottom:1px dashed var(--soft)}.crm-sec li:last-child{border-bottom:0}
+.crm-sec li.late .sub b{color:#b3261e}
+.crm-sec .sub{color:var(--sub);font-size:.74rem}
+.crm-sec .nt{flex-basis:100%;font-size:.76rem;color:#5a544c;padding-left:.1rem}
+.crm-sec .acts,.pc .acts{margin-left:auto;display:inline-flex;gap:.15rem;flex-wrap:wrap}
+.crm-sec .nm{color:#9a9288;font-size:.8rem;margin:.2rem 0}
+.crm-sec .dd{font-size:.74rem;color:#b5651d}.crm-sec .dd.now{color:#b3261e}
+.ops .nm2{border:0;background:none;padding:0;font-weight:700;cursor:pointer;text-decoration:underline;text-decoration-color:var(--soft);text-underline-offset:3px;font-size:inherit}
+.ops .nm2:hover{text-decoration-color:var(--ink)}
+.ops .cw{border:1px solid var(--soft);background:#fff;padding:.12rem .3rem;font-size:.85rem;line-height:1.2;cursor:pointer;border-radius:2px}
+.ops .cw:hover{border-color:var(--ink);background:#f6f3ed}
+.ops .ck2{border:1.5px solid var(--ink);background:#fff;width:1.25rem;height:1.25rem;border-radius:50%;padding:0;font-size:.7rem;line-height:1;cursor:pointer;flex:0 0 auto}
+.ops .ck2:hover{background:#f3efe7}
+.crm-empty{text-align:center;padding:1.5rem 1rem;border-top:1px solid var(--line)}.crm-empty .big{font-family:var(--serif);font-size:1.4rem;margin:.5rem 0}.crm-empty p{color:#5a544c}
+.crm-empty .crm-rule{text-align:left;margin-top:1.5rem}
+.crm-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.7rem}
+.pc{background:#fff;border:1px solid var(--soft);border-top:4px solid var(--oc);padding:.65rem .75rem;cursor:pointer;display:flex;flex-direction:column;gap:.25rem;min-width:0}
+.pc:hover{border-color:var(--ink);border-top-color:var(--oc)}
+.pc .pt{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap}.pc .pt b{font-family:var(--serif);font-weight:400;font-size:1.15rem}
+.pc .nk{font-size:.76rem;color:var(--sub)}
+.pc .pm{font-size:.74rem;color:var(--sub)}.pc .pm .late{color:#b3261e;font-weight:700}.pc .pm .soon{color:#b5651d;font-weight:700}
+.pc .ps{font-size:.8rem;color:#3a352f}
+.pc .tg{display:flex;flex-wrap:wrap;gap:.25rem}.pc .tg span{font-size:.68rem;color:#5a544c;background:#f1ede5;padding:0 .35rem}
+.pc .acts{margin-top:auto;padding-top:.2rem}
+.hd{font-size:.66rem;font-weight:700;color:#fff;background:#b3261e;padding:.05rem .4rem;border-radius:999px}
+.lst .r .fu{color:#b5651d!important}
+.crm-book{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-left:1px solid var(--line);border-top:1px solid var(--line)}
+.crm-book section{border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff;padding:.7rem .9rem;min-width:0}
+.crm-book h3{margin:0 0 .3rem;font-family:var(--serif);font-weight:400;font-size:1.05rem}.crm-book h3 i{color:var(--sub);font-size:.85rem}
+.crm-book ol{margin:0;padding-left:1.2rem;font-size:.84rem;line-height:1.65}
+.crm-book .how{grid-column:1/-1;background:#fff8d6}
+/* 사람 창 */
+.crm-pbox .ph{display:flex;align-items:flex-start;gap:.6rem}.crm-pbox .ph>div{flex:1;min-width:0}
+.crm-pbox h3{margin:0}.crm-pbox h3 small{font-family:inherit;font-size:.85rem;color:var(--sub)}
+.crm-pbox .pm{font-size:.78rem;color:var(--sub);margin-top:.2rem}
+.crm-pbox .qa{display:flex;flex-wrap:wrap;gap:.3rem;margin:.8rem 0}.crm-pbox .qa .ib{font-size:.8rem;padding:.35rem .55rem;text-decoration:none;color:var(--ink)}
+.kvs{border-top:1px solid var(--line)}
+.kv{display:flex;gap:.7rem;padding:.45rem .1rem;border-bottom:1px dashed var(--soft);font-size:.86rem}
+.kv span{flex:0 0 7.5em;color:var(--sub);font-size:.76rem;padding-top:.1rem}.kv div{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word}
+.kv.warn div{color:#b3261e}
+.sec2{margin:.5rem 0;padding:.4rem .6rem;background:#f1ede5}.sec2 .kv{border:0}
+.crm-pbox h4{font-family:var(--serif);font-weight:400;font-size:1rem;margin:1.1rem 0 .35rem}.crm-pbox h4 small{font-family:inherit;color:var(--sub);font-size:.72rem}
+.ths{list-style:none;margin:0 0 .4rem;padding:0;font-size:.85rem}
+.ths li{display:flex;align-items:center;gap:.4rem;padding:.3rem 0;border-bottom:1px dashed var(--soft)}.ths li.dn{color:var(--sub)}.ths .sub{font-size:.72rem;color:var(--sub)}
+.crm-pbox .lst{border-top:1px solid var(--line)}
+/* 창 안 */
+.dlg .hint{font-weight:400;color:var(--sub);letter-spacing:0}
+.dlg label.ckl{display:flex;align-items:center;gap:.4rem;font-weight:400;letter-spacing:0;font-size:.82rem;margin:.55rem 0 0;cursor:pointer}
+.dlg label.ckl input{width:auto;margin:0}
+.dlg .dt{margin-bottom:.35rem}.dlg .dt input[type=text]{flex:2}.dlg .dt input[type=date]{flex:1.2}.dlg .dt label.ckl{flex:0 0 auto;margin:0}.dlg .dt .lk{flex:0 0 auto}
+.crm-way,.crm-mk{flex-wrap:wrap}
+.dlg .crm-way .ib,.dlg .crm-mk .ib{padding:.38rem .6rem;font-size:.84rem}
+.crm-mtx{min-height:150px!important;margin-top:.6rem;overflow-y:auto!important}
+@media(max-width:1000px){.crm-book{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:820px){
+ .crm-go{order:3;margin-left:0}.crm-go~.rt{margin-left:auto}
+ .crm-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .crm-grid,.crm-book{grid-template-columns:minmax(0,1fr)}
+ .crm-bar .seg{order:2;width:100%}.crm-bar .seg .ib{flex:1;padding:.42rem .3rem}
+ .crm-cards{grid-template-columns:minmax(0,1fr)}
+ .kv{flex-direction:column;gap:0}.kv span{flex:none}
+ .dlg .tr{flex-wrap:wrap}.dlg .tr>div{flex:1 1 12rem}
+}
+@media print{.crm-mode .crm-bar,.crm-go,.crm-sec .acts,.pc .acts,.sec2{display:none!important}}

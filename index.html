@@ -18,13 +18,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261123a">
+<link rel="stylesheet" href="css/style.css?v=20261124a">
 </head>
 <body>
 
 <div class="wrap"><div class="ops" id="ops">
 <div id="ops-main"><div class="paper">
-  <div class="mast"><div><div class="kick">MY HOME · 나의 주간 플래너</div><h1>THE WEEKLY <i>Times</i></h1></div><div class="rt" id="ops-rt"></div></div>
+  <div class="mast"><div><div class="kick">MY HOME · 나의 주간 플래너</div><h1>THE WEEKLY <i>Times</i></h1></div><button type="button" class="crm-go" id="crm-go" title="사람 관리 (CRM)">👥 사람 관리</button><div class="rt" id="ops-rt"></div><div class="rt" id="crm-rt" hidden></div></div>
   <div class="rule"></div>
   <div class="bar">
     <button type="button" class="ib" data-a="prev" aria-label="이전">◀</button><button type="button" class="ib" data-a="next" aria-label="다음">▶</button>
@@ -38,6 +38,7 @@
   <div class="bar2"><span id="ops-legend"></span><span>○ 할 일 · ◐ 진행 중 · ● 완료</span>
     <span class="tools"><button type="button" class="tl" data-a="people">사람·형광펜 색</button><button type="button" class="tl" data-a="done">지금까지 한 일</button><button type="button" class="tl" data-a="mail">주간 마감 보고</button><button type="button" class="tl" data-a="carry">못 한 일 이번 주로</button><button type="button" class="tl" data-a="print">인쇄</button><button type="button" class="tl sync-badge none" data-a="sync" id="syncBadge">🔒 동기화 잠김</button></span></div>
   <div id="ops-view"></div>
+  <div id="crm-view" hidden></div>
 </div>
 <p class="foot"><a href="#" data-a="sync">☁️ 동기화 · 내보내기</a> · 끌어서 다른 날로 옮길 수 있어요(반복 일정 빼고).</p>
 </div>
@@ -99,11 +100,60 @@
   <div class="dacts"><button type="button" class="ib del" id="syncReset">이 기기 초기화</button><span class="sp"></span><button type="button" class="ib dk" data-close>닫기</button></div>
   <p class="meta" id="syncVer"></p>
 </div></div>
+
+<!-- ===== 사람 관리(CRM) 창들 — js/crm.js ===== -->
+<div class="dlg crm-dlg" id="crm-dlg-p" hidden><div class="box wide crm-pbox">
+  <div id="crm-p-body"></div>
+  <div class="dacts"><span class="sp"></span><button type="button" class="ib dk" data-cclose>닫기</button></div>
+</div></div>
+<div class="dlg crm-dlg" id="crm-dlg-e" hidden><form class="box wide" id="crm-e-f" autocomplete="off">
+  <h3 id="crm-e-h">사람 적기</h3>
+  <div class="tr"><div><label for="crm-e-name">이름 *</label><input type="text" id="crm-e-name" maxlength="40"></div><div><label for="crm-e-nick">부르는 이름·별명</label><input type="text" id="crm-e-nick" maxlength="40" placeholder="예: 민수 형, 박 원장님"></div></div>
+  <div class="tr"><div><label for="crm-e-circle">묶음</label><select id="crm-e-circle"></select></div></div>
+  <div class="tr"><div><label for="crm-e-cad">연락 주기</label><select id="crm-e-cad"></select></div><div><label for="crm-e-bond">어떤 우정? <span class="hint">(아리스토텔레스)</span></label><select id="crm-e-bond"></select></div></div>
+  <div class="tr"><div><label for="crm-e-phone">전화</label><input type="text" id="crm-e-phone" maxlength="40" inputmode="tel"></div><div><label for="crm-e-bday">생일 <span class="hint">(연도 모르면 아무 해나)</span></label><input type="date" id="crm-e-bday"></div></div>
+  <label>중요한 날 <span class="hint">— 기념일·개업·수술·시험… 지난 날도 3일까지 보여요("어떻게 됐어요?")</span></label>
+  <div id="crm-e-dates"></div><button type="button" class="ib" id="crm-e-dadd">+ 날 추가</button>
+  <label for="crm-e-situation">요즘 사정 · 근황 <span class="hint">— 다른 사람 사정에 관심 갖기</span></label><textarea id="crm-e-situation" maxlength="1000" placeholder="예: 둘째 출산 준비 중, 이직 고민"></textarea>
+  <label class="ckl"><input type="checkbox" id="crm-e-hard"> 지금 힘든 때 — 아프거나 어려운 일 (발의 방문 목록에 떠요)</label>
+  <label for="crm-e-praise">칭찬 거리 <span class="hint">— 구체적으로</span></label><textarea id="crm-e-praise" maxlength="1000" placeholder="예: 직원 한 명 한 명 생일을 챙기는 것"></textarea>
+  <label for="crm-e-needs">내가 도울 수 있는 일</label><textarea id="crm-e-needs" maxlength="1000" placeholder="예: 세무사 소개가 필요하다고 함"></textarea>
+  <div class="tr"><div><label for="crm-e-family">가족 · 이름</label><input type="text" id="crm-e-family" maxlength="500" placeholder="예: 아내 ○○, 딸 ○○(7)"></div><div><label for="crm-e-likes">좋아하는 것 <span class="hint">(밥 약속에)</span></label><input type="text" id="crm-e-likes" maxlength="500" placeholder="예: 평양냉면, 골프, 와인"></div></div>
+  <label for="crm-e-caution">조심할 것 <span class="hint">— 콤플렉스·건드리지 말 이야기</span></label><input type="text" id="crm-e-caution" maxlength="500">
+  <label for="crm-e-secret">🔒 털어놓은 이야기 <span class="hint">— 옮기지 않기. 눌러야 보이고 찾기에 안 나와요</span></label><textarea id="crm-e-secret" maxlength="2000"></textarea>
+  <div class="tr"><div><label for="crm-e-tags">태그</label><input type="text" id="crm-e-tags" maxlength="200" placeholder="예: 동창 골프 거래처"></div></div>
+  <label for="crm-e-memo">메모</label><textarea id="crm-e-memo" maxlength="3000"></textarea>
+  <p class="ops-err" id="crm-e-err" hidden></p>
+  <div class="dacts"><button type="button" class="ib del" id="crm-e-del" hidden>지우기</button><button type="button" class="ib" id="crm-e-arch" hidden>보관함으로</button><span class="sp"></span><button type="button" class="ib" data-cclose>취소</button><button type="submit" class="ib dk">저장</button></div>
+</form></div>
+<div class="dlg crm-dlg" id="crm-dlg-l" hidden><form class="box" id="crm-l-f" autocomplete="off">
+  <h3 id="crm-l-h">연락 기록</h3>
+  <div class="tr"><div><label for="crm-l-p">누구와</label><select id="crm-l-p"></select></div><div style="flex:0 0 9.5rem"><label for="crm-l-day">날짜</label><input type="date" id="crm-l-day"></div></div>
+  <label>어떻게</label><span class="seg crm-way" id="crm-l-way"></span><p class="meta" id="crm-l-wd" style="margin-top:.3rem"></p>
+  <label for="crm-l-memo">무슨 이야기 <span class="hint">— 들은 것 위주로</span></label><textarea id="crm-l-memo" maxlength="3000"></textarea>
+  <div id="crm-l-sitw"><label for="crm-l-sit">새로 알게 된 근황 <span class="hint">(사람 카드의 "요즘 사정"이 이걸로 바뀌어요)</span></label><textarea id="crm-l-sit" maxlength="1000"></textarea>
+  <label class="ckl"><input type="checkbox" id="crm-l-hard"> 지금 힘든 때</label></div>
+  <label for="crm-l-fu">약속한 일 · 다음에 할 것</label><div class="tr"><input type="text" id="crm-l-fu" maxlength="200" placeholder="예: 책 빌려주기, 다음 달 밥"><input type="date" id="crm-l-fud" style="flex:0 0 9.5rem" aria-label="언제까지"></div>
+  <label class="ckl" id="crm-l-endw"><input type="checkbox" id="crm-l-end"> 끝인상 — 내일 "만나서 고마웠어요" 인사 남기기</label>
+  <label class="ckl" id="crm-l-fdw" hidden><input type="checkbox" id="crm-l-fdone"> 약속한 일 했어요</label>
+  <label class="ckl"><input type="checkbox" id="crm-l-pl"> 약속한 일을 주간 플래너 할 일로도 넣기</label>
+  <p class="ops-err" id="crm-l-err" hidden></p>
+  <div class="dacts"><button type="button" class="ib del" id="crm-l-del" hidden>지우기</button><span class="sp"></span><button type="button" class="ib" data-cclose>취소</button><button type="submit" class="ib dk">기록</button></div>
+</form></div>
+<div class="dlg crm-dlg" id="crm-dlg-m" hidden><div class="box">
+  <h3 id="crm-m-h">💬 보낼 문구</h3>
+  <span class="seg crm-mk" id="crm-m-k"></span>
+  <div style="margin-top:.5rem"><span class="seg" id="crm-m-tone"></span></div>
+  <textarea id="crm-m-tx" class="crm-mtx" maxlength="2000" aria-label="문구"></textarea>
+  <p class="meta" id="crm-m-tip"></p>
+  <div class="dacts"><button type="button" class="ib" id="crm-m-log">보냈어요 — 기록</button><span class="sp"></span><a class="ib" id="crm-m-sms" href="#" hidden>문자로</a><button type="button" class="ib dk" id="crm-m-copy">복사</button><button type="button" class="ib" data-cclose>닫기</button></div>
+</div></div>
 </div></div>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="js/app.js?v=20261123a"></script>
-<script src="js/planner.js?v=20261123a"></script>
+<script src="js/app.js?v=20261124a"></script>
+<script src="js/planner.js?v=20261124a"></script>
+<script src="js/crm.js?v=20261124a"></script>
 </body>
 </html>

@@ -10,7 +10,7 @@
   const KEY = 'myhome.v1';
   const API_KEY = 'myhome.api2';
   const PIN_KEY = 'myhome.pin';
-  const APP_VER = '20261123a';
+  const APP_VER = '20261124a';
   /** 저장 서버 주소. 서버가 PIN을 확인하므로 주소가 공개돼도 내용은 열리지 않는다. */
   const DEFAULT_API = 'https://script.google.com/macros/s/AKfycby-lVpo55ltoCZupAziQQrs_OeLUhPMM1h98HfJcZhDEX6ZlvoHQFCGyGaA0F9qmF-YKw/exec';
   // 시트 한 칸은 5만 자까지. 서버(apps-script.gs)는 4만 자가 넘으면 여러 칸으로 나눠 적지만,
@@ -74,6 +74,7 @@
     Object.keys(state).forEach(k => { if (/^ops_\d+$/.test(k)) delete state[k]; });
     parts.forEach((p, i) => { state['ops_' + i] = p; });
     state.ops = { v: 1, parts: parts.length, people: OPS.people, lastCarry: OPS.lastCarry };
+    if (window.MI && window.MI.packCrm) window.MI.packCrm(state);   // 사람 관리(js/crm.js)도 같은 방식으로 crm_0… 에
   }
   function saveLocal() {
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
@@ -385,6 +386,8 @@
     get(p) { try { return Promise.resolve(apiGet(p)); } catch (e) { return Promise.reject(e); } },
     post(p, b) { try { return Promise.resolve(apiPost(p, b)); } catch (e) { return Promise.reject(e); } },
     openSync() { openSyncDlg(); },
+    getState: () => state,          // js/crm.js 가 처음 읽을 때
+    saveAll: () => save(),          // js/crm.js 가 고친 뒤 — 이 기기 저장 + 1.5초 뒤 시트
     redraw: null   // planner.js 가 채운다
   };
   const redraw = () => { if (MI.redraw) MI.redraw(); };
@@ -428,6 +431,7 @@
     state = Object.assign({}, state, remote);
     OPS = unpack(state);
     saveLocal();
+    if (MI.onCrmState) MI.onCrmState(state);
     return true;
   }
 
@@ -562,7 +566,7 @@
           if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('형식 오류');
           const n = unpack(data).items.length;
           if (!confirm(`플래너 항목 ${n}개가 든 파일로 지금 내용을 통째로 바꿀까요?`)) return;
-          state = data; OPS = unpack(state); save(); redraw(); MI.toast('불러왔어요');
+          state = data; OPS = unpack(state); if (MI.onCrmState) MI.onCrmState(state); save(); redraw(); MI.toast('불러왔어요');
         } catch (err) { alert('불러오기 실패: ' + err.message); }
         e.target.value = '';
       };
